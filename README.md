@@ -79,9 +79,13 @@ The app has two modes, switched via `AppModeContext` (`src/context/AppModeContex
   the cart (items, subtotal, applied deals, total) and nothing else. No
   buttons that change anything. A small, deliberately unobtrusive "Staff
   Access" link at the bottom is the only way out of this screen.
-- **Admin** — the Inventory/Cart/Deals tabs from before, plus a "Customer
-  View" button in the header of every admin screen to go back. Reached by
-  tapping "Staff Access" and entering the PIN.
+- **Admin** (`AdminScreen.tsx`) — Inventory/Cart/Deals, switched via a
+  dropdown menu from the header (tap the title) rather than a tab bar; the
+  same menu's last item is "Customer View" to exit back out. Reached by
+  tapping "Staff Access" and entering the PIN. This is plain local state, not
+  a navigator — no screen needs back-stack/deep-linking, so `@react-navigation/*`
+  and `react-native-screens` were removed as dependencies (dropped the bundle
+  from 2.6MB to 2.2MB, 1000+ modules to 659).
 
 **The PIN is `EXPO_PUBLIC_ADMIN_PIN` in `.env`, defaulting to `1234` if
 unset** (`src/lib/adminPin.ts`). This is a deterrent, not real security —
@@ -93,7 +97,7 @@ before using this at a real show.**
 
 ## What's already here
 
-- **Inventory tab** (admin) — real catalog (128 items: originals + their
+- **Inventory page** (admin) — real catalog (128 items: originals + their
   print/sticker/pin/postcard variants), sold items shown but disabled. Pin
   ($3) and postcard ($5) pricing comes from Chrissy's spreadsheet's "2026
   Calculations" sheet; most of their stock counts are real (the sheet's
@@ -110,7 +114,7 @@ before using this at a real show.**
   DB has no cascade delete set up. Editing quantity back above 0 un-marks a
   piece as sold. This is how to fix the placeholder stock counts once
   Chrissy has real numbers — no SQL needed.
-- **Cart tab** (admin) — quantity steppers, subtotal, remove, and any
+- **Cart page** (admin) — quantity steppers, subtotal, remove, and any
   applied/overridden deals shown under the list.
 - **Deals engine** (`src/lib/deals.ts`) — auto-applies active deals from the
   `deals` table against the cart, per the design doc's rules: non-stackable
@@ -121,7 +125,7 @@ before using this at a real show.**
   **Not supported**: the doc's "1 print + 1 original from same series"
   mixed-type combo trigger, and the optional "1 item away from unlocking a
   deal" upsell prompt — both explicitly scoped out as follow-ups, not bugs.
-- **Deals tab** (admin) — add/edit/delete deals from the app (`DealsScreen.tsx` +
+- **Deals page** (admin) — add/edit/delete deals from the app (`DealsScreen.tsx` +
   `DealFormScreen.tsx`), no need to touch Supabase directly. A structured
   form, not raw JSON — pick deal type, trigger count, discount, scope
   (all/by-type/by-SKU-list), stackable, active, optional date window. Toggle
