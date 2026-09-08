@@ -6,14 +6,26 @@ import { Piece } from '../types/database';
 // image_url is the same CDN image used on the live site (print/sticker/pin
 // rows reuse their original's image — there's no separate photo per size).
 //
+// Original prices for 5 pieces were corrected against Chrissy's internal
+// inventory spreadsheet (C:UsersmissaDownloadsInventory.xlsx,
+// 'mfpStudios' sheet), which she confirmed is the authoritative price —
+// the website (Sanity) was stale for those. 'Boxy Boo' shows $0 in that
+// sheet (ambiguous — sold vs. free vs. data-entry gap) and was left alone.
+// 'Behind the Smile' ($390) and 'Best in Show' ($180) exist in the
+// spreadsheet but not yet in Sanity/this app — not added since they need a
+// real SKU, image, and stock count Chrissy hasn't supplied yet.
+//
 // Until the Supabase project exists, this array is the app's data source
 // (see PiecesContext). Once it does, supabase/seed.sql loads the same rows
 // there and this file goes away — the DB becomes the source of truth.
 //
 // IMPORTANT: quantity_remaining on every print/sticker/pin row is a
-// PLACEHOLDER (10/25/15). Sanity only tracks price, not physical show stock.
-// Chrissy MUST correct these to real counts before this is used at an actual
-// show, or the app will let items sell that aren't really there.
+// PLACEHOLDER (10/25/15). The spreadsheet actually tracks real per-size
+// stock, but its two-number-per-size columns (e.g. 4x6: 2, 9) are ambiguous
+// pending Chrissy updating that sheet — see the README. Once that's
+// resolved, replace these placeholders with real counts before this is
+// used at an actual show, or the app will let items sell that aren't
+// really there.
 export const SEED_PIECES: Piece[] = [
   {
     id: "orig-1",
@@ -989,7 +1001,7 @@ export const SEED_PIECES: Piece[] = [
     width_in: 16,
     height_in: 20,
     series: null,
-    price: 378,
+    price: 375,
     cost_basis: null,
     status: "available",
     type: "original",
@@ -1199,7 +1211,7 @@ export const SEED_PIECES: Piece[] = [
     width_in: 10,
     height_in: 8,
     series: null,
-    price: 185,
+    price: 180,
     cost_basis: null,
     status: "available",
     type: "original",
@@ -1619,7 +1631,7 @@ export const SEED_PIECES: Piece[] = [
     width_in: 14,
     height_in: 14,
     series: null,
-    price: 135,
+    price: 255,
     cost_basis: null,
     status: "available",
     type: "original",
@@ -1787,7 +1799,7 @@ export const SEED_PIECES: Piece[] = [
     width_in: 16,
     height_in: 12,
     series: null,
-    price: 295,
+    price: 275,
     cost_basis: null,
     status: "available",
     type: "original",
@@ -1871,7 +1883,7 @@ export const SEED_PIECES: Piece[] = [
     width_in: 16,
     height_in: 20,
     series: null,
-    price: 375,
+    price: 275,
     cost_basis: null,
     status: "available",
     type: "original",

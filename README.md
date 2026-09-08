@@ -39,12 +39,16 @@ inventory data. Square card payments and barcode scanning aren't wired up yet
       `supabase/migrations/0001_init.sql` then `supabase/seed.sql` in its SQL
       editor. Copy `.env.example` to `.env` and fill in the project URL + anon
       key.
-- [ ] **Real stock counts** — `seedPieces.ts` / `seed.sql` have real titles,
-      prices, and mediums pulled from the live site, but print/sticker/pin
-      `quantity_remaining` is a **placeholder** (10/25/15) since the website
-      only tracks price, not physical show stock. Get real counts from Chrissy
-      before this is used at an actual show — either edit `seed.sql` before
-      running it, or update rows in Supabase directly afterward.
+- [ ] **Real stock counts** — Chrissy has an internal spreadsheet
+      (`Inventory.xlsx`, `mfpStudios` sheet) tracking real per-size stock, and
+      its `Original` prices are already pulled into `seedPieces.ts`/`seed.sql`.
+      But each size column (4x6, 5x7, 8x10, 5x5, 8x8, Stickers, Post Cards)
+      has two numbers and only one is labeled (e.g. "Exhaustive Life of a Cat"
+      4x6 shows `2` then `9`) — Chrissy needs to clean that sheet up before we
+      can tell which number is current stock vs. sold-to-date. Until then,
+      print/sticker/pin `quantity_remaining` stays a **placeholder** (10/25/15).
+      Also not yet in the app: "Behind the Smile" ($390) and "Best in Show"
+      ($180), which are in her spreadsheet but not on the live site yet.
 
 **Once those exist:**
 
