@@ -63,8 +63,12 @@ inventory data. Square card payments and barcode scanning aren't wired up yet
 
 ## What's already here
 
-- **Inventory tab** — real catalog (107 items: originals + their print/sticker/pin
-  variants), sold items shown but disabled.
+- **Inventory tab** — real catalog (128 items: originals + their print/sticker/pin/
+  postcard variants), sold items shown but disabled. Pin ($3) and postcard ($5)
+  pricing comes from Chrissy's spreadsheet's "2026 Calculations" sheet; most of
+  their stock counts are real (the sheet's column was unambiguous for them even
+  where prints/stickers weren't) — a few postcard rows still fall back to the
+  same placeholder as prints, flagged in `seedPieces.ts`.
 - **Cart tab** — quantity steppers, subtotal, remove.
 - **Checkout** (modal from Cart) — pick Venmo/PayPal/cash (Square shown but
   disabled until the SDK's wired in), optional tip, fee estimate, "Confirm

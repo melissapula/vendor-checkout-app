@@ -2,7 +2,7 @@
 // Once the Supabase project exists, replace this with the generated version:
 //   npx supabase gen types typescript --project-id <id> > src/types/database.ts
 
-export type PieceType = 'original' | 'print' | 'sticker' | string;
+export type PieceType = 'original' | 'print' | 'sticker' | 'pin' | 'postcard' | string;
 export type PieceStatus = 'available' | 'sold' | 'reserved';
 export type SaleChannel = 'show' | 'online' | 'studio';
 export type PaymentMethod = 'square' | 'venmo' | 'paypal' | 'cash';
