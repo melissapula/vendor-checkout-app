@@ -7,6 +7,7 @@ interface PiecesContextValue {
   loading: boolean;
   error: string | null;
   sellUnits: (pieceId: string, quantitySold: number) => Promise<void>;
+  updatePiece: (pieceId: string, updates: Partial<Piece>) => Promise<void>;
 }
 
 const PiecesContext = createContext<PiecesContextValue | null>(null);
@@ -50,8 +51,14 @@ export function PiecesProvider({ children }: { children: React.ReactNode }) {
     setPieces((prev) => prev.map((p) => (p.id === pieceId ? { ...p, ...updates } : p)));
   }
 
+  async function updatePiece(pieceId: string, updates: Partial<Piece>) {
+    const { error } = await supabase.from('pieces').update(updates).eq('id', pieceId);
+    if (error) throw error;
+    setPieces((prev) => prev.map((p) => (p.id === pieceId ? { ...p, ...updates } : p)));
+  }
+
   return (
-    <PiecesContext.Provider value={{ pieces, loading, error, sellUnits }}>
+    <PiecesContext.Provider value={{ pieces, loading, error, sellUnits, updatePiece }}>
       {children}
     </PiecesContext.Provider>
   );

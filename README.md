@@ -12,6 +12,10 @@ end-to-end against a live Supabase project with real inventory data. Square
 card payments and barcode scanning aren't wired up yet — both need a physical
 device and are blocked on accounts (see checklist).
 
+The app opens on a **Customer view** by default; a "Staff Access" PIN unlocks
+**Admin** (Inventory/pricing/stock, Cart/Checkout, Deals). See "Admin vs.
+Customer" below.
+
 ## Stack
 
 - Expo (React Native + TypeScript) — chosen over bare RN so iOS builds can run
@@ -67,16 +71,40 @@ device and are blocked on accounts (see checklist).
       Replace these with Chrissy's real picks whenever she has them; that's a
       row edit in Supabase, no app change needed.
 
+## Admin vs. Customer
+
+The app has two modes, switched via `AppModeContext` (`src/context/AppModeContext.tsx`):
+
+- **Customer** (default, no login) — read-only: shows whatever's currently in
+  the cart (items, subtotal, applied deals, total) and nothing else. No
+  buttons that change anything. A small, deliberately unobtrusive "Staff
+  Access" link at the bottom is the only way out of this screen.
+- **Admin** — the Inventory/Cart/Deals tabs from before, plus a "Customer
+  View" button in the header of every admin screen to go back. Reached by
+  tapping "Staff Access" and entering the PIN.
+
+**The PIN is `EXPO_PUBLIC_ADMIN_PIN` in `.env`, defaulting to `1234` if
+unset** (`src/lib/adminPin.ts`). This is a deterrent, not real security —
+`EXPO_PUBLIC_*` vars are bundled into the client JS in plaintext, so anyone
+who inspects the app bundle can read it. It's meant to stop a customer from
+casually poking at pricing/inventory/deals while the iPad's in their hands,
+not to protect real secrets. **Change it from the default 1234 in `.env`
+before using this at a real show.**
+
 ## What's already here
 
-- **Inventory tab** — real catalog (128 items: originals + their print/sticker/pin/
-  postcard variants), sold items shown but disabled. Pin ($3) and postcard ($5)
-  pricing comes from Chrissy's spreadsheet's "2026 Calculations" sheet; most of
-  their stock counts are real (the sheet's column was unambiguous for them even
-  where prints/stickers weren't) — a few postcard rows still fall back to the
-  same placeholder as prints, flagged in `seedPieces.ts`.
-- **Cart tab** — quantity steppers, subtotal, remove, and any applied/overridden
-  deals shown under the list.
+- **Inventory tab** (admin) — real catalog (128 items: originals + their
+  print/sticker/pin/postcard variants), sold items shown but disabled. Pin
+  ($3) and postcard ($5) pricing comes from Chrissy's spreadsheet's "2026
+  Calculations" sheet; most of their stock counts are real (the sheet's
+  column was unambiguous for them even where prints/stickers weren't) — a few
+  postcard rows still fall back to the same placeholder as prints, flagged in
+  `seedPieces.ts`. Each row has an **Edit** button (`EditPieceScreen.tsx`) to
+  change price and stock quantity directly against Supabase — this is how to
+  fix the placeholder stock counts once Chrissy has real numbers, no SQL
+  needed. Editing quantity back above 0 un-marks a piece as sold.
+- **Cart tab** (admin) — quantity steppers, subtotal, remove, and any
+  applied/overridden deals shown under the list.
 - **Deals engine** (`src/lib/deals.ts`) — auto-applies active deals from the
   `deals` table against the cart, per the design doc's rules: non-stackable
   deals competing over the same `applies_to` scope keep only the biggest
@@ -86,7 +114,7 @@ device and are blocked on accounts (see checklist).
   **Not supported**: the doc's "1 print + 1 original from same series"
   mixed-type combo trigger, and the optional "1 item away from unlocking a
   deal" upsell prompt — both explicitly scoped out as follow-ups, not bugs.
-- **Deals tab** — add/edit/delete deals from the app (`DealsScreen.tsx` +
+- **Deals tab** (admin) — add/edit/delete deals from the app (`DealsScreen.tsx` +
   `DealFormScreen.tsx`), no need to touch Supabase directly. A structured
   form, not raw JSON — pick deal type, trigger count, discount, scope
   (all/by-type/by-SKU-list), stackable, active, optional date window. Toggle

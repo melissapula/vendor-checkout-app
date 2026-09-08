@@ -1,8 +1,9 @@
-import React from 'react';
-import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { ActivityIndicator, FlatList, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Piece } from '../types/database';
 import { usePieces, isSellable } from '../context/PiecesContext';
 import { useCart } from '../context/CartContext';
+import EditPieceScreen from './EditPieceScreen';
 
 function statusLabel(piece: Piece): string {
   if (piece.status === 'sold') return 'Sold';
@@ -17,7 +18,7 @@ function thumbUrl(url: string): string {
   return `${url}?w=112&h=112&fit=crop&auto=format`;
 }
 
-function PieceRow({ piece }: { piece: Piece }) {
+function PieceRow({ piece, onEdit }: { piece: Piece; onEdit: () => void }) {
   const { addItem } = useCart();
   const sellable = isSellable(piece);
 
@@ -39,13 +40,18 @@ function PieceRow({ piece }: { piece: Piece }) {
       </View>
       <View style={styles.rowActions}>
         <Text style={styles.price}>${piece.price.toFixed(2)}</Text>
-        <Pressable
-          style={[styles.addButton, !sellable && styles.addButtonDisabled]}
-          disabled={!sellable}
-          onPress={() => addItem(piece)}
-        >
-          <Text style={styles.addButtonText}>Add</Text>
-        </Pressable>
+        <View style={styles.buttonRow}>
+          <Pressable style={styles.editButton} onPress={onEdit}>
+            <Text style={styles.editButtonText}>Edit</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.addButton, !sellable && styles.addButtonDisabled]}
+            disabled={!sellable}
+            onPress={() => addItem(piece)}
+          >
+            <Text style={styles.addButtonText}>Add</Text>
+          </Pressable>
+        </View>
       </View>
     </View>
   );
@@ -53,6 +59,7 @@ function PieceRow({ piece }: { piece: Piece }) {
 
 export default function InventoryScreen() {
   const { pieces, loading, error } = usePieces();
+  const [editingPiece, setEditingPiece] = useState<Piece | null>(null);
 
   if (loading) {
     return (
@@ -71,13 +78,20 @@ export default function InventoryScreen() {
   }
 
   return (
-    <FlatList
-      style={styles.list}
-      data={pieces}
-      keyExtractor={(p) => p.id}
-      renderItem={({ item }) => <PieceRow piece={item} />}
-      ItemSeparatorComponent={() => <View style={styles.separator} />}
-    />
+    <>
+      <FlatList
+        style={styles.list}
+        data={pieces}
+        keyExtractor={(p) => p.id}
+        renderItem={({ item }) => <PieceRow piece={item} onEdit={() => setEditingPiece(item)} />}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+      />
+      <Modal visible={!!editingPiece} animationType="slide" onRequestClose={() => setEditingPiece(null)}>
+        {editingPiece && (
+          <EditPieceScreen piece={editingPiece} onClose={() => setEditingPiece(null)} />
+        )}
+      </Modal>
+    </>
   );
 }
 
@@ -107,6 +121,15 @@ const styles = StyleSheet.create({
   statusUnavailable: { color: '#999' },
   rowActions: { alignItems: 'flex-end' },
   price: { fontSize: 16, fontWeight: '600', marginBottom: 6 },
+  buttonRow: { flexDirection: 'row', gap: 8 },
+  editButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#1a1a1a',
+  },
+  editButtonText: { color: '#1a1a1a', fontWeight: '600' },
   addButton: {
     backgroundColor: '#1a1a1a',
     paddingHorizontal: 14,

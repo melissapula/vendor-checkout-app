@@ -3,6 +3,7 @@ import { PiecesProvider } from './src/context/PiecesContext';
 import { CartProvider } from './src/context/CartContext';
 import { SalesProvider } from './src/context/SalesContext';
 import { DealsProvider } from './src/context/DealsContext';
+import { AppModeProvider } from './src/context/AppModeContext';
 import RootNavigator from './src/navigation/RootNavigator';
 
 export default function App() {
@@ -11,8 +12,10 @@ export default function App() {
       <DealsProvider>
         <SalesProvider>
           <CartProvider>
-            <RootNavigator />
-            <StatusBar style="auto" />
+            <AppModeProvider>
+              <RootNavigator />
+              <StatusBar style="auto" />
+            </AppModeProvider>
           </CartProvider>
         </SalesProvider>
       </DealsProvider>
