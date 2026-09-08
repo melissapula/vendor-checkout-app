@@ -27,6 +27,7 @@ export interface Piece {
   date_sold: string | null;
   sale_channel: SaleChannel | null;
   notes: string | null;
+  image_url: string | null;
 }
 
 export interface Sale {

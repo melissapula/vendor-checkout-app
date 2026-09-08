@@ -19,7 +19,8 @@ create table pieces (
   date_created timestamptz not null default now(),
   date_sold timestamptz,
   sale_channel text check (sale_channel in ('show', 'online', 'studio')),
-  notes text
+  notes text,
+  image_url text
 );
 
 create table sales (

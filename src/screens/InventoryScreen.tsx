@@ -1,5 +1,5 @@
 import React from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Piece } from '../types/database';
 import { usePieces, isSellable } from '../context/PiecesContext';
 import { useCart } from '../context/CartContext';
@@ -11,12 +11,23 @@ function statusLabel(piece: Piece): string {
   return `${piece.quantity_remaining} left`;
 }
 
+// Sanity's CDN accepts on-the-fly resize params, so the list requests a
+// small thumbnail instead of the full-resolution site image.
+function thumbUrl(url: string): string {
+  return `${url}?w=112&h=112&fit=crop&auto=format`;
+}
+
 function PieceRow({ piece }: { piece: Piece }) {
   const { addItem } = useCart();
   const sellable = isSellable(piece);
 
   return (
     <View style={styles.row}>
+      {piece.image_url ? (
+        <Image source={{ uri: thumbUrl(piece.image_url) }} style={styles.thumb} />
+      ) : (
+        <View style={styles.thumbPlaceholder} />
+      )}
       <View style={styles.rowInfo}>
         <Text style={styles.title}>{piece.title}</Text>
         <Text style={styles.meta}>
@@ -62,6 +73,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
+  },
+  thumb: { width: 48, height: 48, borderRadius: 6, marginRight: 12, backgroundColor: '#f0f0f0' },
+  thumbPlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: 6,
+    marginRight: 12,
+    backgroundColor: '#f0f0f0',
   },
   rowInfo: { flex: 1, marginRight: 12 },
   title: { fontSize: 16, fontWeight: '600' },
