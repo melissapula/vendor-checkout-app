@@ -7,17 +7,18 @@ Design doc / schema / decisions: [`chrissy-art-inventory-app.md`](./chrissy-art-
 
 ## Status
 
-Inventory + Cart + manual-payment Checkout are working end-to-end against real
-inventory data. Square card payments and barcode scanning aren't wired up yet
-— both need a physical device and are blocked on accounts (see checklist).
+Inventory + Cart + manual-payment Checkout + the deals engine are working
+end-to-end against a live Supabase project with real inventory data. Square
+card payments and barcode scanning aren't wired up yet — both need a physical
+device and are blocked on accounts (see checklist).
 
 ## Stack
 
 - Expo (React Native + TypeScript) — chosen over bare RN so iOS builds can run
   on Expo's cloud Mac fleet (EAS Build); no local Mac needed on this Windows machine.
-- Supabase (Postgres) — `supabase/migrations/0001_init.sql` has the `pieces` /
-  `sales` / `deals` tables. Not connected yet; the app currently runs on the
-  data in `src/data/seedPieces.ts` (see below).
+- Supabase (Postgres), project `majsosgcgydpgelkpdpj` — live. `pieces`, `sales`,
+  and `deals` are all real tables the app reads/writes; nothing's in-memory-only
+  anymore except the cart itself (which should be ephemeral).
 - `mobile-payments-sdk-react-native` (Square's official plugin) for card
   payments via the Bluetooth reader — not yet installed; needs a custom dev
   client (Expo Go can't load native modules).
@@ -35,10 +36,9 @@ inventory data. Square card payments and barcode scanning aren't wired up yet
       Square's Mobile Payments SDK also requires agreeing to their terms for
       production (card-present) access — do this before the reader arrives so
       it's not the last thing blocking a real test swipe.
-- [ ] **Supabase project** (supabase.com) — new project, then run, in order:
-      `supabase/migrations/0001_init.sql` then `supabase/seed.sql` in its SQL
-      editor. Copy `.env.example` to `.env` and fill in the project URL + anon
-      key.
+- [x] **Supabase project** — created, migrated, and seeded (pieces + example
+      deals). `.env` has the real URL/anon key (gitignored — if this repo
+      moves to a new machine, copy `.env.example` and refill it).
 - [ ] **Real stock counts** — Chrissy has an internal spreadsheet
       (`Inventory.xlsx`, `mfpStudios` sheet) tracking real per-size stock, and
       its `Original` prices are already pulled into `seedPieces.ts`/`seed.sql`.
@@ -50,16 +50,22 @@ inventory data. Square card payments and barcode scanning aren't wired up yet
       Also not yet in the app: "Behind the Smile" ($390) and "Best in Show"
       ($180), which are in her spreadsheet but not on the live site yet.
 
-**Once those exist:**
+**Once Apple/Square exist:**
 
 - [ ] `npm install -g eas-cli` + `eas login`, then `eas build:configure` to set
       up a development build (needed the moment we add the Square SDK or
       vision-camera, since those are native modules Expo Go can't run).
 - [ ] Regenerate `src/types/database.ts` from the real schema:
       `npx supabase gen types typescript --project-id <id> > src/types/database.ts`
-- [ ] Point `PiecesContext` at Supabase instead of `seedPieces.ts`, and have
-      `SalesContext` write through to the `sales` table instead of holding
-      sales in memory.
+      — note it'll come back as `interface`s; convert to `type` aliases or
+      `.insert()`/`.update()` calls break (see the type-safety note below).
+
+**To try the deals engine:**
+
+- [ ] Run `supabase/seed_deals.sql` in the SQL editor (not run yet) — it adds
+      3 example deals so there's something for the engine to auto-apply.
+      Replace these with Chrissy's real picks whenever she has them; that's a
+      row edit in Supabase, no app change needed.
 
 ## What's already here
 
@@ -69,25 +75,45 @@ inventory data. Square card payments and barcode scanning aren't wired up yet
   their stock counts are real (the sheet's column was unambiguous for them even
   where prints/stickers weren't) — a few postcard rows still fall back to the
   same placeholder as prints, flagged in `seedPieces.ts`.
-- **Cart tab** — quantity steppers, subtotal, remove.
+- **Cart tab** — quantity steppers, subtotal, remove, and any applied/overridden
+  deals shown under the list.
+- **Deals engine** (`src/lib/deals.ts`) — auto-applies active deals from the
+  `deals` table against the cart, per the design doc's rules: non-stackable
+  deals competing over the same `applies_to` scope keep only the biggest
+  discount (others shown greyed-out/struck-through as "overridden"), stackable
+  deals always combine on top. Supports all 4 deal types (`bundle_price`,
+  `percent_off`, `amount_off`, `bogo`) and quantity/series/type/SKU scoping.
+  **Not supported**: the doc's "1 print + 1 original from same series"
+  mixed-type combo trigger, and the optional "1 item away from unlocking a
+  deal" upsell prompt — both explicitly scoped out as follow-ups, not bugs.
+  3 example deals are in `supabase/seed_deals.sql` (not yet run — see
+  checklist) purely to exercise it, not Chrissy's real picks.
 - **Checkout** (modal from Cart) — pick Venmo/PayPal/cash (Square shown but
-  disabled until the SDK's wired in), optional tip, fee estimate, "Confirm
-  Paid" → decrements inventory (marks sold when a piece hits 0 remaining) and
-  logs a sale per unit.
-- `src/context/PiecesContext.tsx`, `CartContext.tsx`, `SalesContext.tsx` — all
-  in-memory for now; no persistence between app restarts until Supabase is wired in.
+  disabled until the SDK's wired in), optional tip, deal discount, fee
+  estimate, "Confirm Paid" → decrements inventory (marks sold when a piece
+  hits 0 remaining), apportions each item's deal discount and fee into its
+  per-unit `sale_price`/`fee_amount`, and logs a sale row per unit — all
+  written to Supabase.
+- `src/context/PiecesContext.tsx`, `SalesContext.tsx`, `DealsContext.tsx` —
+  read/write Supabase directly. `CartContext.tsx` stays in-memory on purpose
+  (the cart is a transient, per-session thing, not data to persist).
 - `src/lib/fees.ts` — per-method fee estimate (Square/Venmo/PayPal/cash rates
   from the design doc). Fee currently reduces Chrissy's net rather than being
   passed to the buyer — an open business decision, easy to flip in `CheckoutScreen.tsx`.
-- `src/lib/supabase.ts` + `src/types/database.ts` — Supabase client/types, unused until the project exists.
 - `supabase/migrations/0001_init.sql` — `pieces` / `sales` / `deals` tables + RLS.
 - `supabase/seed.sql` — real inventory as INSERT statements, generated from `seedPieces.ts`.
+- **Type-safety note**: `Piece`/`Sale`/`Deal`/`Database` in `src/types/database.ts`
+  are `type` aliases, not `interface`s — deliberately. TypeScript's structural
+  check against `Record<string, unknown>` (which supabase-js's generics rely
+  on) requires an explicit index signature for interfaces but not type
+  aliases; using interfaces silently collapsed every `.insert()`/`.update()`
+  argument type to `never`. Keep this in mind if regenerating this file from
+  the Supabase CLI (it emits interfaces).
 
 ## Not started yet
 
-Square card payments, barcode scanning, the deals/bundle engine, reports,
-offline queueing, refund/void. See "Open / Next Steps" in
-`chrissy-art-inventory-app.md`.
+Square card payments, barcode scanning, reports, offline queueing,
+refund/void. See "Open / Next Steps" in `chrissy-art-inventory-app.md`.
 
 Barcode scanning (`react-native-vision-camera`) and the Square SDK both need a
 physical device to test — the simulator can't do Bluetooth or camera. Tap-to-add

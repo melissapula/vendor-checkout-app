@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { CartItem, useCart } from '../context/CartContext';
+import { useDeals } from '../context/DealsContext';
+import { evaluateDeals } from '../lib/deals';
 import CheckoutScreen from './CheckoutScreen';
 
 function CartRow({ item }: { item: CartItem }) {
@@ -38,7 +40,11 @@ function CartRow({ item }: { item: CartItem }) {
 
 export default function CartScreen() {
   const { items, subtotal, clear } = useCart();
+  const { deals } = useDeals();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+
+  const dealsResult = useMemo(() => evaluateDeals(items, deals), [items, deals]);
+  const total = subtotal - dealsResult.totalDiscount;
 
   if (items.length === 0) {
     return (
@@ -55,12 +61,40 @@ export default function CartScreen() {
         keyExtractor={(i) => i.piece.id}
         renderItem={({ item }) => <CartRow item={item} />}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ListFooterComponent={
+          dealsResult.applied.length + dealsResult.overridden.length > 0 ? (
+            <View style={styles.deals}>
+              {dealsResult.applied.map((a) => (
+                <Text key={a.deal.id} style={styles.dealApplied}>
+                  ✓ {a.description}
+                </Text>
+              ))}
+              {dealsResult.overridden.map((o) => (
+                <Text key={o.deal.id} style={styles.dealOverridden}>
+                  {o.deal.name} (better deal already applied)
+                </Text>
+              ))}
+            </View>
+          ) : null
+        }
       />
       <View style={styles.footer}>
         <View style={styles.subtotalRow}>
           <Text style={styles.subtotalLabel}>Subtotal</Text>
           <Text style={styles.subtotalValue}>${subtotal.toFixed(2)}</Text>
         </View>
+        {dealsResult.totalDiscount > 0 && (
+          <View style={styles.subtotalRow}>
+            <Text style={styles.discountLabel}>Deals</Text>
+            <Text style={styles.discountValue}>-${dealsResult.totalDiscount.toFixed(2)}</Text>
+          </View>
+        )}
+        {dealsResult.totalDiscount > 0 && (
+          <View style={styles.subtotalRow}>
+            <Text style={styles.subtotalLabel}>Total</Text>
+            <Text style={styles.subtotalValue}>${total.toFixed(2)}</Text>
+          </View>
+        )}
         <Pressable style={styles.checkoutButton} onPress={() => setCheckoutOpen(true)}>
           <Text style={styles.checkoutButtonText}>Checkout</Text>
         </Pressable>
@@ -113,6 +147,11 @@ const styles = StyleSheet.create({
   subtotalRow: { flexDirection: 'row', justifyContent: 'space-between' },
   subtotalLabel: { fontSize: 16, color: '#333' },
   subtotalValue: { fontSize: 18, fontWeight: '700' },
+  discountLabel: { fontSize: 15, color: '#2a7a2a' },
+  discountValue: { fontSize: 15, color: '#2a7a2a', fontWeight: '600' },
+  deals: { paddingHorizontal: 16, paddingTop: 8, gap: 4 },
+  dealApplied: { color: '#2a7a2a', fontSize: 13, fontWeight: '600' },
+  dealOverridden: { color: '#999', fontSize: 13, textDecorationLine: 'line-through' },
   checkoutButton: {
     backgroundColor: '#1a1a1a',
     paddingVertical: 14,

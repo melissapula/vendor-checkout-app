@@ -12,6 +12,8 @@ import {
 import { useCart } from '../context/CartContext';
 import { usePieces } from '../context/PiecesContext';
 import { useSales } from '../context/SalesContext';
+import { useDeals } from '../context/DealsContext';
+import { evaluateDeals } from '../lib/deals';
 import { calculateFee } from '../lib/fees';
 import { PaymentMethod, Sale } from '../types/database';
 
@@ -28,31 +30,39 @@ export default function CheckoutScreen({ onClose }: { onClose: () => void }) {
   const { items, subtotal, clear } = useCart();
   const { sellUnits } = usePieces();
   const { addSales } = useSales();
+  const { deals } = useDeals();
   const [method, setMethod] = useState<PaymentMethod>('venmo');
   const [tipText, setTipText] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  const dealsResult = useMemo(() => evaluateDeals(items, deals), [items, deals]);
+  const effectiveSubtotal = subtotal - dealsResult.totalDiscount;
+
   const selectedMethod = METHODS.find((m) => m.key === method)!;
   const tipAmount = selectedMethod.tippable ? parseFloat(tipText) || 0 : 0;
-  const fee = useMemo(() => calculateFee(subtotal, method), [subtotal, method]);
+  const fee = useMemo(() => calculateFee(effectiveSubtotal, method), [effectiveSubtotal, method]);
   // Fee reduces Chrissy's net payout rather than being added to the buyer's
   // total — see "Decide: fee reduces payout vs. passed to buyer" in
   // chrissy-art-inventory-app.md. Revisit if that business decision changes.
-  const buyerTotal = subtotal + tipAmount;
-  const netRevenue = subtotal - fee;
+  const buyerTotal = effectiveSubtotal + tipAmount;
+  const netRevenue = effectiveSubtotal - fee;
 
   async function handleConfirmPaid() {
     const newSales: NewSale[] = [];
 
     items.forEach((item, itemIndex) => {
+      const itemDiscount = dealsResult.discountByPieceId.get(item.piece.id) ?? 0;
+      const perUnitDiscount = itemDiscount / item.quantity;
+      const unitPrice = Math.max(0, item.piece.price - perUnitDiscount);
+
       const apportionedFee =
-        subtotal > 0 ? Math.round(((item.piece.price / subtotal) * fee) * 100) / 100 : 0;
+        effectiveSubtotal > 0 ? Math.round(((unitPrice * item.quantity) / effectiveSubtotal) * fee * 100) / 100 : 0;
       const perUnitFee = Math.round((apportionedFee / item.quantity) * 100) / 100;
 
       for (let i = 0; i < item.quantity; i++) {
         newSales.push({
           piece_id: item.piece.id,
-          sale_price: item.piece.price,
+          sale_price: Math.round(unitPrice * 100) / 100,
           tip_amount: itemIndex === 0 && i === 0 ? tipAmount : null,
           payment_method: method,
           fee_amount: perUnitFee,
@@ -127,8 +137,22 @@ export default function CheckoutScreen({ onClose }: { onClose: () => void }) {
           </>
         )}
 
+        {dealsResult.applied.length > 0 && (
+          <>
+            <Text style={styles.sectionLabel}>Deals applied</Text>
+            {dealsResult.applied.map((a) => (
+              <Text key={a.deal.id} style={styles.dealApplied}>
+                ✓ {a.description}
+              </Text>
+            ))}
+          </>
+        )}
+
         <View style={styles.summary}>
           <SummaryRow label="Subtotal" value={subtotal} />
+          {dealsResult.totalDiscount > 0 && (
+            <SummaryRow label="Deals" value={-dealsResult.totalDiscount} />
+          )}
           {tipAmount > 0 && <SummaryRow label="Tip" value={tipAmount} />}
           <SummaryRow label="Est. processing fee" value={-fee} muted />
           <SummaryRow label="Buyer pays" value={buyerTotal} bold />
@@ -201,6 +225,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 16,
   },
+  dealApplied: { color: '#2a7a2a', fontSize: 13, fontWeight: '600', marginBottom: 2 },
   summary: { marginTop: 24, gap: 8 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between' },
   summaryLabel: { fontSize: 15, color: '#333' },
