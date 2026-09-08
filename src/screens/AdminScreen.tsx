@@ -29,7 +29,7 @@ export default function AdminScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <Pressable style={styles.menuButton} onPress={() => setMenuOpen(true)}>
           <Text style={styles.menuButtonText}>{PAGE_TITLES[page]} ▾</Text>
