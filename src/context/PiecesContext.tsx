@@ -2,12 +2,16 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Piece } from '../types/database';
 import { supabase } from '../lib/supabase';
 
+type NewPiece = Omit<Piece, 'id' | 'date_created'>;
+
 interface PiecesContextValue {
   pieces: Piece[];
   loading: boolean;
   error: string | null;
   sellUnits: (pieceId: string, quantitySold: number) => Promise<void>;
   updatePiece: (pieceId: string, updates: Partial<Piece>) => Promise<void>;
+  addPiece: (piece: NewPiece) => Promise<void>;
+  deletePiece: (pieceId: string) => Promise<void>;
 }
 
 const PiecesContext = createContext<PiecesContextValue | null>(null);
@@ -57,8 +61,22 @@ export function PiecesProvider({ children }: { children: React.ReactNode }) {
     setPieces((prev) => prev.map((p) => (p.id === pieceId ? { ...p, ...updates } : p)));
   }
 
+  async function addPiece(piece: NewPiece) {
+    const { data, error } = await supabase.from('pieces').insert(piece).select().single();
+    if (error) throw error;
+    setPieces((prev) => [...prev, data].sort((a, b) => a.sku.localeCompare(b.sku)));
+  }
+
+  async function deletePiece(pieceId: string) {
+    const { error } = await supabase.from('pieces').delete().eq('id', pieceId);
+    if (error) throw error;
+    setPieces((prev) => prev.filter((p) => p.id !== pieceId));
+  }
+
   return (
-    <PiecesContext.Provider value={{ pieces, loading, error, sellUnits, updatePiece }}>
+    <PiecesContext.Provider
+      value={{ pieces, loading, error, sellUnits, updatePiece, addPiece, deletePiece }}
+    >
       {children}
     </PiecesContext.Provider>
   );

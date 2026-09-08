@@ -99,10 +99,17 @@ before using this at a real show.**
   Calculations" sheet; most of their stock counts are real (the sheet's
   column was unambiguous for them even where prints/stickers weren't) — a few
   postcard rows still fall back to the same placeholder as prints, flagged in
-  `seedPieces.ts`. Each row has an **Edit** button (`EditPieceScreen.tsx`) to
-  change price and stock quantity directly against Supabase — this is how to
-  fix the placeholder stock counts once Chrissy has real numbers, no SQL
-  needed. Editing quantity back above 0 un-marks a piece as sold.
+  `seedPieces.ts`. Full add/edit/delete (`PieceFormScreen.tsx`) — title, SKU,
+  type (chips for known types + a free-text "other"), medium, price,
+  quantity, status, linked original (search-to-select, for print/sticker/
+  pin/postcard variants), series, dimensions, cost basis, image URL, notes.
+  "+ Add Piece" in the footer for a brand-new item (auto-suggests the next
+  `FSS-####` SKU); "+ Add variant" on any original pre-fills the link back to
+  it. Deleting a piece that other pieces reference as their `original_id` is
+  blocked client-side with a clear message rather than a raw FK error — the
+  DB has no cascade delete set up. Editing quantity back above 0 un-marks a
+  piece as sold. This is how to fix the placeholder stock counts once
+  Chrissy has real numbers — no SQL needed.
 - **Cart tab** (admin) — quantity steppers, subtotal, remove, and any
   applied/overridden deals shown under the list.
 - **Deals engine** (`src/lib/deals.ts`) — auto-applies active deals from the

@@ -3,7 +3,7 @@ import { ActivityIndicator, FlatList, Image, Modal, Pressable, StyleSheet, Text,
 import { Piece } from '../types/database';
 import { usePieces, isSellable } from '../context/PiecesContext';
 import { useCart } from '../context/CartContext';
-import EditPieceScreen from './EditPieceScreen';
+import PieceFormScreen from './PieceFormScreen';
 
 function statusLabel(piece: Piece): string {
   if (piece.status === 'sold') return 'Sold';
@@ -18,7 +18,15 @@ function thumbUrl(url: string): string {
   return `${url}?w=112&h=112&fit=crop&auto=format`;
 }
 
-function PieceRow({ piece, onEdit }: { piece: Piece; onEdit: () => void }) {
+function PieceRow({
+  piece,
+  onEdit,
+  onAddVariant,
+}: {
+  piece: Piece;
+  onEdit: () => void;
+  onAddVariant: () => void;
+}) {
   const { addItem } = useCart();
   const sellable = isSellable(piece);
 
@@ -37,6 +45,11 @@ function PieceRow({ piece, onEdit }: { piece: Piece; onEdit: () => void }) {
         <Text style={[styles.status, !sellable && styles.statusUnavailable]}>
           {statusLabel(piece)}
         </Text>
+        {piece.type === 'original' && (
+          <Pressable onPress={onAddVariant}>
+            <Text style={styles.variantLink}>+ Add variant</Text>
+          </Pressable>
+        )}
       </View>
       <View style={styles.rowActions}>
         <Text style={styles.price}>${piece.price.toFixed(2)}</Text>
@@ -60,6 +73,8 @@ function PieceRow({ piece, onEdit }: { piece: Piece; onEdit: () => void }) {
 export default function InventoryScreen() {
   const { pieces, loading, error } = usePieces();
   const [editingPiece, setEditingPiece] = useState<Piece | null>(null);
+  const [presetOriginalId, setPresetOriginalId] = useState<string | undefined>(undefined);
+  const [formOpen, setFormOpen] = useState(false);
 
   if (loading) {
     return (
@@ -77,19 +92,50 @@ export default function InventoryScreen() {
     );
   }
 
+  function openEdit(piece: Piece) {
+    setEditingPiece(piece);
+    setPresetOriginalId(undefined);
+    setFormOpen(true);
+  }
+
+  function openAddVariant(originalId: string) {
+    setEditingPiece(null);
+    setPresetOriginalId(originalId);
+    setFormOpen(true);
+  }
+
+  function openAddNew() {
+    setEditingPiece(null);
+    setPresetOriginalId(undefined);
+    setFormOpen(true);
+  }
+
   return (
     <>
       <FlatList
         style={styles.list}
         data={pieces}
         keyExtractor={(p) => p.id}
-        renderItem={({ item }) => <PieceRow piece={item} onEdit={() => setEditingPiece(item)} />}
+        renderItem={({ item }) => (
+          <PieceRow
+            piece={item}
+            onEdit={() => openEdit(item)}
+            onAddVariant={() => openAddVariant(item.id)}
+          />
+        )}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
-      <Modal visible={!!editingPiece} animationType="slide" onRequestClose={() => setEditingPiece(null)}>
-        {editingPiece && (
-          <EditPieceScreen piece={editingPiece} onClose={() => setEditingPiece(null)} />
-        )}
+      <View style={styles.footer}>
+        <Pressable style={styles.addPieceButton} onPress={openAddNew}>
+          <Text style={styles.addPieceButtonText}>+ Add Piece</Text>
+        </Pressable>
+      </View>
+      <Modal visible={formOpen} animationType="slide" onRequestClose={() => setFormOpen(false)}>
+        <PieceFormScreen
+          piece={editingPiece ?? undefined}
+          presetOriginalId={presetOriginalId}
+          onClose={() => setFormOpen(false)}
+        />
       </Modal>
     </>
   );
@@ -119,6 +165,7 @@ const styles = StyleSheet.create({
   meta: { fontSize: 13, color: '#666', marginTop: 2 },
   status: { fontSize: 13, color: '#2a7a2a', marginTop: 4 },
   statusUnavailable: { color: '#999' },
+  variantLink: { fontSize: 12, color: '#1a1a1a', marginTop: 4, fontWeight: '600' },
   rowActions: { alignItems: 'flex-end' },
   price: { fontSize: 16, fontWeight: '600', marginBottom: 6 },
   buttonRow: { flexDirection: 'row', gap: 8 },
@@ -139,4 +186,7 @@ const styles = StyleSheet.create({
   addButtonDisabled: { backgroundColor: '#ddd' },
   addButtonText: { color: '#fff', fontWeight: '600' },
   separator: { height: 1, backgroundColor: '#eee', marginLeft: 16 },
+  footer: { padding: 16, borderTopWidth: 1, borderTopColor: '#eee' },
+  addPieceButton: { backgroundColor: '#1a1a1a', paddingVertical: 14, borderRadius: 8, alignItems: 'center' },
+  addPieceButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
 });
