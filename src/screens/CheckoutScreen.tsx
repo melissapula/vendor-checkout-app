@@ -27,7 +27,7 @@ const METHODS: { key: PaymentMethod; label: string; enabled: boolean; tippable: 
 ];
 
 export default function CheckoutScreen({ onClose }: { onClose: () => void }) {
-  const { items, subtotal, clear } = useCart();
+  const { items, subtotal, clear, location, setLocation } = useCart();
   const { sellUnits } = usePieces();
   const { addSales } = useSales();
   const { deals } = useDeals();
@@ -68,7 +68,7 @@ export default function CheckoutScreen({ onClose }: { onClose: () => void }) {
           fee_amount: perUnitFee,
           sale_date: new Date().toISOString(),
           square_payment_id: null,
-          location: null,
+          location: location.trim() || null,
         });
       }
     });
@@ -97,6 +97,14 @@ export default function CheckoutScreen({ onClose }: { onClose: () => void }) {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.heading}>Checkout</Text>
+
+        <Text style={styles.sectionLabel}>Show / venue (optional, for reports)</Text>
+        <TextInput
+          style={styles.tipInput}
+          value={location}
+          onChangeText={setLocation}
+          placeholder="e.g. Bemidji Farmers Market"
+        />
 
         <Text style={styles.sectionLabel}>Payment method</Text>
         <View style={styles.methodRow}>

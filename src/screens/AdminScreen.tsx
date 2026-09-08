@@ -4,15 +4,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import InventoryScreen from './InventoryScreen';
 import CartScreen from './CartScreen';
 import DealsScreen from './DealsScreen';
+import ReportsScreen from './ReportsScreen';
 import { useCart } from '../context/CartContext';
 import { useAppMode } from '../context/AppModeContext';
 
-type Page = 'inventory' | 'cart' | 'deals';
+type Page = 'inventory' | 'cart' | 'deals' | 'reports';
 
 const PAGE_TITLES: Record<Page, string> = {
   inventory: "Chrissy's Studio",
   cart: 'Cart',
   deals: 'Manage Deals',
+  reports: 'Reports',
 };
 
 export default function AdminScreen() {
@@ -38,6 +40,7 @@ export default function AdminScreen() {
         {page === 'inventory' && <InventoryScreen />}
         {page === 'cart' && <CartScreen />}
         {page === 'deals' && <DealsScreen />}
+        {page === 'reports' && <ReportsScreen />}
       </View>
 
       <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={() => setMenuOpen(false)}>
@@ -51,6 +54,7 @@ export default function AdminScreen() {
                 onPress={() => choose('cart')}
               />
               <MenuItem label="Deals" active={page === 'deals'} onPress={() => choose('deals')} />
+              <MenuItem label="Reports" active={page === 'reports'} onPress={() => choose('reports')} />
               <View style={styles.menuDivider} />
               <MenuItem
                 label="Customer View"

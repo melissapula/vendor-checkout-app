@@ -14,12 +14,18 @@ interface CartContextValue {
   clear: () => void;
   subtotal: number;
   itemCount: number;
+  // Current show/venue name, attached to each Sale at checkout. Lives here
+  // (not local to CheckoutScreen) so it persists across a whole session of
+  // checkouts instead of needing retyping for every sale.
+  location: string;
+  setLocation: (location: string) => void;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [location, setLocation] = useState('');
 
   function addItem(piece: Piece) {
     setItems((prev) => {
@@ -65,7 +71,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <CartContext.Provider
-      value={{ items, addItem, removeItem, updateQuantity, clear, subtotal, itemCount }}
+      value={{
+        items,
+        addItem,
+        removeItem,
+        updateQuantity,
+        clear,
+        subtotal,
+        itemCount,
+        location,
+        setLocation,
+      }}
     >
       {children}
     </CartContext.Provider>

@@ -134,15 +134,29 @@ before using this at a real show.**
   add it once Chrissy's catalog actually uses that field.
   3 example deals are in `supabase/seed_deals.sql` (not yet run — see
   checklist) purely to exercise it, not Chrissy's real picks.
-- **Checkout** (modal from Cart) — pick Venmo/PayPal/cash (Square shown but
-  disabled until the SDK's wired in), optional tip, deal discount, fee
-  estimate, "Confirm Paid" → decrements inventory (marks sold when a piece
-  hits 0 remaining), apportions each item's deal discount and fee into its
-  per-unit `sale_price`/`fee_amount`, and logs a sale row per unit — all
-  written to Supabase.
+- **Checkout** (modal from Cart) — optional "show/venue" name (persists across
+  checkouts for the session via `CartContext`, so it's not retyped every
+  sale), pick Venmo/PayPal/cash (Square shown but disabled until the SDK's
+  wired in), optional tip, deal discount, fee estimate, "Confirm Paid" →
+  decrements inventory (marks sold when a piece hits 0 remaining), apportions
+  each item's deal discount and fee into its per-unit `sale_price`/
+  `fee_amount`, and logs a sale row per unit — all written to Supabase.
+- **Reports page** (admin, `ReportsScreen.tsx`) — filter sales by date range
+  (today/last 7 days/all time/custom, with a local-timezone-safe custom
+  range — see note below), payment method, item type, and show/venue (the
+  venue filter only appears once at least one sale has one recorded); summary
+  totals (items sold, gross, tips, fees, net) and a by-type breakdown, plus
+  the individual matching sales. Pulls from the real `sales` table — no more
+  in-memory-only sales history (see `SalesContext` note below).
 - `src/context/PiecesContext.tsx`, `SalesContext.tsx`, `DealsContext.tsx` —
   read/write Supabase directly. `CartContext.tsx` stays in-memory on purpose
-  (the cart is a transient, per-session thing, not data to persist).
+  (the cart is a transient, per-session thing, not data to persist) — it also
+  now holds the current show/venue name for Checkout, for the same reason.
+  **Fixed while building Reports**: `SalesContext` never actually loaded
+  existing sales from Supabase on startup — it only accumulated sales made
+  during the current session, so every app reload silently dropped sales
+  history from view (the rows were still safely in the database, just not
+  visible in the app). Now fetches on mount like the other contexts.
 - `src/lib/fees.ts` — per-method fee estimate (Square/Venmo/PayPal/cash rates
   from the design doc). Fee currently reduces Chrissy's net rather than being
   passed to the buyer — an open business decision, easy to flip in `CheckoutScreen.tsx`.
@@ -155,6 +169,14 @@ before using this at a real show.**
   aliases; using interfaces silently collapsed every `.insert()`/`.update()`
   argument type to `never`. Keep this in mind if regenerating this file from
   the Supabase CLI (it emits interfaces).
+- **Date-range note**: `ReportsScreen.tsx`'s custom date filter parses
+  `YYYY-MM-DD` input via an explicit `(year, month, day)` constructor, not
+  `new Date('YYYY-MM-DD')`. That form parses as UTC midnight, and mixing it
+  with `.setHours()` (which mutates in local time) silently shifts the "To"
+  boundary by Chrissy's UTC offset — in US time zones that cuts a report off
+  several hours before real end-of-day, hiding actual sales. Caught by a
+  standalone test before it shipped; keep using the explicit constructor for
+  any future date-only parsing in this app.
 
 ## Not started yet
 
