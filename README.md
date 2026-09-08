@@ -86,6 +86,13 @@ device and are blocked on accounts (see checklist).
   **Not supported**: the doc's "1 print + 1 original from same series"
   mixed-type combo trigger, and the optional "1 item away from unlocking a
   deal" upsell prompt — both explicitly scoped out as follow-ups, not bugs.
+- **Deals tab** — add/edit/delete deals from the app (`DealsScreen.tsx` +
+  `DealFormScreen.tsx`), no need to touch Supabase directly. A structured
+  form, not raw JSON — pick deal type, trigger count, discount, scope
+  (all/by-type/by-SKU-list), stackable, active, optional date window. Toggle
+  a deal on/off right from the list without opening the form. "By series"
+  scope isn't in the form yet since no piece currently has a `series` set —
+  add it once Chrissy's catalog actually uses that field.
   3 example deals are in `supabase/seed_deals.sql` (not yet run — see
   checklist) purely to exercise it, not Chrissy's real picks.
 - **Checkout** (modal from Cart) — pick Venmo/PayPal/cash (Square shown but

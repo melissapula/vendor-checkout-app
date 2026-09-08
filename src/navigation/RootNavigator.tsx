@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import InventoryScreen from '../screens/InventoryScreen';
 import CartScreen from '../screens/CartScreen';
+import DealsScreen from '../screens/DealsScreen';
 import { useCart } from '../context/CartContext';
 
 const Tab = createBottomTabNavigator();
@@ -25,6 +26,7 @@ export default function RootNavigator() {
             tabBarBadge: itemCount > 0 ? itemCount : undefined,
           }}
         />
+        <Tab.Screen name="Deals" component={DealsScreen} options={{ title: 'Manage Deals' }} />
       </Tab.Navigator>
     </NavigationContainer>
   );
