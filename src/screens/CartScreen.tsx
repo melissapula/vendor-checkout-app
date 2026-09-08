@@ -1,6 +1,7 @@
-import React from 'react';
-import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { FlatList, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { CartItem, useCart } from '../context/CartContext';
+import CheckoutScreen from './CheckoutScreen';
 
 function CartRow({ item }: { item: CartItem }) {
   const { updateQuantity, removeItem } = useCart();
@@ -37,6 +38,7 @@ function CartRow({ item }: { item: CartItem }) {
 
 export default function CartScreen() {
   const { items, subtotal, clear } = useCart();
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
 
   if (items.length === 0) {
     return (
@@ -59,21 +61,17 @@ export default function CartScreen() {
           <Text style={styles.subtotalLabel}>Subtotal</Text>
           <Text style={styles.subtotalValue}>${subtotal.toFixed(2)}</Text>
         </View>
-        <Pressable
-          style={styles.checkoutButton}
-          onPress={() =>
-            Alert.alert(
-              'Checkout not built yet',
-              'Square / Venmo / PayPal / cash checkout comes next.'
-            )
-          }
-        >
+        <Pressable style={styles.checkoutButton} onPress={() => setCheckoutOpen(true)}>
           <Text style={styles.checkoutButtonText}>Checkout</Text>
         </Pressable>
         <Pressable onPress={clear}>
           <Text style={styles.clear}>Clear cart</Text>
         </Pressable>
       </View>
+
+      <Modal visible={checkoutOpen} animationType="slide" onRequestClose={() => setCheckoutOpen(false)}>
+        <CheckoutScreen onClose={() => setCheckoutOpen(false)} />
+      </Modal>
     </View>
   );
 }

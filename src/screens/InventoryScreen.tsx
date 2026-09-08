@@ -1,7 +1,7 @@
 import React from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Piece } from '../types/database';
-import { usePieces, isSellable } from '../hooks/usePieces';
+import { usePieces, isSellable } from '../context/PiecesContext';
 import { useCart } from '../context/CartContext';
 
 function statusLabel(piece: Piece): string {
