@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCart, CartItem } from '../context/CartContext';
 import { useDeals } from '../context/DealsContext';
 import { evaluateDeals } from '../lib/deals';
@@ -29,7 +30,7 @@ export default function CustomerScreen() {
   const total = subtotal - dealsResult.totalDiscount;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Four Seasons Studio</Text>
       </View>
@@ -66,16 +67,16 @@ export default function CustomerScreen() {
         </View>
       )}
 
-      <Pressable style={styles.staffButton} onPress={requestAdmin}>
+      <Pressable style={styles.staffButton} onPress={requestAdmin} hitSlop={12}>
         <Text style={styles.staffButtonText}>Staff Access</Text>
       </Pressable>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  header: { paddingTop: 60, paddingBottom: 20, alignItems: 'center' },
+  header: { paddingTop: 20, paddingBottom: 20, alignItems: 'center' },
   headerTitle: { fontSize: 22, fontWeight: '700' },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   emptyText: { color: '#999', fontSize: 18 },
@@ -94,6 +95,6 @@ const styles = StyleSheet.create({
   totalRow: { marginTop: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#eee' },
   totalLabel: { fontSize: 20, fontWeight: '700' },
   totalValue: { fontSize: 20, fontWeight: '700' },
-  staffButton: { alignSelf: 'center', paddingVertical: 12, paddingHorizontal: 8 },
-  staffButtonText: { color: '#ccc', fontSize: 12 },
+  staffButton: { alignSelf: 'center', paddingVertical: 14, paddingHorizontal: 16 },
+  staffButtonText: { color: '#999', fontSize: 13, fontWeight: '500' },
 });

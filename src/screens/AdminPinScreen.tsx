@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppMode } from '../context/AppModeContext';
 import { ADMIN_PIN } from '../lib/adminPin';
 
@@ -20,7 +21,7 @@ export default function AdminPinScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Text style={styles.heading}>Staff Access</Text>
       <TextInput
         style={styles.input}
@@ -42,7 +43,7 @@ export default function AdminPinScreen() {
       <Pressable onPress={cancelPinEntry}>
         <Text style={styles.cancel}>Back to Customer View</Text>
       </Pressable>
-    </View>
+    </SafeAreaView>
   );
 }
 
