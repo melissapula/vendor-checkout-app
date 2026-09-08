@@ -1,5 +1,5 @@
 import React from 'react';
-import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Piece } from '../types/database';
 import { usePieces, isSellable } from '../context/PiecesContext';
 import { useCart } from '../context/CartContext';
@@ -52,7 +52,23 @@ function PieceRow({ piece }: { piece: Piece }) {
 }
 
 export default function InventoryScreen() {
-  const { pieces } = usePieces();
+  const { pieces, loading, error } = usePieces();
+
+  if (loading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.errorText}>Couldn't load inventory: {error}</Text>
+      </View>
+    );
+  }
 
   return (
     <FlatList
@@ -67,6 +83,8 @@ export default function InventoryScreen() {
 
 const styles = StyleSheet.create({
   list: { flex: 1, backgroundColor: '#fff' },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  errorText: { color: '#b00020', textAlign: 'center' },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',

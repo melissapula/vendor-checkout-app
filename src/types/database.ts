@@ -8,7 +8,11 @@ export type SaleChannel = 'show' | 'online' | 'studio';
 export type PaymentMethod = 'square' | 'venmo' | 'paypal' | 'cash';
 export type DealType = 'bundle_price' | 'percent_off' | 'amount_off' | 'bogo';
 
-export interface Piece {
+// `type` rather than `interface`: interfaces don't satisfy TS's implicit
+// index-signature check against Record<string, unknown>, which breaks
+// supabase-js's generic inference for .insert()/.update() (resolves table
+// argument types to `never`). Type aliases for object shapes do satisfy it.
+export type Piece = {
   id: string;
   sku: string;
   title: string;
@@ -28,9 +32,9 @@ export interface Piece {
   sale_channel: SaleChannel | null;
   notes: string | null;
   image_url: string | null;
-}
+};
 
-export interface Sale {
+export type Sale = {
   id: string;
   piece_id: string;
   sale_price: number;
@@ -40,9 +44,9 @@ export interface Sale {
   sale_date: string;
   square_payment_id: string | null;
   location: string | null;
-}
+};
 
-export interface Deal {
+export type Deal = {
   id: string;
   name: string;
   type: DealType;
@@ -53,14 +57,36 @@ export interface Deal {
   start_date: string | null;
   end_date: string | null;
   applies_to: Record<string, unknown>;
-}
+};
 
-export interface Database {
+// supabase-js v2's client generic expects this full shape (Relationships,
+// Views, Functions, etc.) even when unused — a minimal { Row, Insert, Update }
+// per table isn't enough for it to infer .insert()/.update() argument types.
+export type Database = {
   public: {
     Tables: {
-      pieces: { Row: Piece; Insert: Partial<Piece>; Update: Partial<Piece> };
-      sales: { Row: Sale; Insert: Partial<Sale>; Update: Partial<Sale> };
-      deals: { Row: Deal; Insert: Partial<Deal>; Update: Partial<Deal> };
+      pieces: {
+        Row: Piece;
+        Insert: Partial<Piece>;
+        Update: Partial<Piece>;
+        Relationships: [];
+      };
+      sales: {
+        Row: Sale;
+        Insert: Partial<Sale>;
+        Update: Partial<Sale>;
+        Relationships: [];
+      };
+      deals: {
+        Row: Deal;
+        Insert: Partial<Deal>;
+        Update: Partial<Deal>;
+        Relationships: [];
+      };
     };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
-}
+};

@@ -1,34 +1,57 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Piece } from '../types/database';
-import { SEED_PIECES } from '../data/seedPieces';
+import { supabase } from '../lib/supabase';
 
 interface PiecesContextValue {
   pieces: Piece[];
-  sellUnits: (pieceId: string, quantitySold: number) => void;
+  loading: boolean;
+  error: string | null;
+  sellUnits: (pieceId: string, quantitySold: number) => Promise<void>;
 }
 
 const PiecesContext = createContext<PiecesContextValue | null>(null);
 
 export function PiecesProvider({ children }: { children: React.ReactNode }) {
-  const [pieces, setPieces] = useState<Piece[]>(SEED_PIECES);
+  const [pieces, setPieces] = useState<Piece[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  function sellUnits(pieceId: string, quantitySold: number) {
-    setPieces((prev) =>
-      prev.map((p) => {
-        if (p.id !== pieceId) return p;
-        const remaining = Math.max(0, p.quantity_remaining - quantitySold);
-        return {
-          ...p,
-          quantity_remaining: remaining,
-          status: remaining === 0 ? 'sold' : p.status,
-          date_sold: remaining === 0 ? new Date().toISOString() : p.date_sold,
-        };
-      })
-    );
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      const { data, error } = await supabase.from('pieces').select('*').order('sku');
+      if (cancelled) return;
+      if (error) setError(error.message);
+      else setPieces(data ?? []);
+      setLoading(false);
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function sellUnits(pieceId: string, quantitySold: number) {
+    const piece = pieces.find((p) => p.id === pieceId);
+    if (!piece) return;
+
+    const remaining = Math.max(0, piece.quantity_remaining - quantitySold);
+    const updates: Partial<Piece> = {
+      quantity_remaining: remaining,
+      status: remaining === 0 ? 'sold' : piece.status,
+      date_sold: remaining === 0 ? new Date().toISOString() : piece.date_sold,
+    };
+
+    const { error } = await supabase.from('pieces').update(updates).eq('id', pieceId);
+    if (error) throw error;
+
+    setPieces((prev) => prev.map((p) => (p.id === pieceId ? { ...p, ...updates } : p)));
   }
 
   return (
-    <PiecesContext.Provider value={{ pieces, sellUnits }}>
+    <PiecesContext.Provider value={{ pieces, loading, error, sellUnits }}>
       {children}
     </PiecesContext.Provider>
   );

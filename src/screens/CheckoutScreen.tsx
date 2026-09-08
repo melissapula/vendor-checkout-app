@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
@@ -14,6 +15,8 @@ import { useSales } from '../context/SalesContext';
 import { calculateFee } from '../lib/fees';
 import { PaymentMethod, Sale } from '../types/database';
 
+type NewSale = Omit<Sale, 'id'>;
+
 const METHODS: { key: PaymentMethod; label: string; enabled: boolean; tippable: boolean }[] = [
   { key: 'square', label: 'Square (card)', enabled: false, tippable: false },
   { key: 'venmo', label: 'Venmo', enabled: true, tippable: true },
@@ -27,6 +30,7 @@ export default function CheckoutScreen({ onClose }: { onClose: () => void }) {
   const { addSales } = useSales();
   const [method, setMethod] = useState<PaymentMethod>('venmo');
   const [tipText, setTipText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const selectedMethod = METHODS.find((m) => m.key === method)!;
   const tipAmount = selectedMethod.tippable ? parseFloat(tipText) || 0 : 0;
@@ -37,8 +41,8 @@ export default function CheckoutScreen({ onClose }: { onClose: () => void }) {
   const buyerTotal = subtotal + tipAmount;
   const netRevenue = subtotal - fee;
 
-  function handleConfirmPaid() {
-    const newSales: Sale[] = [];
+  async function handleConfirmPaid() {
+    const newSales: NewSale[] = [];
 
     items.forEach((item, itemIndex) => {
       const apportionedFee =
@@ -47,7 +51,6 @@ export default function CheckoutScreen({ onClose }: { onClose: () => void }) {
 
       for (let i = 0; i < item.quantity; i++) {
         newSales.push({
-          id: `sale-${Date.now()}-${itemIndex}-${i}`,
           piece_id: item.piece.id,
           sale_price: item.piece.price,
           tip_amount: itemIndex === 0 && i === 0 ? tipAmount : null,
@@ -58,16 +61,26 @@ export default function CheckoutScreen({ onClose }: { onClose: () => void }) {
           location: null,
         });
       }
-      sellUnits(item.piece.id, item.quantity);
     });
 
-    addSales(newSales);
-    clear();
-    onClose();
-    Alert.alert(
-      'Sale recorded',
-      `Charged $${buyerTotal.toFixed(2)} via ${selectedMethod.label}.\nNet after fees: $${netRevenue.toFixed(2)}`
-    );
+    setSubmitting(true);
+    try {
+      await Promise.all(items.map((item) => sellUnits(item.piece.id, item.quantity)));
+      await addSales(newSales);
+      clear();
+      onClose();
+      Alert.alert(
+        'Sale recorded',
+        `Charged $${buyerTotal.toFixed(2)} via ${selectedMethod.label}.\nNet after fees: $${netRevenue.toFixed(2)}`
+      );
+    } catch (err) {
+      Alert.alert(
+        'Checkout failed',
+        err instanceof Error ? err.message : 'Could not save this sale — check your connection and try again.'
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -124,10 +137,18 @@ export default function CheckoutScreen({ onClose }: { onClose: () => void }) {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Pressable style={styles.confirmButton} onPress={handleConfirmPaid}>
-          <Text style={styles.confirmButtonText}>Confirm Paid</Text>
+        <Pressable
+          style={[styles.confirmButton, submitting && styles.confirmButtonDisabled]}
+          disabled={submitting}
+          onPress={handleConfirmPaid}
+        >
+          {submitting ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.confirmButtonText}>Confirm Paid</Text>
+          )}
         </Pressable>
-        <Pressable onPress={onClose}>
+        <Pressable disabled={submitting} onPress={onClose}>
           <Text style={styles.cancel}>Cancel</Text>
         </Pressable>
       </View>
@@ -193,6 +214,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
   },
+  confirmButtonDisabled: { opacity: 0.6 },
   confirmButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   cancel: { textAlign: 'center', color: '#666' },
 });
