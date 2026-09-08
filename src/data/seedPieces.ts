@@ -2371,7 +2371,7 @@ export const SEED_PIECES: Piece[] = [
     image_url: "https://cdn.sanity.io/images/3i77cmnf/production/4b1af7696ec70fdfd3ee868bb730c154fbf7b161-1326x1786.jpg"
   },
   {
-    id: "pin-orig-15",
+    id: "pin-orig-15-mod",
     sku: "FSS-0015-PINMOD",
     title: "Mod. Cat Pin",
     medium: "Pin",
@@ -2392,7 +2392,7 @@ export const SEED_PIECES: Piece[] = [
     image_url: "https://cdn.sanity.io/images/3i77cmnf/production/acad109f5ef93350a126a126d889b72d47afa114-528x527.jpg"
   },
   {
-    id: "pin-orig-30",
+    id: "pin-orig-30-mod",
     sku: "FSS-0030-PINMOD",
     title: "Mod. Exhaus. Cat Pin",
     medium: "Pin",
@@ -2686,7 +2686,7 @@ export const SEED_PIECES: Piece[] = [
     image_url: "https://cdn.sanity.io/images/3i77cmnf/production/44d18dc9238b6159d9031e6f6b9b26880fa03dbf-2002x1520.jpg"
   },
   {
-    id: "postcard-orig-8",
+    id: "postcard-orig-8-pride1",
     sku: "FSS-0008-PC-PRIDE1",
     title: "SWAK Pride Ed. 1 (Postcard)",
     medium: "Printed postcard",
@@ -2707,7 +2707,7 @@ export const SEED_PIECES: Piece[] = [
     image_url: "https://cdn.sanity.io/images/3i77cmnf/production/ffaf1aed9206b7df48b10aa83edb9f98f481ed25-1596x514.jpg"
   },
   {
-    id: "postcard-orig-8",
+    id: "postcard-orig-8-pride2",
     sku: "FSS-0008-PC-PRIDE2",
     title: "SWAK Pride Ed. 2 (Postcard)",
     medium: "Printed postcard",
