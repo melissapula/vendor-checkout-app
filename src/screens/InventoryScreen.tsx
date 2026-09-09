@@ -4,6 +4,7 @@ import { Piece } from '../types/database';
 import { usePieces, isSellable } from '../context/PiecesContext';
 import { useCart } from '../context/CartContext';
 import PieceFormScreen from './PieceFormScreen';
+import PrintLabelsOverlay from '../components/PrintLabelsOverlay';
 
 function statusLabel(piece: Piece): string {
   if (piece.status === 'sold') return 'Sold';
@@ -22,10 +23,12 @@ function PieceRow({
   piece,
   onEdit,
   onAddVariant,
+  onPrintLabel,
 }: {
   piece: Piece;
   onEdit: () => void;
   onAddVariant: () => void;
+  onPrintLabel: () => void;
 }) {
   const { addItem } = useCart();
   const sellable = isSellable(piece);
@@ -65,6 +68,9 @@ function PieceRow({
             <Text style={styles.addButtonText}>Add</Text>
           </Pressable>
         </View>
+        <Pressable onPress={onPrintLabel}>
+          <Text style={styles.labelLink}>Print label</Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -75,6 +81,7 @@ export default function InventoryScreen() {
   const [editingPiece, setEditingPiece] = useState<Piece | null>(null);
   const [presetOriginalId, setPresetOriginalId] = useState<string | undefined>(undefined);
   const [formOpen, setFormOpen] = useState(false);
+  const [printQueue, setPrintQueue] = useState<Piece[] | null>(null);
 
   if (loading) {
     return (
@@ -110,6 +117,11 @@ export default function InventoryScreen() {
     setFormOpen(true);
   }
 
+  function printAllLabels() {
+    // Skip sold pieces — no need to re-tag something that's already gone.
+    setPrintQueue(pieces.filter((p) => p.status !== 'sold'));
+  }
+
   return (
     <>
       <FlatList
@@ -121,11 +133,15 @@ export default function InventoryScreen() {
             piece={item}
             onEdit={() => openEdit(item)}
             onAddVariant={() => openAddVariant(item.id)}
+            onPrintLabel={() => setPrintQueue([item])}
           />
         )}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
       <View style={styles.footer}>
+        <Pressable style={styles.printAllButton} onPress={printAllLabels}>
+          <Text style={styles.printAllButtonText}>Print Labels</Text>
+        </Pressable>
         <Pressable style={styles.addPieceButton} onPress={openAddNew}>
           <Text style={styles.addPieceButtonText}>+ Add Piece</Text>
         </Pressable>
@@ -137,6 +153,7 @@ export default function InventoryScreen() {
           onClose={() => setFormOpen(false)}
         />
       </Modal>
+      <PrintLabelsOverlay pieces={printQueue} onDone={() => setPrintQueue(null)} />
     </>
   );
 }
@@ -185,8 +202,18 @@ const styles = StyleSheet.create({
   },
   addButtonDisabled: { backgroundColor: '#ddd' },
   addButtonText: { color: '#fff', fontWeight: '600' },
+  labelLink: { fontSize: 12, color: '#666', marginTop: 8, textDecorationLine: 'underline' },
   separator: { height: 1, backgroundColor: '#eee', marginLeft: 16 },
-  footer: { padding: 16, borderTopWidth: 1, borderTopColor: '#eee' },
-  addPieceButton: { backgroundColor: '#1a1a1a', paddingVertical: 14, borderRadius: 8, alignItems: 'center' },
+  footer: { flexDirection: 'row', gap: 8, padding: 16, borderTopWidth: 1, borderTopColor: '#eee' },
+  addPieceButton: { flex: 1, backgroundColor: '#1a1a1a', paddingVertical: 14, borderRadius: 8, alignItems: 'center' },
   addPieceButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  printAllButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#1a1a1a',
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  printAllButtonText: { color: '#1a1a1a', fontWeight: '700', fontSize: 16 },
 });

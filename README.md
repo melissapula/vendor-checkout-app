@@ -172,6 +172,77 @@ one global rate table for everyone), multi-staff accounts per store, store
 deletion/data export, in-app billing (subscriptions are handled outside the
 app, e.g. Stripe/invoice).
 
+## Barcode labels
+
+Each piece's `sku` is encoded as a Code128 barcode (`jsbarcode`) and can be
+printed — either one at a time ("Print label" on an Inventory row) or in
+bulk ("Print Labels" in the footer, which queues every non-sold piece).
+Code128 rather than QR: it's what cheap USB/Bluetooth barcode scanners (the
+kind that plug in and act like a keyboard — scan an item, its SKU gets typed
+wherever the cursor has focus, no camera or native code needed) expect,
+matching how small-business inventory tagging usually works. This is a
+**web-only** approach, not a compatibility shim: it needs no camera/native
+module at all, which fits the app's web-only distribution (see "Web
+distribution" above) rather than working around it.
+
+**Printed to match Avery 5160** (1in x 2.625in, 30/sheet, 3 cols x 10 rows,
+0.5in top/bottom margin, 0.1875in side margin, 0.125in gap between columns,
+no vertical gap — verified against Avery's own published spec, not guessed).
+Pieces beyond 30 automatically continue onto additional sheets
+(`page-break-after` per sheet). If a vendor uses a different label
+product, the dimensions are named constants at the top of
+`src/components/PrintLabelsOverlay.tsx` (`LABEL_WIDTH_IN`, `MARGIN_TOP_IN`,
+etc.) — change those to match, they're not scattered magic numbers.
+
+How it works: the barcode itself is a `<canvas>` rendered off-screen and
+converted to a PNG data URL (`src/lib/barcode.ts`, `renderBarcodeDataUrl`),
+shown at an explicit physical size (`width: '2.2in', height: 'auto'`) so it
+scales correctly for print regardless of the source canvas's raw pixel
+dimensions. The label/sheet grid itself is raw DOM (`<div>` with
+`display: 'grid'` and `in`-unit `gridTemplateColumns`/`gridTemplateRows`),
+not React Native's `StyleSheet` — RN's style system has no grid or absolute
+physical-unit support, and this subtree only ever renders on web anyway, so
+there's no cross-platform reason to route it through RN's abstraction.
+Printing uses a React portal (`react-dom`'s `createPortal`) into a `<div>`
+appended to `<body>`, sitting outside `#root` — injected print-only CSS
+(including `@page { size: letter; margin: 0 }`, needed so the browser's own
+default print margins don't stack with the sheet's own 0.5in/0.1875in
+margins) hides the whole app and shows just that portal for the duration of
+`window.print()`, then an `afterprint` listener clears the queue and the
+app's normal UI reappears.
+
+## Barcode scanning
+
+Two ways to add an item to the cart by its barcode, both in `CartScreen.tsx`
+via the shared `useScanToCart` hook (`src/lib/scanToCart.ts` — looks a piece
+up by `sku`, checks it's sellable, calls `CartContext.addItem`; shared so
+both entry points have identical add/error logic):
+
+- **USB/Bluetooth scanner** — a visible "Scan or type a SKU, then Enter"
+  field. These scanners act as a keyboard: scanning a label types its SKU
+  into whatever has focus and sends Enter. Tap into the field once, then
+  scanning (or manual typing, as a fallback) adds the item on Enter. No
+  camera permission, no extra library — it's just a text input.
+- **Phone camera** — a "Scan with camera" button opens a live camera view
+  (`src/components/CameraScanner.tsx`, `@zxing/browser` +
+  `@zxing/library`, restricted to `CODE_128` to match what this app
+  prints) and adds items continuously as they're recognized. A 2-second
+  per-code cooldown (`RESCAN_COOLDOWN_MS`) stops one label held in frame
+  from being decoded — and added — dozens of times a second; without it,
+  every recognized video frame fires the callback again. `BrowserMultiFormatReader`'s
+  `onScan` callback is read through a ref rather than a direct dependency of
+  its effect, specifically so a parent whose callback identity changes on
+  every successful scan (this one does, since it closes over cart state)
+  doesn't restart the camera stream — and flicker the video — after every
+  single item scanned.
+
+Not yet verified against a real device/camera in this environment (no
+physical camera available where this was built) — the keyboard-wedge path
+was verified end-to-end (typed input → correct item added, unknown SKU →
+correct error message); the camera path was only confirmed to open cleanly
+and request camera access without crashing. Worth an real-device test before
+relying on it for a live show.
+
 ## What's already here
 
 - **Inventory page** (admin) — real catalog (128 items: originals + their
@@ -191,7 +262,9 @@ app, e.g. Stripe/invoice).
   blocked client-side with a clear message rather than a raw FK error — the
   DB has no cascade delete set up. Editing quantity back above 0 un-marks a
   piece as sold. This is how to fix the placeholder stock counts once
-  Chrissy has real numbers — no SQL needed.
+  Chrissy has real numbers — no SQL needed. Each row also has a **"Print
+  label"** link, and there's a bulk **"Print Labels"** button in the footer
+  (all non-sold pieces at once) — see "Barcode labels" below.
 - **Cart page** (admin) — quantity steppers, subtotal, remove, and any
   applied/overridden deals shown under the list.
 - **Deals engine** (`src/lib/deals.ts`) — auto-applies active deals from the

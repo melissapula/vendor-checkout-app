@@ -1,8 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { FlatList, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { CartItem, useCart } from '../context/CartContext';
 import { useDeals } from '../context/DealsContext';
 import { evaluateDeals } from '../lib/deals';
+import { useScanToCart } from '../lib/scanToCart';
+import CameraScanner from '../components/CameraScanner';
 import CheckoutScreen from './CheckoutScreen';
 
 function CartRow({ item }: { item: CartItem }) {
@@ -41,21 +43,55 @@ function CartRow({ item }: { item: CartItem }) {
 export default function CartScreen() {
   const { items, subtotal, clear } = useCart();
   const { deals } = useDeals();
+  const { addBySku } = useScanToCart();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [skuInput, setSkuInput] = useState('');
+  const [scanMessage, setScanMessage] = useState<{ text: string; ok: boolean } | null>(null);
 
   const dealsResult = useMemo(() => evaluateDeals(items, deals), [items, deals]);
   const total = subtotal - dealsResult.totalDiscount;
 
-  if (items.length === 0) {
-    return (
-      <View style={styles.empty}>
-        <Text style={styles.emptyText}>Cart is empty — add pieces from Inventory.</Text>
-      </View>
-    );
+  function handleSkuSubmit() {
+    if (!skuInput.trim()) return;
+    const result = addBySku(skuInput);
+    setScanMessage({ text: result.message, ok: result.success });
+    setSkuInput('');
+  }
+
+  function handleCameraScan(code: string) {
+    const result = addBySku(code);
+    setScanMessage({ text: result.message, ok: result.success });
   }
 
   return (
     <View style={styles.container}>
+      <View style={styles.scanBar}>
+        <TextInput
+          style={styles.scanInput}
+          value={skuInput}
+          onChangeText={setSkuInput}
+          onSubmitEditing={handleSkuSubmit}
+          placeholder="Scan or type a SKU, then Enter"
+          autoCapitalize="characters"
+          returnKeyType="done"
+        />
+        <Pressable style={styles.cameraButton} onPress={() => setCameraOpen(true)}>
+          <Text style={styles.cameraButtonText}>Scan with camera</Text>
+        </Pressable>
+      </View>
+      {scanMessage && (
+        <Text style={[styles.scanMessage, scanMessage.ok ? styles.scanMessageOk : styles.scanMessageError]}>
+          {scanMessage.text}
+        </Text>
+      )}
+
+      {items.length === 0 ? (
+        <View style={styles.empty}>
+          <Text style={styles.emptyText}>Cart is empty — scan a barcode or add pieces from Inventory.</Text>
+        </View>
+      ) : (
+        <>
       <FlatList
         data={items}
         keyExtractor={(i) => i.piece.id}
@@ -102,10 +138,13 @@ export default function CartScreen() {
           <Text style={styles.clear}>Clear cart</Text>
         </Pressable>
       </View>
+        </>
+      )}
 
       <Modal visible={checkoutOpen} animationType="slide" onRequestClose={() => setCheckoutOpen(false)}>
         <CheckoutScreen onClose={() => setCheckoutOpen(false)} />
       </Modal>
+      <CameraScanner visible={cameraOpen} onScan={handleCameraScan} onClose={() => setCameraOpen(false)} />
     </View>
   );
 }
@@ -114,6 +153,33 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   emptyText: { color: '#666', fontSize: 15, textAlign: 'center' },
+  scanBar: {
+    flexDirection: 'row',
+    gap: 8,
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  scanInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+  },
+  cameraButton: {
+    borderWidth: 1,
+    borderColor: '#1a1a1a',
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    justifyContent: 'center',
+  },
+  cameraButtonText: { color: '#1a1a1a', fontWeight: '600', fontSize: 13 },
+  scanMessage: { paddingHorizontal: 16, paddingTop: 8, fontSize: 13, fontWeight: '600' },
+  scanMessageOk: { color: '#2a7a2a' },
+  scanMessageError: { color: '#b00020' },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

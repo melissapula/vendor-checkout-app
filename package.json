@@ -5,8 +5,11 @@
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
     "@supabase/supabase-js": "^2.116.0",
+    "@zxing/browser": "^0.2.1",
+    "@zxing/library": "^0.23.0",
     "expo": "~57.0.21",
     "expo-status-bar": "~57.0.1",
+    "jsbarcode": "^3.12.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.3",
@@ -16,6 +19,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "@types/react-dom": "^19.2.7",
     "typescript": "~6.0.3"
   },
   "scripts": {
