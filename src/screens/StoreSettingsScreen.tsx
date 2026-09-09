@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import PaymentSettingsScreen from './PaymentSettingsScreen';
+import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 
 export default function StoreSettingsScreen() {
   const { store, updateStore, signOut } = useAuth();
@@ -18,11 +19,12 @@ export default function StoreSettingsScreen() {
   const [pin, setPin] = useState(store?.admin_pin ?? '');
   const [submitting, setSubmitting] = useState(false);
   const [view, setView] = useState<'main' | 'payments'>('main');
+  const { isTabletUp } = useBreakpoint();
 
   if (view === 'payments') {
     return (
       <View style={{ flex: 1 }}>
-        <Pressable style={styles.backRow} onPress={() => setView('main')}>
+        <Pressable style={[styles.backRow, centeredColumn(isTabletUp, CONTENT_WIDTH.narrow)]} onPress={() => setView('main')}>
           <Text style={styles.backLink}>← Back to Settings</Text>
         </Pressable>
         <PaymentSettingsScreen />
@@ -46,7 +48,7 @@ export default function StoreSettingsScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.scroll}>
+    <ScrollView contentContainerStyle={[styles.scroll, centeredColumn(isTabletUp, CONTENT_WIDTH.narrow)]}>
       <Text style={styles.heading}>Store Settings</Text>
 
       <Text style={styles.label}>Store name</Text>

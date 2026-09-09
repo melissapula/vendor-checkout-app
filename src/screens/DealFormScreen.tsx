@@ -14,6 +14,7 @@ import { useDeals } from '../context/DealsContext';
 import { usePieces } from '../context/PiecesContext';
 import { AppliesTo } from '../lib/deals';
 import { Deal, DealType, PieceType } from '../types/database';
+import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 
 const DEAL_TYPES: { key: DealType; label: string }[] = [
   { key: 'percent_off', label: 'Percent off' },
@@ -58,6 +59,7 @@ export default function DealFormScreen({
   const { addDeal, updateDeal, deleteDeal } = useDeals();
   const { pieces } = usePieces();
   const [submitting, setSubmitting] = useState(false);
+  const { isTabletUp } = useBreakpoint();
 
   const initialScope = useMemo(() => parseAppliesTo(deal), [deal]);
 
@@ -162,7 +164,7 @@ export default function DealFormScreen({
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={[styles.scroll, centeredColumn(isTabletUp, CONTENT_WIDTH.narrow)]}>
         <Text style={styles.heading}>{deal ? 'Edit Deal' : 'New Deal'}</Text>
 
         <Text style={styles.label}>Name</Text>
@@ -285,7 +287,7 @@ export default function DealFormScreen({
         />
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, centeredColumn(isTabletUp, CONTENT_WIDTH.narrow)]}>
         <Pressable
           style={[styles.saveButton, submitting && styles.disabled]}
           disabled={submitting}

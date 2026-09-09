@@ -6,6 +6,7 @@ import { useDeals } from '../context/DealsContext';
 import { evaluateDeals } from '../lib/deals';
 import { useAppMode } from '../context/AppModeContext';
 import { useAuth } from '../context/AuthContext';
+import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 
 function CustomerRow({ item }: { item: CartItem }) {
   const lineTotal = item.piece.price * item.quantity;
@@ -27,47 +28,50 @@ export default function CustomerScreen() {
   const { deals } = useDeals();
   const { requestAdmin } = useAppMode();
   const { store } = useAuth();
+  const { isTabletUp } = useBreakpoint();
 
   const dealsResult = useMemo(() => evaluateDeals(items, deals), [items, deals]);
   const total = subtotal - dealsResult.totalDiscount;
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>{store?.name}</Text>
-      </View>
-
-      {items.length === 0 ? (
-        <View style={styles.empty}>
-          <Text style={styles.emptyText}>Your cart will appear here</Text>
+      <View style={[styles.content, centeredColumn(isTabletUp, CONTENT_WIDTH.wide)]}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>{store?.name}</Text>
         </View>
-      ) : (
-        <FlatList
-          data={items}
-          keyExtractor={(i) => i.piece.id}
-          renderItem={({ item }) => <CustomerRow item={item} />}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-        />
-      )}
 
-      {items.length > 0 && (
-        <View style={styles.footer}>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Subtotal</Text>
-            <Text style={styles.summaryValue}>${subtotal.toFixed(2)}</Text>
+        {items.length === 0 ? (
+          <View style={styles.empty}>
+            <Text style={styles.emptyText}>Your cart will appear here</Text>
           </View>
-          {dealsResult.applied.map((a) => (
-            <View key={a.deal.id} style={styles.summaryRow}>
-              <Text style={styles.dealLabel}>{a.deal.name}</Text>
-              <Text style={styles.dealValue}>-${a.discountAmount.toFixed(2)}</Text>
+        ) : (
+          <FlatList
+            data={items}
+            keyExtractor={(i) => i.piece.id}
+            renderItem={({ item }) => <CustomerRow item={item} />}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+          />
+        )}
+
+        {items.length > 0 && (
+          <View style={styles.footer}>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Subtotal</Text>
+              <Text style={styles.summaryValue}>${subtotal.toFixed(2)}</Text>
             </View>
-          ))}
-          <View style={[styles.summaryRow, styles.totalRow]}>
-            <Text style={styles.totalLabel}>Total</Text>
-            <Text style={styles.totalValue}>${total.toFixed(2)}</Text>
+            {dealsResult.applied.map((a) => (
+              <View key={a.deal.id} style={styles.summaryRow}>
+                <Text style={styles.dealLabel}>{a.deal.name}</Text>
+                <Text style={styles.dealValue}>-${a.discountAmount.toFixed(2)}</Text>
+              </View>
+            ))}
+            <View style={[styles.summaryRow, styles.totalRow]}>
+              <Text style={styles.totalLabel}>Total</Text>
+              <Text style={styles.totalValue}>${total.toFixed(2)}</Text>
+            </View>
           </View>
-        </View>
-      )}
+        )}
+      </View>
 
       <Pressable style={styles.staffButton} onPress={requestAdmin} hitSlop={12}>
         <Text style={styles.staffButtonText}>Staff Access</Text>
@@ -78,6 +82,7 @@ export default function CustomerScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
+  content: { flex: 1 },
   header: { paddingTop: 20, paddingBottom: 20, alignItems: 'center' },
   headerTitle: { fontSize: 22, fontWeight: '700' },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center' },

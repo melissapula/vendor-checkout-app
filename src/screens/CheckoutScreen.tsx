@@ -19,6 +19,7 @@ import { evaluateDeals } from '../lib/deals';
 import { calculateFee } from '../lib/fees';
 import { venmoPayUrl, paypalPayUrl, renderQrDataUrl } from '../lib/payLinks';
 import { createStripeCheckout, checkStripeCheckoutStatus } from '../lib/payments';
+import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 import { PaymentMethod, Sale } from '../types/database';
 
 type NewSale = Omit<Sale, 'id' | 'store_id'>;
@@ -51,6 +52,7 @@ export default function CheckoutScreen({ onClose }: { onClose: () => void }) {
   const { deals } = useDeals();
   const { store } = useAuth();
   const enabledMethods = store?.enabled_payment_methods ?? [];
+  const { isTabletUp } = useBreakpoint();
 
   const [step, setStep] = useState<Step>('staffSetup');
   const [method, setMethod] = useState<PaymentMethod | null>(null);
@@ -222,7 +224,7 @@ export default function CheckoutScreen({ onClose }: { onClose: () => void }) {
   if (step === 'staffSetup') {
     return (
       <View style={styles.container}>
-        <ScrollView contentContainerStyle={styles.scroll}>
+        <ScrollView contentContainerStyle={[styles.scroll, centeredColumn(isTabletUp, CONTENT_WIDTH.narrow)]}>
           <Text style={styles.heading}>Checkout</Text>
           <Text style={styles.sectionLabel}>Show / venue (optional, for reports)</Text>
           <TextInput
@@ -235,13 +237,13 @@ export default function CheckoutScreen({ onClose }: { onClose: () => void }) {
             <Text style={styles.error}>No payment methods enabled — set some up in Admin &gt; Settings &gt; Payment Methods.</Text>
           )}
         </ScrollView>
-        <View style={styles.footer}>
+        <View style={[styles.footer, centeredColumn(isTabletUp, CONTENT_WIDTH.narrow)]}>
           <Pressable
-            style={[styles.confirmButton, enabledMethods.length === 0 && styles.confirmButtonDisabled]}
+            style={[styles.confirmButton, isTabletUp && styles.confirmButtonTabletUp, enabledMethods.length === 0 && styles.confirmButtonDisabled]}
             disabled={enabledMethods.length === 0}
             onPress={() => setStep('buyerReview')}
           >
-            <Text style={styles.confirmButtonText}>Continue →</Text>
+            <Text style={[styles.confirmButtonText, isTabletUp && styles.confirmButtonTextTabletUp]}>Continue →</Text>
           </Pressable>
           <Pressable onPress={handleCancel}>
             <Text style={styles.cancel}>Cancel</Text>
@@ -255,8 +257,8 @@ export default function CheckoutScreen({ onClose }: { onClose: () => void }) {
   if (step === 'buyerReview') {
     return (
       <View style={styles.container}>
-        <ScrollView contentContainerStyle={styles.scroll}>
-          <Text style={styles.heading}>Your order</Text>
+        <ScrollView contentContainerStyle={[styles.scroll, centeredColumn(isTabletUp, CONTENT_WIDTH.wide)]}>
+          <Text style={[styles.heading, isTabletUp && styles.headingTabletUp]}>Your order</Text>
           {items.map((item) => (
             <View key={item.piece.id} style={styles.reviewRow}>
               <Text style={styles.reviewItemName}>
@@ -280,9 +282,9 @@ export default function CheckoutScreen({ onClose }: { onClose: () => void }) {
             <SummaryRow label="Subtotal" value={subtotal} bold />
           </View>
         </ScrollView>
-        <View style={styles.footer}>
-          <Pressable style={styles.confirmButton} onPress={() => setStep('buyerTip')}>
-            <Text style={styles.confirmButtonText}>Confirm & Continue</Text>
+        <View style={[styles.footer, centeredColumn(isTabletUp, CONTENT_WIDTH.wide)]}>
+          <Pressable style={[styles.confirmButton, isTabletUp && styles.confirmButtonTabletUp]} onPress={() => setStep('buyerTip')}>
+            <Text style={[styles.confirmButtonText, isTabletUp && styles.confirmButtonTextTabletUp]}>Confirm & Continue</Text>
           </Pressable>
           <Pressable onPress={handleCancel}>
             <Text style={styles.cancel}>Cancel</Text>
@@ -296,11 +298,15 @@ export default function CheckoutScreen({ onClose }: { onClose: () => void }) {
   if (step === 'buyerTip') {
     return (
       <View style={styles.container}>
-        <ScrollView contentContainerStyle={styles.scroll}>
-          <Text style={styles.heading}>Add a tip?</Text>
+        <ScrollView contentContainerStyle={[styles.scroll, centeredColumn(isTabletUp, CONTENT_WIDTH.wide)]}>
+          <Text style={[styles.heading, isTabletUp && styles.headingTabletUp]}>Add a tip?</Text>
           <View style={styles.tipPresetRow}>
             {TIP_PRESETS.map((pct) => (
-              <Pressable key={pct} style={styles.tipPresetButton} onPress={() => selectTipPreset(pct)}>
+              <Pressable
+                key={pct}
+                style={[styles.tipPresetButton, isTabletUp && styles.tipPresetButtonTabletUp]}
+                onPress={() => selectTipPreset(pct)}
+              >
                 <Text style={styles.tipPresetPercent}>{Math.round(pct * 100)}%</Text>
                 <Text style={styles.tipPresetAmount}>${(effectiveSubtotal * pct).toFixed(2)}</Text>
               </Pressable>
@@ -319,14 +325,14 @@ export default function CheckoutScreen({ onClose }: { onClose: () => void }) {
             keyboardType="decimal-pad"
           />
           <Pressable
-            style={[styles.confirmButton, !customTipText.trim() && styles.confirmButtonDisabled]}
+            style={[styles.confirmButton, isTabletUp && styles.confirmButtonTabletUp, !customTipText.trim() && styles.confirmButtonDisabled]}
             disabled={!customTipText.trim()}
             onPress={confirmCustomTip}
           >
-            <Text style={styles.confirmButtonText}>Continue</Text>
+            <Text style={[styles.confirmButtonText, isTabletUp && styles.confirmButtonTextTabletUp]}>Continue</Text>
           </Pressable>
         </ScrollView>
-        <View style={styles.footer}>
+        <View style={[styles.footer, centeredColumn(isTabletUp, CONTENT_WIDTH.wide)]}>
           <Pressable onPress={handleCancel}>
             <Text style={styles.cancel}>Cancel</Text>
           </Pressable>
@@ -339,18 +345,22 @@ export default function CheckoutScreen({ onClose }: { onClose: () => void }) {
   if (step === 'buyerMethod') {
     return (
       <View style={styles.container}>
-        <ScrollView contentContainerStyle={styles.scroll}>
-          <Text style={styles.heading}>How would you like to pay?</Text>
+        <ScrollView contentContainerStyle={[styles.scroll, centeredColumn(isTabletUp, CONTENT_WIDTH.wide)]}>
+          <Text style={[styles.heading, isTabletUp && styles.headingTabletUp]}>How would you like to pay?</Text>
           <View style={styles.methodList}>
             {enabledMethods.map((m) => (
-              <Pressable key={m} style={styles.methodCard} onPress={() => handleSelectMethod(m)}>
+              <Pressable
+                key={m}
+                style={[styles.methodCard, isTabletUp && styles.methodCardTabletUp]}
+                onPress={() => handleSelectMethod(m)}
+              >
                 <Text style={styles.methodCardText}>{METHOD_LABELS[m]}</Text>
                 <Text style={styles.methodCardAmount}>${buyerTotalFor(m).toFixed(2)}</Text>
               </Pressable>
             ))}
           </View>
         </ScrollView>
-        <View style={styles.footer}>
+        <View style={[styles.footer, centeredColumn(isTabletUp, CONTENT_WIDTH.wide)]}>
           <Pressable onPress={handleCancel}>
             <Text style={styles.cancel}>Cancel</Text>
           </Pressable>
@@ -362,26 +372,30 @@ export default function CheckoutScreen({ onClose }: { onClose: () => void }) {
   // ---- confirm: QR / cash, then hand back to staff ----
   const showHandBackToStaff = method === 'cash' || ((method === 'venmo' || method === 'paypal') && buyerDone);
 
+  const qrSize = isTabletUp ? 320 : 240;
+
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.qrScroll}>
+      <ScrollView contentContainerStyle={[styles.qrScroll, centeredColumn(isTabletUp, CONTENT_WIDTH.wide)]}>
         {showHandBackToStaff ? (
           <>
-            <Text style={styles.heading}>Please hand the device back to staff</Text>
+            <Text style={[styles.heading, isTabletUp && styles.headingTabletUp]}>Please hand the device back to staff</Text>
             <Text style={styles.qrMethodLabel}>
               {method ? METHOD_LABELS[method] : ''} — ${buyerTotal.toFixed(2)}
             </Text>
           </>
         ) : (
           <>
-            <Text style={styles.heading}>Have the buyer scan this</Text>
+            <Text style={[styles.heading, isTabletUp && styles.headingTabletUp]}>Have the buyer scan this</Text>
             <Text style={styles.qrMethodLabel}>
               {method ? METHOD_LABELS[method] : ''} — ${buyerTotal.toFixed(2)}
             </Text>
 
             {qrLoading && <ActivityIndicator size="large" style={{ marginTop: 40 }} />}
             {qrError && <Text style={styles.error}>{qrError}</Text>}
-            {qrDataUrl && <Image source={{ uri: qrDataUrl }} style={styles.qrImage} resizeMode="contain" />}
+            {qrDataUrl && (
+              <Image source={{ uri: qrDataUrl }} style={[styles.qrImage, { width: qrSize, height: qrSize }]} resizeMode="contain" />
+            )}
 
             {method && STRIPE_METHODS.includes(method) ? (
               <Text style={styles.qrHint}>
@@ -394,19 +408,23 @@ export default function CheckoutScreen({ onClose }: { onClose: () => void }) {
         )}
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, centeredColumn(isTabletUp, CONTENT_WIDTH.wide)]}>
         {showHandBackToStaff && (
           <Pressable
-            style={[styles.confirmButton, submitting && styles.confirmButtonDisabled]}
+            style={[styles.confirmButton, isTabletUp && styles.confirmButtonTabletUp, submitting && styles.confirmButtonDisabled]}
             disabled={submitting}
             onPress={() => method && finalizeSale(fee, null, method)}
           >
-            {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.confirmButtonText}>Confirm Paid</Text>}
+            {submitting ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={[styles.confirmButtonText, isTabletUp && styles.confirmButtonTextTabletUp]}>Confirm Paid</Text>
+            )}
           </Pressable>
         )}
         {!showHandBackToStaff && (method === 'venmo' || method === 'paypal') && (
-          <Pressable style={styles.confirmButton} onPress={() => setBuyerDone(true)}>
-            <Text style={styles.confirmButtonText}>Done, I've paid</Text>
+          <Pressable style={[styles.confirmButton, isTabletUp && styles.confirmButtonTabletUp]} onPress={() => setBuyerDone(true)}>
+            <Text style={[styles.confirmButtonText, isTabletUp && styles.confirmButtonTextTabletUp]}>Done, I've paid</Text>
           </Pressable>
         )}
         <Pressable disabled={submitting} onPress={handleCancel}>
@@ -443,6 +461,7 @@ const styles = StyleSheet.create({
   scroll: { padding: 16 },
   qrScroll: { padding: 16, alignItems: 'center' },
   heading: { fontSize: 20, fontWeight: '700', marginBottom: 16 },
+  headingTabletUp: { fontSize: 24 },
   sectionLabel: { fontSize: 13, color: '#666', marginTop: 16, marginBottom: 8 },
   tipInput: {
     borderWidth: 1,
@@ -468,7 +487,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   confirmButtonDisabled: { opacity: 0.6 },
+  confirmButtonTabletUp: { paddingVertical: 18 },
   confirmButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  confirmButtonTextTabletUp: { fontSize: 18 },
   cancel: { textAlign: 'center', color: '#666' },
   qrMethodLabel: { fontSize: 16, fontWeight: '600', marginBottom: 24 },
   qrImage: { width: 280, height: 280, marginTop: 8 },
@@ -492,6 +513,7 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     alignItems: 'center',
   },
+  tipPresetButtonTabletUp: { paddingVertical: 24 },
   tipPresetPercent: { fontSize: 20, fontWeight: '700', color: '#1a1a1a' },
   tipPresetAmount: { fontSize: 13, color: '#666', marginTop: 4 },
   noTipButton: { marginTop: 12, paddingVertical: 12, alignItems: 'center' },
@@ -507,6 +529,7 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     paddingHorizontal: 18,
   },
+  methodCardTabletUp: { paddingVertical: 26, paddingHorizontal: 24 },
   methodCardText: { fontSize: 18, fontWeight: '700', color: '#1a1a1a' },
   methodCardAmount: { fontSize: 16, fontWeight: '600', color: '#333' },
 });

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { usePieces } from '../context/PiecesContext';
 import { Piece, PieceStatus, PieceType } from '../types/database';
+import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 
 const STATUSES: PieceStatus[] = ['available', 'sold', 'reserved'];
 
@@ -36,6 +37,7 @@ export default function PieceFormScreen({
 }) {
   const { pieces, addPiece, updatePiece, deletePiece } = usePieces();
   const [submitting, setSubmitting] = useState(false);
+  const { isTabletUp } = useBreakpoint();
 
   const originals = useMemo(() => pieces.filter((p) => p.type === 'original'), [pieces]);
   const knownTypes = useMemo(
@@ -166,7 +168,7 @@ export default function PieceFormScreen({
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={[styles.scroll, centeredColumn(isTabletUp, CONTENT_WIDTH.narrow)]}>
         <Text style={styles.heading}>{piece ? 'Edit Piece' : 'New Piece'}</Text>
 
         <Text style={styles.label}>Title</Text>
@@ -294,7 +296,7 @@ export default function PieceFormScreen({
         />
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, centeredColumn(isTabletUp, CONTENT_WIDTH.narrow)]}>
         <Pressable style={[styles.saveButton, submitting && styles.disabled]} disabled={submitting} onPress={handleSave}>
           {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveButtonText}>Save</Text>}
         </Pressable>

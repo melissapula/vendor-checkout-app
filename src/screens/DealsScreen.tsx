@@ -4,6 +4,7 @@ import { useDeals } from '../context/DealsContext';
 import { AppliesTo } from '../lib/deals';
 import { Deal } from '../types/database';
 import DealFormScreen from './DealFormScreen';
+import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 
 function describeScope(deal: Deal): string {
   const appliesTo = deal.applies_to as unknown as AppliesTo;
@@ -52,6 +53,7 @@ export default function DealsScreen() {
   const { deals, loading, error } = useDeals();
   const [editingDeal, setEditingDeal] = useState<Deal | undefined>(undefined);
   const [formOpen, setFormOpen] = useState(false);
+  const { isTabletUp } = useBreakpoint();
 
   if (loading) {
     return (
@@ -77,6 +79,7 @@ export default function DealsScreen() {
         </View>
       ) : (
         <FlatList
+          contentContainerStyle={centeredColumn(isTabletUp, CONTENT_WIDTH.wide)}
           data={deals}
           keyExtractor={(d) => d.id}
           renderItem={({ item }) => (
@@ -92,7 +95,7 @@ export default function DealsScreen() {
         />
       )}
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, centeredColumn(isTabletUp, CONTENT_WIDTH.wide)]}>
         <Pressable
           style={styles.addButton}
           onPress={() => {

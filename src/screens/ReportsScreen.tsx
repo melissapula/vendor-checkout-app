@@ -3,6 +3,7 @@ import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, Vi
 import { useSales } from '../context/SalesContext';
 import { usePieces } from '../context/PiecesContext';
 import { Sale, PaymentMethod, PieceType } from '../types/database';
+import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 
 type DateRange = 'today' | '7days' | 'all' | 'custom';
 
@@ -55,6 +56,7 @@ export default function ReportsScreen() {
   const [methodFilter, setMethodFilter] = useState<PaymentMethod | 'all'>('all');
   const [typeFilter, setTypeFilter] = useState<PieceType | 'all'>('all');
   const [locationFilter, setLocationFilter] = useState<string | 'all'>('all');
+  const { isTabletUp } = useBreakpoint();
 
   const pieceById = useMemo(() => new Map(pieces.map((p) => [p.id, p])), [pieces]);
   const knownTypes = useMemo(() => Array.from(new Set(pieces.map((p) => p.type))).sort(), [pieces]);
@@ -114,6 +116,7 @@ export default function ReportsScreen() {
   return (
     <FlatList
       style={styles.list}
+      contentContainerStyle={centeredColumn(isTabletUp, CONTENT_WIDTH.wide)}
       data={filtered}
       keyExtractor={(s) => s.id}
       renderItem={({ item }) => <SaleRow sale={item} title={pieceById.get(item.piece_id)?.title ?? 'Unknown item'} />}

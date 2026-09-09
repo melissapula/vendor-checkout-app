@@ -6,6 +6,7 @@ import { evaluateDeals } from '../lib/deals';
 import { useScanToCart } from '../lib/scanToCart';
 import CameraScanner from '../components/CameraScanner';
 import CheckoutScreen from './CheckoutScreen';
+import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 
 function CartRow({ item }: { item: CartItem }) {
   const { updateQuantity, removeItem } = useCart();
@@ -48,6 +49,7 @@ export default function CartScreen() {
   const [cameraOpen, setCameraOpen] = useState(false);
   const [skuInput, setSkuInput] = useState('');
   const [scanMessage, setScanMessage] = useState<{ text: string; ok: boolean } | null>(null);
+  const { isTabletUp } = useBreakpoint();
 
   const dealsResult = useMemo(() => evaluateDeals(items, deals), [items, deals]);
   const total = subtotal - dealsResult.totalDiscount;
@@ -66,80 +68,82 @@ export default function CartScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.scanBar}>
-        <TextInput
-          style={styles.scanInput}
-          value={skuInput}
-          onChangeText={setSkuInput}
-          onSubmitEditing={handleSkuSubmit}
-          placeholder="Scan or type a SKU, then Enter"
-          autoCapitalize="characters"
-          returnKeyType="done"
-        />
-        <Pressable style={styles.cameraButton} onPress={() => setCameraOpen(true)}>
-          <Text style={styles.cameraButtonText}>Scan with camera</Text>
-        </Pressable>
-      </View>
-      {scanMessage && (
-        <Text style={[styles.scanMessage, scanMessage.ok ? styles.scanMessageOk : styles.scanMessageError]}>
-          {scanMessage.text}
-        </Text>
-      )}
+      <View style={[styles.content, centeredColumn(isTabletUp, CONTENT_WIDTH.wide)]}>
+        <View style={styles.scanBar}>
+          <TextInput
+            style={styles.scanInput}
+            value={skuInput}
+            onChangeText={setSkuInput}
+            onSubmitEditing={handleSkuSubmit}
+            placeholder="Scan or type a SKU, then Enter"
+            autoCapitalize="characters"
+            returnKeyType="done"
+          />
+          <Pressable style={styles.cameraButton} onPress={() => setCameraOpen(true)}>
+            <Text style={styles.cameraButtonText}>Scan with camera</Text>
+          </Pressable>
+        </View>
+        {scanMessage && (
+          <Text style={[styles.scanMessage, scanMessage.ok ? styles.scanMessageOk : styles.scanMessageError]}>
+            {scanMessage.text}
+          </Text>
+        )}
 
-      {items.length === 0 ? (
-        <View style={styles.empty}>
-          <Text style={styles.emptyText}>Cart is empty — scan a barcode or add pieces from Inventory.</Text>
-        </View>
-      ) : (
-        <>
-      <FlatList
-        data={items}
-        keyExtractor={(i) => i.piece.id}
-        renderItem={({ item }) => <CartRow item={item} />}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-        ListFooterComponent={
-          dealsResult.applied.length + dealsResult.overridden.length > 0 ? (
-            <View style={styles.deals}>
-              {dealsResult.applied.map((a) => (
-                <Text key={a.deal.id} style={styles.dealApplied}>
-                  ✓ {a.description}
-                </Text>
-              ))}
-              {dealsResult.overridden.map((o) => (
-                <Text key={o.deal.id} style={styles.dealOverridden}>
-                  {o.deal.name} (better deal already applied)
-                </Text>
-              ))}
+        {items.length === 0 ? (
+          <View style={styles.empty}>
+            <Text style={styles.emptyText}>Cart is empty — scan a barcode or add pieces from Inventory.</Text>
+          </View>
+        ) : (
+          <>
+            <FlatList
+              data={items}
+              keyExtractor={(i) => i.piece.id}
+              renderItem={({ item }) => <CartRow item={item} />}
+              ItemSeparatorComponent={() => <View style={styles.separator} />}
+              ListFooterComponent={
+                dealsResult.applied.length + dealsResult.overridden.length > 0 ? (
+                  <View style={styles.deals}>
+                    {dealsResult.applied.map((a) => (
+                      <Text key={a.deal.id} style={styles.dealApplied}>
+                        ✓ {a.description}
+                      </Text>
+                    ))}
+                    {dealsResult.overridden.map((o) => (
+                      <Text key={o.deal.id} style={styles.dealOverridden}>
+                        {o.deal.name} (better deal already applied)
+                      </Text>
+                    ))}
+                  </View>
+                ) : null
+              }
+            />
+            <View style={styles.footer}>
+              <View style={styles.subtotalRow}>
+                <Text style={styles.subtotalLabel}>Subtotal</Text>
+                <Text style={styles.subtotalValue}>${subtotal.toFixed(2)}</Text>
+              </View>
+              {dealsResult.totalDiscount > 0 && (
+                <View style={styles.subtotalRow}>
+                  <Text style={styles.discountLabel}>Deals</Text>
+                  <Text style={styles.discountValue}>-${dealsResult.totalDiscount.toFixed(2)}</Text>
+                </View>
+              )}
+              {dealsResult.totalDiscount > 0 && (
+                <View style={styles.subtotalRow}>
+                  <Text style={styles.subtotalLabel}>Total</Text>
+                  <Text style={styles.subtotalValue}>${total.toFixed(2)}</Text>
+                </View>
+              )}
+              <Pressable style={styles.checkoutButton} onPress={() => setCheckoutOpen(true)}>
+                <Text style={styles.checkoutButtonText}>Checkout</Text>
+              </Pressable>
+              <Pressable onPress={clear}>
+                <Text style={styles.clear}>Clear cart</Text>
+              </Pressable>
             </View>
-          ) : null
-        }
-      />
-      <View style={styles.footer}>
-        <View style={styles.subtotalRow}>
-          <Text style={styles.subtotalLabel}>Subtotal</Text>
-          <Text style={styles.subtotalValue}>${subtotal.toFixed(2)}</Text>
-        </View>
-        {dealsResult.totalDiscount > 0 && (
-          <View style={styles.subtotalRow}>
-            <Text style={styles.discountLabel}>Deals</Text>
-            <Text style={styles.discountValue}>-${dealsResult.totalDiscount.toFixed(2)}</Text>
-          </View>
+          </>
         )}
-        {dealsResult.totalDiscount > 0 && (
-          <View style={styles.subtotalRow}>
-            <Text style={styles.subtotalLabel}>Total</Text>
-            <Text style={styles.subtotalValue}>${total.toFixed(2)}</Text>
-          </View>
-        )}
-        <Pressable style={styles.checkoutButton} onPress={() => setCheckoutOpen(true)}>
-          <Text style={styles.checkoutButtonText}>Checkout</Text>
-        </Pressable>
-        <Pressable onPress={clear}>
-          <Text style={styles.clear}>Clear cart</Text>
-        </Pressable>
       </View>
-        </>
-      )}
 
       <Modal visible={checkoutOpen} animationType="slide" onRequestClose={() => setCheckoutOpen(false)}>
         <CheckoutScreen onClose={() => setCheckoutOpen(false)} />
@@ -151,6 +155,7 @@ export default function CartScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
+  content: { flex: 1 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   emptyText: { color: '#666', fontSize: 15, textAlign: 'center' },
   scanBar: {

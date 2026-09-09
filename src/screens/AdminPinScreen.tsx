@@ -3,10 +3,12 @@ import { Pressable, StyleSheet, Text, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppMode } from '../context/AppModeContext';
 import { useAuth } from '../context/AuthContext';
+import { useBreakpoint } from '../lib/responsive';
 
 export default function AdminPinScreen() {
   const { unlockAdmin, cancelPinEntry } = useAppMode();
   const { store } = useAuth();
+  const { isTabletUp } = useBreakpoint();
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
 
@@ -25,7 +27,7 @@ export default function AdminPinScreen() {
     <SafeAreaView style={styles.container}>
       <Text style={styles.heading}>Staff Access</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, isTabletUp && styles.inputTabletUp]}
         value={pin}
         onChangeText={(t) => {
           setPin(t);
@@ -38,7 +40,7 @@ export default function AdminPinScreen() {
         onSubmitEditing={handleSubmit}
       />
       {error && <Text style={styles.error}>Incorrect PIN</Text>}
-      <Pressable style={styles.unlockButton} onPress={handleSubmit}>
+      <Pressable style={[styles.unlockButton, isTabletUp && styles.unlockButtonTabletUp]} onPress={handleSubmit}>
         <Text style={styles.unlockButtonText}>Unlock</Text>
       </Pressable>
       <Pressable onPress={cancelPinEntry}>
@@ -62,6 +64,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: 4,
   },
+  inputTabletUp: { width: 240, fontSize: 22, paddingVertical: 14 },
   error: { color: '#b00020' },
   unlockButton: {
     backgroundColor: '#1a1a1a',
@@ -69,6 +72,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
     borderRadius: 8,
   },
+  unlockButtonTabletUp: { paddingVertical: 18, paddingHorizontal: 48 },
   unlockButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   cancel: { color: '#666', marginTop: 8 },
 });

@@ -5,6 +5,7 @@ import { usePieces, isSellable } from '../context/PiecesContext';
 import { useCart } from '../context/CartContext';
 import PieceFormScreen from './PieceFormScreen';
 import PrintLabelsOverlay from '../components/PrintLabelsOverlay';
+import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 
 function statusLabel(piece: Piece): string {
   if (piece.status === 'sold') return 'Sold';
@@ -82,6 +83,7 @@ export default function InventoryScreen() {
   const [presetOriginalId, setPresetOriginalId] = useState<string | undefined>(undefined);
   const [formOpen, setFormOpen] = useState(false);
   const [printQueue, setPrintQueue] = useState<Piece[] | null>(null);
+  const { isTabletUp } = useBreakpoint();
 
   if (loading) {
     return (
@@ -126,6 +128,7 @@ export default function InventoryScreen() {
     <>
       <FlatList
         style={styles.list}
+        contentContainerStyle={centeredColumn(isTabletUp, CONTENT_WIDTH.wide)}
         data={pieces}
         keyExtractor={(p) => p.id}
         renderItem={({ item }) => (
@@ -138,7 +141,7 @@ export default function InventoryScreen() {
         )}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
-      <View style={styles.footer}>
+      <View style={[styles.footer, centeredColumn(isTabletUp, CONTENT_WIDTH.wide)]}>
         <Pressable style={styles.printAllButton} onPress={printAllLabels}>
           <Text style={styles.printAllButtonText}>Print Labels</Text>
         </Pressable>

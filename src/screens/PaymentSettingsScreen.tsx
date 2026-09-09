@@ -13,6 +13,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { PaymentMethod } from '../types/database';
 import { startStripeOnboarding, checkStripeAccountStatus } from '../lib/payments';
+import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 
 const METHOD_LABELS: Record<PaymentMethod, string> = {
   card: 'Credit/debit card',
@@ -34,6 +35,7 @@ export default function PaymentSettingsScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(false);
+  const { isTabletUp } = useBreakpoint();
 
   useEffect(() => {
     // Re-check status once on mount in case Stripe onboarding just finished
@@ -117,7 +119,7 @@ export default function PaymentSettingsScreen() {
   const stripeReady = !!store?.stripe_onboarding_complete;
 
   return (
-    <ScrollView contentContainerStyle={styles.scroll}>
+    <ScrollView contentContainerStyle={[styles.scroll, centeredColumn(isTabletUp, CONTENT_WIDTH.narrow)]}>
       <Text style={styles.heading}>Payment Methods</Text>
 
       <Text style={styles.sectionLabel}>Card &amp; Cash App Pay (via Stripe)</Text>

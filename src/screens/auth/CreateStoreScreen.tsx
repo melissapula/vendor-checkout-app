@@ -85,7 +85,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
-    width: 280,
+    width: '100%',
+    maxWidth: 280,
     textAlign: 'center',
   },
   submitButton: {
