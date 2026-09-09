@@ -14,15 +14,15 @@ import { Piece, PieceStatus, PieceType } from '../types/database';
 
 const STATUSES: PieceStatus[] = ['available', 'sold', 'reserved'];
 
-// Sensible starting point for a brand-new original — next unused FSS-####.
+// Sensible starting point for a brand-new original — next unused SKU-####.
 // Purely a suggestion; the field stays freely editable.
 function suggestSku(pieces: Piece[]): string {
   const nums = pieces
-    .map((p) => p.sku.match(/^FSS-(\d{4})$/))
+    .map((p) => p.sku.match(/^SKU-(\d{4})$/))
     .filter((m): m is RegExpMatchArray => !!m)
     .map((m) => parseInt(m[1], 10));
   const next = (nums.length ? Math.max(...nums) : 0) + 1;
-  return `FSS-${String(next).padStart(4, '0')}`;
+  return `SKU-${String(next).padStart(4, '0')}`;
 }
 
 export default function PieceFormScreen({
@@ -177,7 +177,7 @@ export default function PieceFormScreen({
           style={styles.input}
           value={sku}
           onChangeText={setSku}
-          placeholder="e.g. FSS-0129"
+          placeholder="e.g. SKU-0129"
           autoCapitalize="characters"
         />
 

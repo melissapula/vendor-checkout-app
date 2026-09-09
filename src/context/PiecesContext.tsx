@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Piece } from '../types/database';
 import { supabase } from '../lib/supabase';
 
-type NewPiece = Omit<Piece, 'id' | 'date_created'>;
+type NewPiece = Omit<Piece, 'id' | 'store_id' | 'date_created'>;
 
 interface PiecesContextValue {
   pieces: Piece[];

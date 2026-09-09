@@ -17,7 +17,7 @@ import { evaluateDeals } from '../lib/deals';
 import { calculateFee } from '../lib/fees';
 import { PaymentMethod, Sale } from '../types/database';
 
-type NewSale = Omit<Sale, 'id'>;
+type NewSale = Omit<Sale, 'id' | 'store_id'>;
 
 const METHODS: { key: PaymentMethod; label: string; enabled: boolean; tippable: boolean }[] = [
   { key: 'square', label: 'Square (card)', enabled: false, tippable: false },
@@ -41,8 +41,8 @@ export default function CheckoutScreen({ onClose }: { onClose: () => void }) {
   const selectedMethod = METHODS.find((m) => m.key === method)!;
   const tipAmount = selectedMethod.tippable ? parseFloat(tipText) || 0 : 0;
   const fee = useMemo(() => calculateFee(effectiveSubtotal, method), [effectiveSubtotal, method]);
-  // Fee reduces Chrissy's net payout rather than being added to the buyer's
-  // total — see "Decide: fee reduces payout vs. passed to buyer" in
+  // Fee reduces the seller's net payout rather than being added to the
+  // buyer's total — see "Decide: fee reduces payout vs. passed to buyer" in
   // chrissy-art-inventory-app.md. Revisit if that business decision changes.
   const buyerTotal = effectiveSubtotal + tipAmount;
   const netRevenue = effectiveSubtotal - fee;
@@ -164,7 +164,7 @@ export default function CheckoutScreen({ onClose }: { onClose: () => void }) {
           {tipAmount > 0 && <SummaryRow label="Tip" value={tipAmount} />}
           <SummaryRow label="Est. processing fee" value={-fee} muted />
           <SummaryRow label="Buyer pays" value={buyerTotal} bold />
-          <SummaryRow label="Net to Chrissy" value={netRevenue} muted />
+          <SummaryRow label="Net payout" value={netRevenue} muted />
         </View>
       </ScrollView>
 

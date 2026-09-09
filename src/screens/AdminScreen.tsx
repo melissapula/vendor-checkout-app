@@ -5,16 +5,18 @@ import InventoryScreen from './InventoryScreen';
 import CartScreen from './CartScreen';
 import DealsScreen from './DealsScreen';
 import ReportsScreen from './ReportsScreen';
+import StoreSettingsScreen from './StoreSettingsScreen';
 import { useCart } from '../context/CartContext';
 import { useAppMode } from '../context/AppModeContext';
+import { useAuth } from '../context/AuthContext';
 
-type Page = 'inventory' | 'cart' | 'deals' | 'reports';
+type Page = 'inventory' | 'cart' | 'deals' | 'reports' | 'settings';
 
-const PAGE_TITLES: Record<Page, string> = {
-  inventory: "Chrissy's Studio",
+const PAGE_TITLES: Record<Exclude<Page, 'inventory'>, string> = {
   cart: 'Cart',
   deals: 'Manage Deals',
   reports: 'Reports',
+  settings: 'Settings',
 };
 
 export default function AdminScreen() {
@@ -22,17 +24,20 @@ export default function AdminScreen() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { itemCount } = useCart();
   const { exitToCustomer } = useAppMode();
+  const { store } = useAuth();
 
   function choose(next: Page) {
     setPage(next);
     setMenuOpen(false);
   }
 
+  const title = page === 'inventory' ? store?.name : PAGE_TITLES[page];
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <Pressable style={styles.menuButton} onPress={() => setMenuOpen(true)}>
-          <Text style={styles.menuButtonText}>{PAGE_TITLES[page]} ▾</Text>
+          <Text style={styles.menuButtonText}>{title} ▾</Text>
         </Pressable>
       </View>
 
@@ -41,6 +46,7 @@ export default function AdminScreen() {
         {page === 'cart' && <CartScreen />}
         {page === 'deals' && <DealsScreen />}
         {page === 'reports' && <ReportsScreen />}
+        {page === 'settings' && <StoreSettingsScreen />}
       </View>
 
       <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={() => setMenuOpen(false)}>
@@ -55,6 +61,7 @@ export default function AdminScreen() {
               />
               <MenuItem label="Deals" active={page === 'deals'} onPress={() => choose('deals')} />
               <MenuItem label="Reports" active={page === 'reports'} onPress={() => choose('reports')} />
+              <MenuItem label="Settings" active={page === 'settings'} onPress={() => choose('settings')} />
               <View style={styles.menuDivider} />
               <MenuItem
                 label="Customer View"

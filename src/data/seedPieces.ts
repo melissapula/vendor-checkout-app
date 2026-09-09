@@ -29,16 +29,20 @@ import { Piece } from '../types/database';
 // the spreadsheet but isn't in this catalog at all yet (its Sanity price is
 // null/not for sale), so its pin wasn't added.
 //
-// Until the Supabase project exists, this array is the app's data source
-// (see PiecesContext). Once it does, supabase/seed.sql loads the same rows
-// there and this file goes away — the DB becomes the source of truth.
+// Until the Supabase project existed, this array was the app's data source
+// (see PiecesContext). Now it's historical only — supabase/seed.sql loaded
+// these same rows once, during the original single-tenant setup and again
+// during the multi-tenant cutover backfill (see README's "Multi-tenant"
+// section). New stores start empty; this isn't run for them. No `store_id`
+// here since these rows predate stores existing — that gets assigned by
+// backfill_existing_data.sql at insert time, not baked into this file.
 //
 // IMPORTANT: quantity_remaining on print/sticker rows (and the placeholder
 // postcard rows noted above) is still a PLACEHOLDER (10/25/15) pending
 // Chrissy cleaning up her stock spreadsheet's ambiguous paired columns —
 // see the README. Replace these with real counts before this is used at an
 // actual show, or the app will let items sell that aren't really there.
-export const SEED_PIECES: Piece[] = [
+export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
   {
     id: "orig-1",
     sku: "FSS-0001",

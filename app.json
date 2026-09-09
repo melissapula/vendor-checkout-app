@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "chrissys-studio-checkout",
-    "slug": "chrissys-studio-checkout",
+    "name": "vendor-checkout-app",
+    "slug": "vendor-checkout-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -20,6 +20,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "owner": "mfpstudio",
+    "extra": {
+      "eas": {
+        "projectId": "4cdf839c-b219-48ae-a5fa-8c0574601fd3"
+      }
     }
   }
 }

@@ -1,16 +1,26 @@
-# Chrissy's Studio — Checkout & Inventory App
+# Checkout & Inventory App
 
-Native iOS app (Expo/React Native) for Four Seasons Studio: barcode-scan
-inventory, cart, and checkout via Square reader / manual Venmo-PayPal-cash.
+Expo/React Native app, originally built for Chrissy's Four Seasons Studio and
+since opened up as a multi-tenant app any independent art/craft vendor can
+sign up for: barcode-scan inventory, cart, and checkout via manual
+Venmo-PayPal-cash. See "Multi-tenant" below for how stores are isolated from
+each other.
+
+**Distribution: web app, not the App Store.** Deployed as a static web build
+and used via each vendor's browser "Add to Home Screen" (full-screen, no
+browser chrome, no Apple Developer Program enrollment needed). This was a
+deliberate choice over a native build — see "Web distribution" below for what
+that trades away.
 
 Design doc / schema / decisions: [`chrissy-art-inventory-app.md`](./chrissy-art-inventory-app.md).
 
 ## Status
 
 Inventory + Cart + manual-payment Checkout + the deals engine are working
-end-to-end against a live Supabase project with real inventory data. Square
-card payments and barcode scanning aren't wired up yet — both need a physical
-device and are blocked on accounts (see checklist).
+end-to-end against a live Supabase project with real inventory data, both as
+the native app (Expo Go) and as a web build (see "Web distribution" below).
+Square card payments and barcode scanning are permanently out of scope now
+that distribution is web-only — see "Web distribution" for why.
 
 The app opens on a **Customer view** by default; a "Staff Access" PIN unlocks
 **Admin** (Inventory/pricing/stock, Cart/Checkout, Deals). See "Admin vs.
@@ -18,28 +28,64 @@ Customer" below.
 
 ## Stack
 
-- Expo (React Native + TypeScript) — chosen over bare RN so iOS builds can run
-  on Expo's cloud Mac fleet (EAS Build); no local Mac needed on this Windows machine.
+- Expo (React Native + TypeScript) — originally chosen so iOS builds could run
+  on Expo's cloud Mac fleet (EAS Build) with no local Mac needed; now doubling
+  as the web build tooling too (`react-native-web`), since distribution is
+  web-first (see "Web distribution" below).
 - Supabase (Postgres), project `majsosgcgydpgelkpdpj` — live. `pieces`, `sales`,
   and `deals` are all real tables the app reads/writes; nothing's in-memory-only
   anymore except the cart itself (which should be ephemeral).
-- `mobile-payments-sdk-react-native` (Square's official plugin) for card
-  payments via the Bluetooth reader — not yet installed; needs a custom dev
-  client (Expo Go can't load native modules).
+
+## Web distribution
+
+**Live at https://vendor-checkout-app.expo.app** — hosted on EAS Hosting's
+free tier (owner account: `mfpstudio` on expo.dev; project id in `app.json`'s
+`extra.eas.projectId`). Free tier means no custom domain (fine here — vendors
+tap a home-screen icon, never type the URL) and 100k requests/month, far more
+than this needs.
+
+Note: an earlier deployment briefly lived at
+`https://chrissys-studio-checkout.expo.app`, under a separate now-unused EAS
+project (`chrissys-studio-checkout`, same `mfpstudio` account) — a project
+slug can't be renamed on Expo's side once created, so switching the app's
+name to something vendor-neutral meant creating a fresh project rather than
+renaming the old one. That old project was never linked from anywhere real
+(no vendor onboarded during the window it was live), so nothing depends on
+it; it's just an unused leftover, safe to delete from the expo.dev dashboard
+whenever, not currently linked from `app.json`.
+
+Built with `npx expo export --platform web` (outputs static files to `dist/`)
+and deployed with `eas deploy --prod` (or `npm run deploy:web`, which does
+both in one step) — a plain static site, no server, no SSR. Vendors "install"
+it via their browser's "Add to Home Screen" (iOS Safari) / "Install app"
+(Android Chrome), which reads `public/index.html`'s meta tags and
+`public/manifest.json` to launch full-screen with no browser chrome.
+`eas deploy` (without `--prod`) publishes a throwaway preview URL instead of
+updating the live site — useful for checking a change before it goes out to
+everyone, but easy to forget the `--prod` flag and wonder why nothing changed.
+
+**What this trades away**, permanently, not just "for now": no App Store
+listing/discoverability, and — the bigger one — no Square Bluetooth
+card-reader SDK (`mobile-payments-sdk-react-native` is a native module; it
+cannot run in a browser at all, on any platform). Checkout stays
+manual-payment-only (Venmo/PayPal/cash) unless this becomes a native build
+later. Worth knowing this was a deliberate tradeoff, not an oversight, before
+building further on top of it.
+
+`public/index.html` and `public/manifest.json` are hand-written (Expo's web
+export doesn't auto-generate PWA manifest/meta tags from `app.json` the way
+older Expo web tooling did) — edit those directly for icon/theme-color/name
+changes, not `app.json`'s `web` key. `public/icon-512.png` is currently just
+Expo's stock placeholder icon (the default `create-expo-app` template art,
+not anything Chrissy-specific) — swap it for a real icon whenever one exists.
+The browser tab title / suggested home-screen name updates at runtime to the
+signed-in vendor's own store name (see `App.tsx`); the static default in
+`public/index.html` ("Studio Checkout") is only what shows before sign-in.
 
 ## Setup checklist
 
 **Blocking — only you can do these:**
 
-- [ ] **Apple Developer Program enrollment** ($99/yr, developer.apple.com) —
-      required to install dev builds on the iPad past the 7-day free-provisioning
-      limit, and eventually to distribute the finished app. Start this first;
-      Apple's verification can take a day or more.
-- [ ] **Square Developer account + Application** (developer.squareup.com) —
-      create an Application, grab the Application ID + sandbox access token.
-      Square's Mobile Payments SDK also requires agreeing to their terms for
-      production (card-present) access — do this before the reader arrives so
-      it's not the last thing blocking a real test swipe.
 - [x] **Supabase project** — created, migrated, and seeded (pieces + example
       deals). `.env` has the real URL/anon key (gitignored — if this repo
       moves to a new machine, copy `.env.example` and refill it).
@@ -54,11 +100,8 @@ Customer" below.
       Also not yet in the app: "Behind the Smile" ($390) and "Best in Show"
       ($180), which are in her spreadsheet but not on the live site yet.
 
-**Once Apple/Square exist:**
+**Housekeeping:**
 
-- [ ] `npm install -g eas-cli` + `eas login`, then `eas build:configure` to set
-      up a development build (needed the moment we add the Square SDK or
-      vision-camera, since those are native modules Expo Go can't run).
 - [ ] Regenerate `src/types/database.ts` from the real schema:
       `npx supabase gen types typescript --project-id <id> > src/types/database.ts`
       — note it'll come back as `interface`s; convert to `type` aliases or
@@ -87,13 +130,47 @@ The app has two modes, switched via `AppModeContext` (`src/context/AppModeContex
   and `react-native-screens` were removed as dependencies (dropped the bundle
   from 2.6MB to 2.2MB, 1000+ modules to 659).
 
-**The PIN is `EXPO_PUBLIC_ADMIN_PIN` in `.env`, defaulting to `1234` if
-unset** (`src/lib/adminPin.ts`). This is a deterrent, not real security —
-`EXPO_PUBLIC_*` vars are bundled into the client JS in plaintext, so anyone
-who inspects the app bundle can read it. It's meant to stop a customer from
-casually poking at pricing/inventory/deals while the iPad's in their hands,
-not to protect real secrets. **Change it from the default 1234 in `.env`
-before using this at a real show.**
+**The PIN is per-store now** — set when a store owner first signs up
+(`CreateStoreScreen.tsx`) and editable anytime from Admin → Settings
+(`StoreSettingsScreen.tsx`), stored as `stores.admin_pin`. This is a
+deterrent, not real security: it's meant to stop a customer from casually
+poking at pricing/inventory/deals while the iPad's in their hands, not to
+protect real secrets or isolate one store's data from another's — that
+isolation is Supabase Auth + RLS's job (see "Multi-tenant" below), not the PIN's.
+
+## Multi-tenant
+
+Originally single-tenant (all data was implicitly Chrissy's). Now every
+business signs up with email/password (Supabase Auth — no email confirmation
+step, so access is immediate) and gets one `stores` row tied to their
+`auth.users` id. `pieces`/`sales`/`deals` all carry a `store_id`,
+stamped server-side by a Postgres trigger on every insert/update (so a client
+can't spoof another store's id even by accident) and enforced by RLS scoped
+to `store_id = the caller's own store`. See `supabase/migrations/
+0002_stores_and_tenant_columns.sql` and `0003_enforce_tenant_isolation.sql`,
+and `supabase/backfill_existing_data.sql` for the one-time cutover of
+Chrissy's pre-existing data into her own store.
+
+The device itself stays signed in as its owner (kiosk usage — customers never
+get their own login); the `AuthContext` → `AppGate` in `App.tsx` sits above
+the whole existing Customer/PIN/Admin mode machine, which is otherwise
+unchanged. A brand-new store starts with an empty catalog — added through the
+existing Admin Inventory CRUD, same as before.
+
+**Forgot-password recovery**: code-based, not a magic link — `ResetPasswordScreen.tsx`
+has the user request a reset, receive a 6-digit code by email, then enter the
+code + a new password in-app (`AuthContext.requestPasswordReset` /
+`confirmPasswordReset`, wrapping `supabase.auth.resetPasswordForEmail` and
+`verifyOtp({ type: 'recovery' })`). Chosen over a deep-linked reset URL to
+avoid needing a custom URL scheme/universal links for a mobile app — works
+identically in Expo Go and any future standalone build. **Requires** editing
+the Supabase project's "Reset Password" email template to actually display
+`{{ .Token }}` (the stock template only shows a clickable link, not the code).
+
+Deferred (not in scope yet): per-store fee rates (`src/lib/fees.ts` is still
+one global rate table for everyone), multi-staff accounts per store, store
+deletion/data export, in-app billing (subscriptions are handled outside the
+app, e.g. Stripe/invoice).
 
 ## What's already here
 
@@ -108,8 +185,9 @@ before using this at a real show.**
   quantity, status, linked original (search-to-select, for print/sticker/
   pin/postcard variants), series, dimensions, cost basis, image URL, notes.
   "+ Add Piece" in the footer for a brand-new item (auto-suggests the next
-  `FSS-####` SKU); "+ Add variant" on any original pre-fills the link back to
-  it. Deleting a piece that other pieces reference as their `original_id` is
+  `SKU-####`); "+ Add variant" on any original pre-fills the link back to
+  it. SKUs are unique per store, not globally, so two stores can each have
+  their own `SKU-0001`. Deleting a piece that other pieces reference as their `original_id` is
   blocked client-side with a clear message rather than a raw FK error — the
   DB has no cascade delete set up. Editing quantity back above 0 un-marks a
   piece as sold. This is how to fix the placeholder stock counts once
@@ -158,10 +236,18 @@ before using this at a real show.**
   history from view (the rows were still safely in the database, just not
   visible in the app). Now fetches on mount like the other contexts.
 - `src/lib/fees.ts` — per-method fee estimate (Square/Venmo/PayPal/cash rates
-  from the design doc). Fee currently reduces Chrissy's net rather than being
-  passed to the buyer — an open business decision, easy to flip in `CheckoutScreen.tsx`.
-- `supabase/migrations/0001_init.sql` — `pieces` / `sales` / `deals` tables + RLS.
-- `supabase/seed.sql` — real inventory as INSERT statements, generated from `seedPieces.ts`.
+  from the design doc), one global rate table shared by every store for now
+  (see "Multi-tenant" above). Fee currently reduces the seller's net rather
+  than being passed to the buyer — an open business decision, easy to flip in
+  `CheckoutScreen.tsx`.
+- `supabase/migrations/0001_init.sql` — original single-tenant `pieces` /
+  `sales` / `deals` tables + RLS; `0002_stores_and_tenant_columns.sql` /
+  `0003_enforce_tenant_isolation.sql` layer multi-tenancy on top (see
+  "Multi-tenant" above).
+- `supabase/seed.sql` / `src/data/seedPieces.ts` — Chrissy's real inventory as
+  a one-time seed for her specific store during the multi-tenant cutover;
+  **not** bundled/run for new stores, which start empty. Kept for historical
+  reference.
 - **Type-safety note**: `Piece`/`Sale`/`Deal`/`Database` in `src/types/database.ts`
   are `type` aliases, not `interface`s — deliberately. TypeScript's structural
   check against `Record<string, unknown>` (which supabase-js's generics rely
@@ -180,9 +266,10 @@ before using this at a real show.**
 
 ## Not started yet
 
-Square card payments, barcode scanning, reports, offline queueing,
-refund/void. See "Open / Next Steps" in `chrissy-art-inventory-app.md`.
+Offline queueing, refund/void. See "Open / Next Steps" in
+`chrissy-art-inventory-app.md`.
 
-Barcode scanning (`react-native-vision-camera`) and the Square SDK both need a
-physical device to test — the simulator can't do Bluetooth or camera. Tap-to-add
-from the Inventory list stands in for scanning until then.
+Square card payments and barcode scanning (`react-native-vision-camera`) are
+**not planned** — both are native-only modules, permanently ruled out by the
+web-distribution decision (see "Web distribution" above), not just "not built
+yet." Tap-to-add from the Inventory list stands in for scanning.

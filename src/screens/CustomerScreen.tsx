@@ -5,6 +5,7 @@ import { useCart, CartItem } from '../context/CartContext';
 import { useDeals } from '../context/DealsContext';
 import { evaluateDeals } from '../lib/deals';
 import { useAppMode } from '../context/AppModeContext';
+import { useAuth } from '../context/AuthContext';
 
 function CustomerRow({ item }: { item: CartItem }) {
   const lineTotal = item.piece.price * item.quantity;
@@ -25,6 +26,7 @@ export default function CustomerScreen() {
   const { items, subtotal } = useCart();
   const { deals } = useDeals();
   const { requestAdmin } = useAppMode();
+  const { store } = useAuth();
 
   const dealsResult = useMemo(() => evaluateDeals(items, deals), [items, deals]);
   const total = subtotal - dealsResult.totalDiscount;
@@ -32,7 +34,7 @@ export default function CustomerScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Four Seasons Studio</Text>
+        <Text style={styles.headerTitle}>{store?.name}</Text>
       </View>
 
       {items.length === 0 ? (

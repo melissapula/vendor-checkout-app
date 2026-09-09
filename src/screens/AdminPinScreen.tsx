@@ -2,15 +2,16 @@ import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppMode } from '../context/AppModeContext';
-import { ADMIN_PIN } from '../lib/adminPin';
+import { useAuth } from '../context/AuthContext';
 
 export default function AdminPinScreen() {
   const { unlockAdmin, cancelPinEntry } = useAppMode();
+  const { store } = useAuth();
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
 
   function handleSubmit() {
-    if (pin === ADMIN_PIN) {
+    if (pin === store?.admin_pin) {
       setPin('');
       setError(false);
       unlockAdmin();

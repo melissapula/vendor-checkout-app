@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Deal } from '../types/database';
 import { supabase } from '../lib/supabase';
 
-type NewDeal = Omit<Deal, 'id'>;
+type NewDeal = Omit<Deal, 'id' | 'store_id'>;
 
 interface DealsContextValue {
   deals: Deal[];

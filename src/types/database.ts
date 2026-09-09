@@ -14,6 +14,7 @@ export type DealType = 'bundle_price' | 'percent_off' | 'amount_off' | 'bogo';
 // argument types to `never`). Type aliases for object shapes do satisfy it.
 export type Piece = {
   id: string;
+  store_id: string;
   sku: string;
   title: string;
   medium: string | null;
@@ -36,6 +37,7 @@ export type Piece = {
 
 export type Sale = {
   id: string;
+  store_id: string;
   piece_id: string;
   sale_price: number;
   tip_amount: number | null;
@@ -48,6 +50,7 @@ export type Sale = {
 
 export type Deal = {
   id: string;
+  store_id: string;
   name: string;
   type: DealType;
   trigger_condition: Record<string, unknown>;
@@ -57,6 +60,14 @@ export type Deal = {
   start_date: string | null;
   end_date: string | null;
   applies_to: Record<string, unknown>;
+};
+
+export type Store = {
+  id: string;
+  owner_id: string;
+  name: string;
+  admin_pin: string;
+  created_at: string;
 };
 
 // supabase-js v2's client generic expects this full shape (Relationships,
@@ -81,6 +92,12 @@ export type Database = {
         Row: Deal;
         Insert: Partial<Deal>;
         Update: Partial<Deal>;
+        Relationships: [];
+      };
+      stores: {
+        Row: Store;
+        Insert: Partial<Store>;
+        Update: Partial<Store>;
         Relationships: [];
       };
     };
