@@ -5,7 +5,7 @@
 export type PieceType = 'original' | 'print' | 'sticker' | 'pin' | 'postcard' | string;
 export type PieceStatus = 'available' | 'sold' | 'reserved';
 export type SaleChannel = 'show' | 'online' | 'studio';
-export type PaymentMethod = 'square' | 'venmo' | 'paypal' | 'cash';
+export type PaymentMethod = 'card' | 'venmo' | 'paypal' | 'cash_app' | 'cash';
 export type DealType = 'bundle_price' | 'percent_off' | 'amount_off' | 'bogo';
 
 // `type` rather than `interface`: interfaces don't satisfy TS's implicit
@@ -44,7 +44,7 @@ export type Sale = {
   payment_method: PaymentMethod;
   fee_amount: number;
   sale_date: string;
-  square_payment_id: string | null;
+  processor_payment_id: string | null;
   location: string | null;
 };
 
@@ -68,6 +68,13 @@ export type Store = {
   name: string;
   admin_pin: string;
   created_at: string;
+  enabled_payment_methods: PaymentMethod[];
+  pass_fee_to_buyer: boolean;
+  stripe_account_id: string | null;
+  stripe_onboarding_complete: boolean;
+  venmo_username: string | null;
+  paypal_me_username: string | null;
+  cash_app_cashtag: string | null;
 };
 
 // supabase-js v2's client generic expects this full shape (Relationships,

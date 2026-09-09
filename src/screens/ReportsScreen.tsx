@@ -6,7 +6,7 @@ import { Sale, PaymentMethod, PieceType } from '../types/database';
 
 type DateRange = 'today' | '7days' | 'all' | 'custom';
 
-const PAYMENT_METHODS: PaymentMethod[] = ['square', 'venmo', 'paypal', 'cash'];
+const PAYMENT_METHODS: PaymentMethod[] = ['card', 'venmo', 'paypal', 'cash_app', 'cash'];
 
 function startOfToday(): Date {
   const d = new Date();

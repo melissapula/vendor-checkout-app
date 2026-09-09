@@ -14,7 +14,24 @@ interface AuthContextValue {
   store: Store | null;
   storeLoading: boolean;
   createStore: (name: string, adminPin: string) => Promise<void>;
-  updateStore: (updates: Partial<Pick<Store, 'name' | 'admin_pin'>>) => Promise<void>;
+  updateStore: (
+    updates: Partial<
+      Pick<
+        Store,
+        | 'name'
+        | 'admin_pin'
+        | 'enabled_payment_methods'
+        | 'pass_fee_to_buyer'
+        | 'venmo_username'
+        | 'paypal_me_username'
+        | 'cash_app_cashtag'
+      >
+    >
+  ) => Promise<void>;
+  // For state written server-side by an Edge Function (stripe_account_id,
+  // stripe_onboarding_complete) rather than through updateStore — re-fetches
+  // the store row so local state catches up.
+  refreshStore: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -123,11 +140,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setStore(data);
   }
 
-  async function updateStore(updates: Partial<Pick<Store, 'name' | 'admin_pin'>>) {
+  async function updateStore(updates: Partial<Store>) {
     if (!store) throw new Error('No store to update');
     const { error } = await supabase.from('stores').update(updates).eq('id', store.id);
     if (error) throw error;
     setStore((prev) => (prev ? { ...prev, ...updates } : prev));
+  }
+
+  async function refreshStore() {
+    if (!store) return;
+    const { data, error } = await supabase.from('stores').select('*').eq('id', store.id).single();
+    if (error) throw error;
+    setStore(data);
   }
 
   return (
@@ -144,6 +168,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         storeLoading,
         createStore,
         updateStore,
+        refreshStore,
       }}
     >
       {children}

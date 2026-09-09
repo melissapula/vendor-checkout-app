@@ -10,12 +10,25 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
+import PaymentSettingsScreen from './PaymentSettingsScreen';
 
 export default function StoreSettingsScreen() {
   const { store, updateStore, signOut } = useAuth();
   const [name, setName] = useState(store?.name ?? '');
   const [pin, setPin] = useState(store?.admin_pin ?? '');
   const [submitting, setSubmitting] = useState(false);
+  const [view, setView] = useState<'main' | 'payments'>('main');
+
+  if (view === 'payments') {
+    return (
+      <View style={{ flex: 1 }}>
+        <Pressable style={styles.backRow} onPress={() => setView('main')}>
+          <Text style={styles.backLink}>← Back to Settings</Text>
+        </Pressable>
+        <PaymentSettingsScreen />
+      </View>
+    );
+  }
 
   async function handleSave() {
     if (!name.trim()) return Alert.alert('Missing name', 'Give your store a name.');
@@ -54,6 +67,12 @@ export default function StoreSettingsScreen() {
 
       <View style={styles.divider} />
 
+      <Pressable style={styles.paymentSettingsRow} onPress={() => setView('payments')}>
+        <Text style={styles.paymentSettingsText}>Payment Methods →</Text>
+      </Pressable>
+
+      <View style={styles.divider} />
+
       <Pressable disabled={submitting} onPress={signOut}>
         <Text style={styles.signOut}>Sign out</Text>
       </Pressable>
@@ -84,4 +103,8 @@ const styles = StyleSheet.create({
   saveButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   divider: { height: 1, backgroundColor: '#eee', marginVertical: 24 },
   signOut: { textAlign: 'center', color: '#b00020', fontWeight: '600' },
+  paymentSettingsRow: { paddingVertical: 4 },
+  paymentSettingsText: { fontSize: 15, fontWeight: '600', color: '#1a1a1a' },
+  backRow: { padding: 16, paddingBottom: 0 },
+  backLink: { color: '#666', fontSize: 14 },
 });

@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,41 +14,88 @@ import { useCart } from '../context/CartContext';
 import { usePieces } from '../context/PiecesContext';
 import { useSales } from '../context/SalesContext';
 import { useDeals } from '../context/DealsContext';
+import { useAuth } from '../context/AuthContext';
 import { evaluateDeals } from '../lib/deals';
 import { calculateFee } from '../lib/fees';
+import { venmoPayUrl, paypalPayUrl, renderQrDataUrl } from '../lib/payLinks';
+import { createStripeCheckout, checkStripeCheckoutStatus } from '../lib/payments';
 import { PaymentMethod, Sale } from '../types/database';
 
 type NewSale = Omit<Sale, 'id' | 'store_id'>;
+type Step = 'staffSetup' | 'buyerReview' | 'buyerTip' | 'buyerMethod' | 'confirm';
 
-const METHODS: { key: PaymentMethod; label: string; enabled: boolean; tippable: boolean }[] = [
-  { key: 'square', label: 'Square (card)', enabled: false, tippable: false },
-  { key: 'venmo', label: 'Venmo', enabled: true, tippable: true },
-  { key: 'paypal', label: 'PayPal', enabled: true, tippable: true },
-  { key: 'cash', label: 'Cash', enabled: true, tippable: true },
-];
+const METHOD_LABELS: Record<PaymentMethod, string> = {
+  card: 'Card',
+  venmo: 'Venmo',
+  paypal: 'PayPal',
+  cash_app: 'Cash App Pay',
+  cash: 'Cash',
+};
+
+// Card and Cash App Pay are both real Stripe payment method types on the
+// vendor's connected account, so both get an auto-polled, auto-confirmed QR
+// step. Venmo/PayPal/cash stay self-reported — PayPal can't go through
+// Stripe for this app's US/Connect-platform setup (see fees.ts), and Venmo
+// has no API for this at all.
+const STRIPE_METHODS: PaymentMethod[] = ['card', 'cash_app'];
+
+const TIP_PRESETS = [0.15, 0.2, 0.25];
+
+// How often to ask Stripe whether the buyer has paid yet, once the QR is up.
+const CARD_POLL_INTERVAL_MS = 2000;
 
 export default function CheckoutScreen({ onClose }: { onClose: () => void }) {
   const { items, subtotal, clear, location, setLocation } = useCart();
   const { sellUnits } = usePieces();
   const { addSales } = useSales();
   const { deals } = useDeals();
-  const [method, setMethod] = useState<PaymentMethod>('venmo');
+  const { store } = useAuth();
+  const enabledMethods = store?.enabled_payment_methods ?? [];
+
+  const [step, setStep] = useState<Step>('staffSetup');
+  const [method, setMethod] = useState<PaymentMethod | null>(null);
   const [tipText, setTipText] = useState('');
+  const [customTipText, setCustomTipText] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // Confirm-step state — QR for Stripe/Venmo/PayPal, or nothing for cash.
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [qrLoading, setQrLoading] = useState(false);
+  const [qrError, setQrError] = useState<string | null>(null);
+  const [checkoutSessionId, setCheckoutSessionId] = useState<string | null>(null);
+  const [cardPaid, setCardPaid] = useState(false);
+  // Venmo/PayPal only: buyer taps "Done, I've paid" before the screen asks
+  // for the device back — until then they're still looking at their QR.
+  const [buyerDone, setBuyerDone] = useState(false);
+  const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const dealsResult = useMemo(() => evaluateDeals(items, deals), [items, deals]);
   const effectiveSubtotal = subtotal - dealsResult.totalDiscount;
 
-  const selectedMethod = METHODS.find((m) => m.key === method)!;
-  const tipAmount = selectedMethod.tippable ? parseFloat(tipText) || 0 : 0;
-  const fee = useMemo(() => calculateFee(effectiveSubtotal, method), [effectiveSubtotal, method]);
-  // Fee reduces the seller's net payout rather than being added to the
-  // buyer's total — see "Decide: fee reduces payout vs. passed to buyer" in
-  // chrissy-art-inventory-app.md. Revisit if that business decision changes.
-  const buyerTotal = effectiveSubtotal + tipAmount;
-  const netRevenue = effectiveSubtotal - fee;
+  const tipAmount = parseFloat(tipText) || 0;
+  const fee = useMemo(() => (method ? calculateFee(effectiveSubtotal, method) : 0), [effectiveSubtotal, method]);
+  const passFeeToBuyer = store?.pass_fee_to_buyer ?? false;
+  const buyerTotal = effectiveSubtotal + tipAmount + (passFeeToBuyer ? fee : 0);
+  const netRevenue = effectiveSubtotal - (passFeeToBuyer ? 0 : fee);
 
-  async function handleConfirmPaid() {
+  useEffect(() => {
+    return () => {
+      if (pollTimer.current) clearInterval(pollTimer.current);
+    };
+  }, []);
+
+  // amountsFor/feeFor let handleSelectMethod use the *just-picked* method
+  // immediately, instead of racing the setMethod() state update that won't
+  // have landed yet in this same synchronous handler.
+  function feeFor(m: PaymentMethod) {
+    return calculateFee(effectiveSubtotal, m);
+  }
+  function buyerTotalFor(m: PaymentMethod) {
+    const f = feeFor(m);
+    return effectiveSubtotal + tipAmount + (passFeeToBuyer ? f : 0);
+  }
+
+  async function finalizeSale(actualFee: number, processorPaymentId: string | null, m: PaymentMethod) {
     const newSales: NewSale[] = [];
 
     items.forEach((item, itemIndex) => {
@@ -56,7 +104,9 @@ export default function CheckoutScreen({ onClose }: { onClose: () => void }) {
       const unitPrice = Math.max(0, item.piece.price - perUnitDiscount);
 
       const apportionedFee =
-        effectiveSubtotal > 0 ? Math.round(((unitPrice * item.quantity) / effectiveSubtotal) * fee * 100) / 100 : 0;
+        effectiveSubtotal > 0
+          ? Math.round(((unitPrice * item.quantity) / effectiveSubtotal) * actualFee * 100) / 100
+          : 0;
       const perUnitFee = Math.round((apportionedFee / item.quantity) * 100) / 100;
 
       for (let i = 0; i < item.quantity; i++) {
@@ -64,10 +114,10 @@ export default function CheckoutScreen({ onClose }: { onClose: () => void }) {
           piece_id: item.piece.id,
           sale_price: Math.round(unitPrice * 100) / 100,
           tip_amount: itemIndex === 0 && i === 0 ? tipAmount : null,
-          payment_method: method,
+          payment_method: m,
           fee_amount: perUnitFee,
           sale_date: new Date().toISOString(),
-          square_payment_id: null,
+          processor_payment_id: itemIndex === 0 && i === 0 ? processorPaymentId : null,
           location: location.trim() || null,
         });
       }
@@ -77,11 +127,13 @@ export default function CheckoutScreen({ onClose }: { onClose: () => void }) {
     try {
       await Promise.all(items.map((item) => sellUnits(item.piece.id, item.quantity)));
       await addSales(newSales);
+      const total = effectiveSubtotal + tipAmount + (passFeeToBuyer ? actualFee : 0);
+      const net = effectiveSubtotal - (passFeeToBuyer ? 0 : actualFee);
       clear();
       onClose();
       Alert.alert(
         'Sale recorded',
-        `Charged $${buyerTotal.toFixed(2)} via ${selectedMethod.label}.\nNet after fees: $${netRevenue.toFixed(2)}`
+        `Charged $${total.toFixed(2)} via ${METHOD_LABELS[m]}.\nNet after fees: $${net.toFixed(2)}`
       );
     } catch (err) {
       Alert.alert(
@@ -93,94 +145,271 @@ export default function CheckoutScreen({ onClose }: { onClose: () => void }) {
     }
   }
 
+  function selectTipPreset(pct: number) {
+    setTipText((effectiveSubtotal * pct).toFixed(2));
+    setStep('buyerMethod');
+  }
+
+  function selectNoTip() {
+    setTipText('');
+    setStep('buyerMethod');
+  }
+
+  function confirmCustomTip() {
+    setTipText(customTipText);
+    setStep('buyerMethod');
+  }
+
+  async function handleSelectMethod(selected: PaymentMethod) {
+    setMethod(selected);
+    setStep('confirm');
+    setBuyerDone(false);
+    setQrDataUrl(null);
+    setQrError(null);
+    setCardPaid(false);
+
+    if (selected === 'cash') return; // nothing to generate — the render branch handles cash directly
+
+    setQrLoading(true);
+    try {
+      if (STRIPE_METHODS.includes(selected)) {
+        const idempotencyKey = crypto.randomUUID();
+        const amountCents = Math.round(buyerTotalFor(selected) * 100);
+        const { url, sessionId } = await createStripeCheckout(
+          amountCents,
+          idempotencyKey,
+          selected === 'cash_app' ? 'cashapp' : 'card'
+        );
+        setCheckoutSessionId(sessionId);
+        setQrDataUrl(await renderQrDataUrl(url));
+        pollTimer.current = setInterval(() => pollCardStatus(sessionId, selected), CARD_POLL_INTERVAL_MS);
+      } else if (selected === 'venmo' && store?.venmo_username) {
+        const url = venmoPayUrl(store.venmo_username, buyerTotalFor(selected), `${store.name} purchase`);
+        setQrDataUrl(await renderQrDataUrl(url));
+      } else if (selected === 'paypal' && store?.paypal_me_username) {
+        const url = paypalPayUrl(store.paypal_me_username, buyerTotalFor(selected));
+        setQrDataUrl(await renderQrDataUrl(url));
+      } else {
+        setQrError('This payment method is missing its handle — set it up in Admin > Settings > Payment Methods.');
+      }
+    } catch (err) {
+      setQrError(err instanceof Error ? err.message : 'Could not start this payment — please try again.');
+    } finally {
+      setQrLoading(false);
+    }
+  }
+
+  async function pollCardStatus(sessionId: string, m: PaymentMethod) {
+    try {
+      const status = await checkStripeCheckoutStatus(sessionId);
+      if (status.paymentStatus === 'paid') {
+        if (pollTimer.current) clearInterval(pollTimer.current);
+        setCardPaid(true);
+        const realFee = status.feeAmountCents != null ? status.feeAmountCents / 100 : feeFor(m);
+        await finalizeSale(realFee, status.paymentIntentId, m);
+      }
+    } catch {
+      // A transient poll failure isn't fatal — just try again next tick.
+    }
+  }
+
+  function handleCancel() {
+    if (pollTimer.current) clearInterval(pollTimer.current);
+    onClose();
+  }
+
+  // ---- staff setup ----
+  if (step === 'staffSetup') {
+    return (
+      <View style={styles.container}>
+        <ScrollView contentContainerStyle={styles.scroll}>
+          <Text style={styles.heading}>Checkout</Text>
+          <Text style={styles.sectionLabel}>Show / venue (optional, for reports)</Text>
+          <TextInput
+            style={styles.tipInput}
+            value={location}
+            onChangeText={setLocation}
+            placeholder="e.g. Bemidji Farmers Market"
+          />
+          {enabledMethods.length === 0 && (
+            <Text style={styles.error}>No payment methods enabled — set some up in Admin &gt; Settings &gt; Payment Methods.</Text>
+          )}
+        </ScrollView>
+        <View style={styles.footer}>
+          <Pressable
+            style={[styles.confirmButton, enabledMethods.length === 0 && styles.confirmButtonDisabled]}
+            disabled={enabledMethods.length === 0}
+            onPress={() => setStep('buyerReview')}
+          >
+            <Text style={styles.confirmButtonText}>Continue →</Text>
+          </Pressable>
+          <Pressable onPress={handleCancel}>
+            <Text style={styles.cancel}>Cancel</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
+  // ---- buyer: review cart ----
+  if (step === 'buyerReview') {
+    return (
+      <View style={styles.container}>
+        <ScrollView contentContainerStyle={styles.scroll}>
+          <Text style={styles.heading}>Your order</Text>
+          {items.map((item) => (
+            <View key={item.piece.id} style={styles.reviewRow}>
+              <Text style={styles.reviewItemName}>
+                {item.piece.title}
+                {item.quantity > 1 ? ` × ${item.quantity}` : ''}
+              </Text>
+              <Text style={styles.reviewItemPrice}>${(item.piece.price * item.quantity).toFixed(2)}</Text>
+            </View>
+          ))}
+          {dealsResult.applied.length > 0 && (
+            <>
+              <Text style={styles.sectionLabel}>Deals applied</Text>
+              {dealsResult.applied.map((a) => (
+                <Text key={a.deal.id} style={styles.dealApplied}>
+                  ✓ {a.description}
+                </Text>
+              ))}
+            </>
+          )}
+          <View style={styles.summary}>
+            <SummaryRow label="Subtotal" value={subtotal} bold />
+          </View>
+        </ScrollView>
+        <View style={styles.footer}>
+          <Pressable style={styles.confirmButton} onPress={() => setStep('buyerTip')}>
+            <Text style={styles.confirmButtonText}>Confirm & Continue</Text>
+          </Pressable>
+          <Pressable onPress={handleCancel}>
+            <Text style={styles.cancel}>Cancel</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
+  // ---- buyer: tip ----
+  if (step === 'buyerTip') {
+    return (
+      <View style={styles.container}>
+        <ScrollView contentContainerStyle={styles.scroll}>
+          <Text style={styles.heading}>Add a tip?</Text>
+          <View style={styles.tipPresetRow}>
+            {TIP_PRESETS.map((pct) => (
+              <Pressable key={pct} style={styles.tipPresetButton} onPress={() => selectTipPreset(pct)}>
+                <Text style={styles.tipPresetPercent}>{Math.round(pct * 100)}%</Text>
+                <Text style={styles.tipPresetAmount}>${(effectiveSubtotal * pct).toFixed(2)}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <Pressable style={styles.noTipButton} onPress={selectNoTip}>
+            <Text style={styles.noTipButtonText}>No tip</Text>
+          </Pressable>
+
+          <Text style={styles.sectionLabel}>Or enter a custom amount</Text>
+          <TextInput
+            style={styles.tipInput}
+            value={customTipText}
+            onChangeText={setCustomTipText}
+            placeholder="0.00"
+            keyboardType="decimal-pad"
+          />
+          <Pressable
+            style={[styles.confirmButton, !customTipText.trim() && styles.confirmButtonDisabled]}
+            disabled={!customTipText.trim()}
+            onPress={confirmCustomTip}
+          >
+            <Text style={styles.confirmButtonText}>Continue</Text>
+          </Pressable>
+        </ScrollView>
+        <View style={styles.footer}>
+          <Pressable onPress={handleCancel}>
+            <Text style={styles.cancel}>Cancel</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
+  // ---- buyer: choose payment method ----
+  if (step === 'buyerMethod') {
+    return (
+      <View style={styles.container}>
+        <ScrollView contentContainerStyle={styles.scroll}>
+          <Text style={styles.heading}>How would you like to pay?</Text>
+          <View style={styles.methodList}>
+            {enabledMethods.map((m) => (
+              <Pressable key={m} style={styles.methodCard} onPress={() => handleSelectMethod(m)}>
+                <Text style={styles.methodCardText}>{METHOD_LABELS[m]}</Text>
+                <Text style={styles.methodCardAmount}>${buyerTotalFor(m).toFixed(2)}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </ScrollView>
+        <View style={styles.footer}>
+          <Pressable onPress={handleCancel}>
+            <Text style={styles.cancel}>Cancel</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
+  // ---- confirm: QR / cash, then hand back to staff ----
+  const showHandBackToStaff = method === 'cash' || ((method === 'venmo' || method === 'paypal') && buyerDone);
+
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.heading}>Checkout</Text>
-
-        <Text style={styles.sectionLabel}>Show / venue (optional, for reports)</Text>
-        <TextInput
-          style={styles.tipInput}
-          value={location}
-          onChangeText={setLocation}
-          placeholder="e.g. Bemidji Farmers Market"
-        />
-
-        <Text style={styles.sectionLabel}>Payment method</Text>
-        <View style={styles.methodRow}>
-          {METHODS.map((m) => (
-            <Pressable
-              key={m.key}
-              disabled={!m.enabled}
-              onPress={() => setMethod(m.key)}
-              style={[
-                styles.methodButton,
-                method === m.key && styles.methodButtonSelected,
-                !m.enabled && styles.methodButtonDisabled,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.methodButtonText,
-                  method === m.key && styles.methodButtonTextSelected,
-                ]}
-              >
-                {m.label}
-                {!m.enabled ? ' (soon)' : ''}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-
-        {selectedMethod.tippable && (
+      <ScrollView contentContainerStyle={styles.qrScroll}>
+        {showHandBackToStaff ? (
           <>
-            <Text style={styles.sectionLabel}>Tip (optional)</Text>
-            <TextInput
-              style={styles.tipInput}
-              value={tipText}
-              onChangeText={setTipText}
-              placeholder="0.00"
-              keyboardType="decimal-pad"
-            />
+            <Text style={styles.heading}>Please hand the device back to staff</Text>
+            <Text style={styles.qrMethodLabel}>
+              {method ? METHOD_LABELS[method] : ''} — ${buyerTotal.toFixed(2)}
+            </Text>
+          </>
+        ) : (
+          <>
+            <Text style={styles.heading}>Have the buyer scan this</Text>
+            <Text style={styles.qrMethodLabel}>
+              {method ? METHOD_LABELS[method] : ''} — ${buyerTotal.toFixed(2)}
+            </Text>
+
+            {qrLoading && <ActivityIndicator size="large" style={{ marginTop: 40 }} />}
+            {qrError && <Text style={styles.error}>{qrError}</Text>}
+            {qrDataUrl && <Image source={{ uri: qrDataUrl }} style={styles.qrImage} resizeMode="contain" />}
+
+            {method && STRIPE_METHODS.includes(method) ? (
+              <Text style={styles.qrHint}>
+                {cardPaid ? 'Payment received — recording sale…' : 'Waiting for payment…'}
+              </Text>
+            ) : (
+              <Text style={styles.qrHint}>Scan the code and pay in your {method ? METHOD_LABELS[method] : ''} app.</Text>
+            )}
           </>
         )}
-
-        {dealsResult.applied.length > 0 && (
-          <>
-            <Text style={styles.sectionLabel}>Deals applied</Text>
-            {dealsResult.applied.map((a) => (
-              <Text key={a.deal.id} style={styles.dealApplied}>
-                ✓ {a.description}
-              </Text>
-            ))}
-          </>
-        )}
-
-        <View style={styles.summary}>
-          <SummaryRow label="Subtotal" value={subtotal} />
-          {dealsResult.totalDiscount > 0 && (
-            <SummaryRow label="Deals" value={-dealsResult.totalDiscount} />
-          )}
-          {tipAmount > 0 && <SummaryRow label="Tip" value={tipAmount} />}
-          <SummaryRow label="Est. processing fee" value={-fee} muted />
-          <SummaryRow label="Buyer pays" value={buyerTotal} bold />
-          <SummaryRow label="Net payout" value={netRevenue} muted />
-        </View>
       </ScrollView>
 
       <View style={styles.footer}>
-        <Pressable
-          style={[styles.confirmButton, submitting && styles.confirmButtonDisabled]}
-          disabled={submitting}
-          onPress={handleConfirmPaid}
-        >
-          {submitting ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.confirmButtonText}>Confirm Paid</Text>
-          )}
-        </Pressable>
-        <Pressable disabled={submitting} onPress={onClose}>
+        {showHandBackToStaff && (
+          <Pressable
+            style={[styles.confirmButton, submitting && styles.confirmButtonDisabled]}
+            disabled={submitting}
+            onPress={() => method && finalizeSale(fee, null, method)}
+          >
+            {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.confirmButtonText}>Confirm Paid</Text>}
+          </Pressable>
+        )}
+        {!showHandBackToStaff && (method === 'venmo' || method === 'paypal') && (
+          <Pressable style={styles.confirmButton} onPress={() => setBuyerDone(true)}>
+            <Text style={styles.confirmButtonText}>Done, I've paid</Text>
+          </Pressable>
+        )}
+        <Pressable disabled={submitting} onPress={handleCancel}>
           <Text style={styles.cancel}>Cancel</Text>
         </Pressable>
       </View>
@@ -212,19 +441,9 @@ function SummaryRow({
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   scroll: { padding: 16 },
+  qrScroll: { padding: 16, alignItems: 'center' },
   heading: { fontSize: 20, fontWeight: '700', marginBottom: 16 },
   sectionLabel: { fontSize: 13, color: '#666', marginTop: 16, marginBottom: 8 },
-  methodRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  methodButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: '#f0f0f0',
-  },
-  methodButtonSelected: { backgroundColor: '#1a1a1a' },
-  methodButtonDisabled: { opacity: 0.4 },
-  methodButtonText: { fontWeight: '600', color: '#1a1a1a' },
-  methodButtonTextSelected: { color: '#fff' },
   tipInput: {
     borderWidth: 1,
     borderColor: '#ddd',
@@ -240,6 +459,7 @@ const styles = StyleSheet.create({
   summaryValue: { fontSize: 15, color: '#333' },
   bold: { fontWeight: '700', fontSize: 17 },
   muted: { color: '#888' },
+  error: { color: '#b00020', textAlign: 'center', marginTop: 8 },
   footer: { padding: 16, borderTopWidth: 1, borderTopColor: '#eee', gap: 10 },
   confirmButton: {
     backgroundColor: '#1a1a1a',
@@ -250,4 +470,43 @@ const styles = StyleSheet.create({
   confirmButtonDisabled: { opacity: 0.6 },
   confirmButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   cancel: { textAlign: 'center', color: '#666' },
+  qrMethodLabel: { fontSize: 16, fontWeight: '600', marginBottom: 24 },
+  qrImage: { width: 280, height: 280, marginTop: 8 },
+  qrHint: { marginTop: 24, fontSize: 14, color: '#666', textAlign: 'center', maxWidth: 300 },
+
+  reviewRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  reviewItemName: { fontSize: 16, color: '#1a1a1a', flex: 1, paddingRight: 12 },
+  reviewItemPrice: { fontSize: 16, fontWeight: '600', color: '#1a1a1a' },
+
+  tipPresetRow: { flexDirection: 'row', gap: 10 },
+  tipPresetButton: {
+    flex: 1,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 10,
+    paddingVertical: 18,
+    alignItems: 'center',
+  },
+  tipPresetPercent: { fontSize: 20, fontWeight: '700', color: '#1a1a1a' },
+  tipPresetAmount: { fontSize: 13, color: '#666', marginTop: 4 },
+  noTipButton: { marginTop: 12, paddingVertical: 12, alignItems: 'center' },
+  noTipButtonText: { fontSize: 15, color: '#666', textDecorationLine: 'underline' },
+
+  methodList: { gap: 10 },
+  methodCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    borderRadius: 10,
+    paddingVertical: 20,
+    paddingHorizontal: 18,
+  },
+  methodCardText: { fontSize: 18, fontWeight: '700', color: '#1a1a1a' },
+  methodCardAmount: { fontSize: 16, fontWeight: '600', color: '#333' },
 });

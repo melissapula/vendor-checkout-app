@@ -89,6 +89,12 @@ signed-in vendor's own store name (see `App.tsx`); the static default in
 - [x] **Supabase project** — created, migrated, and seeded (pieces + example
       deals). `.env` has the real URL/anon key (gitignored — if this repo
       moves to a new machine, copy `.env.example` and refill it).
+- [ ] **Run `supabase/migrations/0004_payments_and_qr_checkout.sql`** in the
+      SQL editor — adds the payment-method/Stripe-Connect columns. Not run
+      yet as of this writing.
+- [ ] **Deploy the `stripe-*` Edge Functions + set `STRIPE_SECRET_KEY`** —
+      see "Checkout payments" below for the exact commands. Not done yet;
+      `card` won't be usable in the app until this is.
 - [ ] **Real stock counts** — Chrissy has an internal spreadsheet
       (`Inventory.xlsx`, `mfpStudios` sheet) tracking real per-size stock, and
       its `Original` prices are already pulled into `seedPieces.ts`/`seed.sql`.
@@ -242,6 +248,70 @@ was verified end-to-end (typed input → correct item added, unknown SKU →
 correct error message); the camera path was only confirmed to open cleanly
 and request camera access without crashing. Worth an real-device test before
 relying on it for a live show.
+
+## Checkout payments
+
+Each store picks which of **card, Venmo, PayPal, Cash App, cash** it
+accepts (`PaymentSettingsScreen.tsx`, off `Admin > Settings > Payment
+Methods →`), and whether the processing fee gets added to what the buyer
+pays or comes out of the vendor's own payout (`pass_fee_to_buyer`). Tips are
+available on every method now, not gated to a hardcoded subset.
+
+**How card payments actually work — no reader, no native app, no Tap to
+Pay.** This took several false starts to land on, worth recording why:
+a Bluetooth reader needs Web Bluetooth, which Safari doesn't have; a WiFi
+smart reader (e.g. Stripe's $249 WisePOS E) would've worked but is real
+hardware cost; Tap to Pay (device's own NFC, free) is a hard native-only, OS-
+level restriction — Apple/Google don't expose payment-grade NFC to *any*
+website, and it's Android-tablet/iPhone only, never iPad, directly
+conflicting with "works on any tablet." The actual answer: **show a QR
+code.** For card, staff taps "Show QR to Buyer," the app creates a Stripe
+Checkout Session on the vendor's own connected account
+(`stripe-create-checkout` Edge Function) and QR-encodes the resulting URL —
+the buyer scans it with their own phone and pays on Stripe's hosted page
+(typed card, or Apple Pay/Google Pay if their browser supports it). The app
+polls `stripe-checkout-status` every 2s and, once paid, records the sale
+automatically using Stripe's *real* fee (not an estimate) and the payment's
+id. For Venmo/PayPal/Cash App, the QR instead encodes that provider's own
+documented amount-prefilled pay link (`src/lib/payLinks.ts` —
+`venmo.com/<user>?txn=pay&amount=...`, `paypal.me/<user>/<amount>`,
+`cash.app/$<tag>/<amount>`, verified directly against each provider's docs)
+— same self-reported flow as before (staff still taps "Confirm Paid" once
+they see the money land), just without the buyer needing to type the amount
+by hand. Cash has no QR, straight to "Confirm Paid."
+
+**Stripe Connect**: each vendor connects their *own* Stripe account (Express,
+via a hosted onboarding link — `stripe-connect-onboarding` /
+`stripe-account-status` Edge Functions) so money settles directly to them,
+not through the app owner. `card` stays disabled in Settings until that
+finishes. First Edge Functions in this repo
+(`supabase/functions/stripe-*`, Deno) — each builds its Supabase client from
+the *caller's own* Authorization header rather than a service-role key, so
+each one runs as, and can only ever act on, the calling store's own Stripe
+account (same `current_store_id()` RLS that already protects
+`pieces`/`sales`/`deals`/`stores`, not a separate authorization check).
+
+**Deploying the Edge Functions** (not done automatically — needs your own
+Supabase CLI login, same as the `eas` deploys):
+```
+npx supabase login
+npx supabase link --project-ref <your-project-ref>
+npx supabase secrets set STRIPE_SECRET_KEY=sk_...
+npx supabase functions deploy stripe-connect-onboarding
+npx supabase functions deploy stripe-account-status
+npx supabase functions deploy stripe-create-checkout
+npx supabase functions deploy stripe-checkout-status
+```
+
+**Deferred**: Stripe webhooks (polling `stripe-checkout-status` instead for
+v1 — fine for a buyer standing right there, less robust for a payment that
+resolves after the buyer's already walked off), refunds/voids (no
+sale-deletion feature exists at all yet, not card-specific), per-vendor
+custom fee-rate editing (the ask was pass-through on/off, not rate editing —
+`src/lib/fees.ts` stays one global table), receipt emailing/SMS, and native
+Tap to Pay (would still work as a future *optional* add-on for vendors on a
+qualifying Android device, layered on top of the same Stripe Connect
+accounts — not part of this build).
 
 ## What's already here
 
