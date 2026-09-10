@@ -16,11 +16,13 @@ Design doc / schema / decisions: [`chrissy-art-inventory-app.md`](./chrissy-art-
 
 ## Status
 
-Inventory + Cart + manual-payment Checkout + the deals engine are working
+Inventory + Cart + buyer-facing Checkout (real card/Cash App Pay via Stripe
+Connect, self-reported Venmo/PayPal/cash) + the deals engine are working
 end-to-end against a live Supabase project with real inventory data, both as
 the native app (Expo Go) and as a web build (see "Web distribution" below).
-Square card payments and barcode scanning are permanently out of scope now
-that distribution is web-only — see "Web distribution" for why.
+Square card payments and native barcode-scanner-camera modules are
+permanently out of scope now that distribution is web-only — see "Web
+distribution" for why.
 
 The app opens on a **Customer view** by default; a "Staff Access" PIN unlocks
 **Admin** (Inventory/pricing/stock, Cart/Checkout, Deals). See "Admin vs.
@@ -180,16 +182,39 @@ app, e.g. Stripe/invoice).
 
 ## Barcode labels
 
-Each piece's `sku` is encoded as a Code128 barcode (`jsbarcode`) and can be
-printed — either one at a time ("Print label" on an Inventory row) or in
-bulk ("Print Labels" in the footer, which queues every non-sold piece).
-Code128 rather than QR: it's what cheap USB/Bluetooth barcode scanners (the
-kind that plug in and act like a keyboard — scan an item, its SKU gets typed
-wherever the cursor has focus, no camera or native code needed) expect,
-matching how small-business inventory tagging usually works. This is a
-**web-only** approach, not a compatibility shim: it needs no camera/native
-module at all, which fits the app's web-only distribution (see "Web
-distribution" above) rather than working around it.
+Labels are built with a dedicated screen, `PrintLabelsBuilderScreen.tsx`
+(opened from Inventory's bulk "Print Labels" button, empty, or from a
+row's "Print label" link, pre-seeded with that one piece at quantity 1) —
+not a fixed one-label-per-piece flow. The vendor searches/adds pieces, sets
+a **quantity per piece independent of stock on hand** (printing more labels
+than remaining inventory is normal — a whole print run, not a bug), and
+picks which fields appear on **every label in that batch** (one shared
+toggle set, not per-piece): title, barcode, QR code, price, size. Defaults
+to title + barcode + price, matching the old fixed behavior when nothing's
+touched.
+
+Each piece's `sku` is encoded as a **Code128 barcode** (`jsbarcode`) by
+default — it's what cheap USB/Bluetooth barcode scanners (the kind that
+plug in and act like a keyboard — scan an item, its SKU gets typed wherever
+the cursor has focus, no camera or native code needed) expect, matching how
+small-business inventory tagging usually works. The optional **QR code**
+field encodes that *same* SKU string, not a URL (the app has no
+piece-detail page) — so a QR label is functionally equivalent to a barcode
+label, just a different visual format. **Note**: `CameraScanner.tsx`
+currently only accepts `BarcodeFormat.CODE_128`, so QR labels aren't yet
+scannable by the in-app camera scanner — add `BarcodeFormat.QR_CODE` to its
+`POSSIBLE_FORMATS` hint if/when that's needed; flagged as a natural,
+low-effort follow-up, not done yet since it's a separate feature
+(scan-to-cart) from label printing.
+
+QR generation is **async** (`QRCode.toDataURL`, `src/lib/payLinks.ts`'s
+`renderQrDataUrl`), unlike the barcode's synchronous canvas render — printing
+before it resolves would leave blank QR cells on the sheet. `PrintLabelsOverlay.tsx`
+pre-generates and dedupes one QR per distinct SKU in the batch before calling
+`window.print()`. This is a **web-only** approach overall, not a
+compatibility shim: it needs no camera/native module at all, which fits the
+app's web-only distribution (see "Web distribution" above) rather than
+working around it.
 
 **Printed to match Avery 5160** (1in x 2.625in, 30/sheet, 3 cols x 10 rows,
 0.5in top/bottom margin, 0.1875in side margin, 0.125in gap between columns,
@@ -255,7 +280,25 @@ Each store picks which of **card, Venmo, PayPal, Cash App, cash** it
 accepts (`PaymentSettingsScreen.tsx`, off `Admin > Settings > Payment
 Methods →`), and whether the processing fee gets added to what the buyer
 pays or comes out of the vendor's own payout (`pass_fee_to_buyer`). Tips are
-available on every method now, not gated to a hardcoded subset.
+available on every method now, not gated to a hardcoded subset. A
+brand-new store starts with **cash enabled and nothing else** — card/Cash
+App need Stripe Connect and Venmo/PayPal need a handle, so those three stay
+unselected in Payment Settings until the vendor actually configures them
+(`AuthContext.createStore`).
+
+**Checkout is buyer-facing, not staff-entered.** The buyer reviews their own
+cart, picks a tip, picks a payment method (with a prominent running total
+shown), and — for card/Venmo/PayPal/Cash App — scans a QR with their own
+phone; staff only taps "Confirm Paid" for the self-reported methods once
+they see the money land. Two entry points share the same flow
+(`CheckoutScreen.tsx`'s `initialStep` prop): staff can still tap Checkout
+from Admin's Cart screen (starts at the venue-name step), or the buyer can
+tap "Confirm Cart" directly in Customer View (skips straight to tip,
+matching the point of a self-checkout — no staff tap needed at all). The
+Cancel button on every step moves back one screen at a time
+(confirm → method → tip → review → setup) rather than exiting outright,
+except on whichever step that particular session actually started on, where
+there's nothing before it to step back to.
 
 **How card payments actually work — no reader, no native app, no Tap to
 Pay.** This took several false starts to land on, worth recording why:
@@ -265,20 +308,49 @@ hardware cost; Tap to Pay (device's own NFC, free) is a hard native-only, OS-
 level restriction — Apple/Google don't expose payment-grade NFC to *any*
 website, and it's Android-tablet/iPhone only, never iPad, directly
 conflicting with "works on any tablet." The actual answer: **show a QR
-code.** For card, staff taps "Show QR to Buyer," the app creates a Stripe
-Checkout Session on the vendor's own connected account
-(`stripe-create-checkout` Edge Function) and QR-encodes the resulting URL —
-the buyer scans it with their own phone and pays on Stripe's hosted page
-(typed card, or Apple Pay/Google Pay if their browser supports it). The app
-polls `stripe-checkout-status` every 2s and, once paid, records the sale
+code.** The app creates a Stripe Checkout Session on the vendor's own
+connected account (`stripe-create-checkout` Edge Function, Direct charges
+via the `stripeAccount` request option so funds settle straight to the
+vendor) and QR-encodes the resulting URL — the buyer scans it with their
+own phone and pays on Stripe's hosted page. **Both `card` and `cash_app`
+(Cash App Pay) route through this same Stripe Checkout Session** — Cash
+App Pay is a real, Connect-compatible `payment_method_types` value, just
+like card; it isn't a separate self-reported flow. The app polls
+`stripe-checkout-status` every 2s and, once paid, records the sale
 automatically using Stripe's *real* fee (not an estimate) and the payment's
-id. For Venmo/PayPal/Cash App, the QR instead encodes that provider's own
-documented amount-prefilled pay link (`src/lib/payLinks.ts` —
-`venmo.com/<user>?txn=pay&amount=...`, `paypal.me/<user>/<amount>`,
-`cash.app/$<tag>/<amount>`, verified directly against each provider's docs)
-— same self-reported flow as before (staff still taps "Confirm Paid" once
-they see the money land), just without the buyer needing to type the amount
-by hand. Cash has no QR, straight to "Confirm Paid."
+id. For Venmo/PayPal, the QR instead encodes that provider's own documented
+amount-prefilled pay link (`src/lib/payLinks.ts` —
+`venmo.com/<user>?txn=pay&amount=...`, `paypal.me/<user>/<amount>USD`,
+verified directly against each provider's docs) — self-reported (staff
+still taps "Confirm Paid" once they see the money land), just without the
+buyer needing to type the amount by hand. Cash has no QR, straight to
+"Confirm Paid."
+
+**PayPal.me amount-prefill only works for Personal PayPal accounts, not
+Business ones — confirmed by live testing, not documentation.** The `USD`
+currency suffix on the link is necessary but wasn't sufficient on its own:
+testing against a real vendor's **Business**-type PayPal.me profile showed
+every URL variant (`paypal.me/<user>/<amt>`, `.../<amt>USD`, the direct
+`paypal.com/paypalme/...` form) gets redirected straight to a generic
+`paypal.com/biz/profile/<user>` page with the amount dropped entirely,
+before any login step — a PayPal platform behavior, not something fixable
+from this app's side. Switching the same vendor to a **Personal** PayPal
+account fixed it immediately (verified: name, handle, and amount all show
+correctly pre-login). Worth knowing before troubleshooting a "PayPal QR
+doesn't show the amount" report — check the vendor's PayPal account type
+first. Using a Personal account for recurring business income is itself a
+PayPal-ToS tradeoff worth flagging to vendors (Business accounts are what
+PayPal expects for that use case), not something to silently paper over.
+
+**Going live (test mode → live mode)**: there's no in-app toggle for this —
+it's entirely controlled by the `STRIPE_SECRET_KEY` secret's value
+(`sk_test_...` vs `sk_live_...`). Swapping it (`supabase secrets set
+STRIPE_SECRET_KEY=sk_live_...`) takes effect on the next Edge Function call,
+no redeploy needed — but Stripe test-mode and live-mode are **completely
+separate account graphs**: any vendor who completed Connect onboarding
+under the test key has a test-mode connected account that doesn't exist on
+the live side. Every vendor needs to redo "Connect with Stripe" in Payment
+Settings once, after the switch, to get a real payable account.
 
 **Stripe Connect**: each vendor connects their *own* Stripe account (Express,
 via a hosted onboarding link — `stripe-connect-onboarding` /
@@ -313,6 +385,50 @@ Tap to Pay (would still work as a future *optional* add-on for vendors on a
 qualifying Android device, layered on top of the same Stripe Connect
 accounts — not part of this build).
 
+## Responsive breakpoints
+
+`src/lib/responsive.ts` — `useBreakpoint()` (mobile <600px / tablet
+600–1024px / laptop >1024px, via `useWindowDimensions`) plus a
+`centeredColumn(isTabletUp, maxWidth)` helper: a no-op on mobile, centers
+content in a fixed-width column (`CONTENT_WIDTH.narrow` 480 for forms,
+`.wide` 760 for row-list screens) at tablet/laptop, so the app doesn't look
+stretched full-bleed on a laptop browser. Applied app-wide via the same
+mechanical edit repeated per screen. Buyer-facing screens (`CheckoutScreen`'s
+steps, `CustomerScreen`) also get larger touch targets/fonts at tablet+,
+since that's the one surface where the person tapping didn't choose their
+own device. **Deliberately not done**: `AdminScreen`'s dropdown nav
+becoming a persistent sidebar at laptop width, and `InventoryScreen`/
+`DealsScreen` becoming multi-column grids — both are real UX redesigns, not
+"add a breakpoint," left as a possible follow-up.
+
+## `Alert.alert` does not work on web — read this before adding any UI dialog
+
+**`react-native-web`'s `Alert.alert()` is a complete no-op**
+(`node_modules/react-native-web/src/exports/Alert/index.js` is literally
+`static alert() {}`) — no dialog, no console warning, nothing. Since this
+app is web-only, calling RN's `Alert` directly is a silent bug every time,
+not a platform quirk to work around per-call. **Use `appAlert` from
+`src/lib/alert.ts` instead** — same `(title, message?, buttons?)` signature
+as `Alert.alert`, so it's a drop-in replacement, including the
+`[{text:'Cancel', style:'cancel'}, {text:'Delete', style:'destructive',
+onPress}]` confirm-dialog pattern. It's rendered by `AlertHost.tsx`, mounted
+once in `App.tsx`.
+
+**Don't build a dialog/overlay with RN's `<Modal>` and expect it to stack
+correctly above other modals.** `react-native-web`'s `Modal` hardcodes
+`zIndex: 9999` on its portal wrapper with no way to override it via props,
+and — more subtly — that portal `<div>` is created in the DOM the moment
+`ModalPortal` first *mounts*, not when the modal becomes visible. A
+component that's always mounted from app boot (like an alert host) ends up
+with the *earliest* portal div in `document.body`; any feature modal opened
+later (Edit Piece, Print Labels, etc.) gets appended later and — being the
+same z-index — permanently paints over it, even while the earlier one is
+fully present, correctly styled, and even receives clicks. `AlertHost.tsx`
+works around this by portaling manually (`react-dom`'s `createPortal` into
+its own dedicated `<div id="alert-root">`, same pattern
+`PrintLabelsOverlay.tsx` already uses) with an explicit `zIndex: 999999` on
+a raw `<div>` rather than going through `<Modal>` at all.
+
 ## What's already here
 
 - **Inventory page** (admin) — real catalog (128 items: originals + their
@@ -332,9 +448,12 @@ accounts — not part of this build).
   blocked client-side with a clear message rather than a raw FK error — the
   DB has no cascade delete set up. Editing quantity back above 0 un-marks a
   piece as sold. This is how to fix the placeholder stock counts once
-  Chrissy has real numbers — no SQL needed. Each row also has a **"Print
-  label"** link, and there's a bulk **"Print Labels"** button in the footer
-  (all non-sold pieces at once) — see "Barcode labels" below.
+  Chrissy has real numbers — no SQL needed. Tapping "Add" shows a small,
+  non-blocking "✓ Added to cart" badge that floats above the row's own Add
+  button (doesn't shift the page layout) and auto-dismisses after 2.5s.
+  Each row also has a **"Print label"** link, and there's a bulk **"Print
+  Labels"** button in the footer, both opening the label builder — see
+  "Barcode labels" below.
 - **Cart page** (admin) — quantity steppers, subtotal, remove, and any
   applied/overridden deals shown under the list.
 - **Deals engine** (`src/lib/deals.ts`) — auto-applies active deals from the
@@ -355,13 +474,16 @@ accounts — not part of this build).
   add it once Chrissy's catalog actually uses that field.
   3 example deals are in `supabase/seed_deals.sql` (not yet run — see
   checklist) purely to exercise it, not Chrissy's real picks.
-- **Checkout** (modal from Cart) — optional "show/venue" name (persists across
+- **Checkout** (buyer-facing, from Cart or Customer View's "Confirm Cart") —
+  optional "show/venue" name on the staff-initiated path (persists across
   checkouts for the session via `CartContext`, so it's not retyped every
-  sale), pick Venmo/PayPal/cash (Square shown but disabled until the SDK's
-  wired in), optional tip, deal discount, fee estimate, "Confirm Paid" →
-  decrements inventory (marks sold when a piece hits 0 remaining), apportions
-  each item's deal discount and fee into its per-unit `sale_price`/
-  `fee_amount`, and logs a sale row per unit — all written to Supabase.
+  sale), buyer picks a tip and a payment method with a prominent running
+  total, then scans a QR (card/Venmo/PayPal/Cash App) or goes straight to
+  "Confirm Paid" (cash) — see "Checkout payments" below for the full flow.
+  "Confirm Paid"/a completed Stripe payment decrements inventory (marks sold
+  when a piece hits 0 remaining), apportions each item's deal discount and
+  fee into its per-unit `sale_price`/`fee_amount`, and logs a sale row per
+  unit — all written to Supabase.
 - **Reports page** (admin, `ReportsScreen.tsx`) — filter sales by date range
   (today/last 7 days/all time/custom, with a local-timezone-safe custom
   range — see note below), payment method, item type, and show/venue (the
