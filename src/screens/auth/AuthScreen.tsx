@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   StyleSheet,
   Text,
@@ -9,6 +8,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
+import { appAlert } from '../../lib/alert';
 
 export default function AuthScreen({ onForgotPassword }: { onForgotPassword: () => void }) {
   const { signIn, signUp } = useAuth();
@@ -20,11 +20,11 @@ export default function AuthScreen({ onForgotPassword }: { onForgotPassword: () 
 
   async function handleSubmit() {
     if (!email.trim() || !password) {
-      Alert.alert('Missing info', 'Enter an email and password.');
+      appAlert('Missing info', 'Enter an email and password.');
       return;
     }
     if (mode === 'sign-up' && password !== confirmPassword) {
-      Alert.alert("Passwords don't match", 'Re-enter your password to confirm it.');
+      appAlert("Passwords don't match", 'Re-enter your password to confirm it.');
       return;
     }
     setSubmitting(true);
@@ -35,7 +35,7 @@ export default function AuthScreen({ onForgotPassword }: { onForgotPassword: () 
         await signIn(email.trim(), password);
       }
     } catch (err) {
-      Alert.alert(
+      appAlert(
         mode === 'sign-up' ? 'Sign up failed' : 'Sign in failed',
         err instanceof Error ? err.message : 'Something went wrong — check your connection and try again.'
       );

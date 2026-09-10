@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   StyleSheet,
   Text,
@@ -9,6 +8,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
+import { appAlert } from '../../lib/alert';
 
 export default function ResetPasswordScreen({ onCancel }: { onCancel: () => void }) {
   const { requestPasswordReset, confirmPasswordReset } = useAuth();
@@ -21,7 +21,7 @@ export default function ResetPasswordScreen({ onCancel }: { onCancel: () => void
 
   async function handleRequestCode() {
     if (!email.trim()) {
-      Alert.alert('Missing email', 'Enter the email you signed up with.');
+      appAlert('Missing email', 'Enter the email you signed up with.');
       return;
     }
     setSubmitting(true);
@@ -29,7 +29,7 @@ export default function ResetPasswordScreen({ onCancel }: { onCancel: () => void
       await requestPasswordReset(email.trim());
       setStep('confirm');
     } catch (err) {
-      Alert.alert('Could not send code', err instanceof Error ? err.message : 'Please try again.');
+      appAlert('Could not send code', err instanceof Error ? err.message : 'Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -37,11 +37,11 @@ export default function ResetPasswordScreen({ onCancel }: { onCancel: () => void
 
   async function handleConfirm() {
     if (!code.trim()) {
-      Alert.alert('Missing code', 'Enter the code from your email.');
+      appAlert('Missing code', 'Enter the code from your email.');
       return;
     }
     if (!password || password !== confirmPassword) {
-      Alert.alert("Passwords don't match", 'Re-enter your new password to confirm it.');
+      appAlert("Passwords don't match", 'Re-enter your new password to confirm it.');
       return;
     }
     setSubmitting(true);
@@ -50,7 +50,7 @@ export default function ResetPasswordScreen({ onCancel }: { onCancel: () => void
       // On success, the auth session updates and the app navigates away from
       // this screen on its own (see App.tsx) — nothing else to do here.
     } catch (err) {
-      Alert.alert('Could not reset password', err instanceof Error ? err.message : 'Check the code and try again.');
+      appAlert('Could not reset password', err instanceof Error ? err.message : 'Check the code and try again.');
     } finally {
       setSubmitting(false);
     }

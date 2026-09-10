@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   StyleSheet,
   Text,
@@ -9,6 +8,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
+import { appAlert } from '../../lib/alert';
 
 export default function CreateStoreScreen() {
   const { createStore, signOut } = useAuth();
@@ -18,18 +18,18 @@ export default function CreateStoreScreen() {
 
   async function handleCreate() {
     if (!name.trim()) {
-      Alert.alert('Missing name', 'Give your store a name — customers will see this.');
+      appAlert('Missing name', 'Give your store a name — customers will see this.');
       return;
     }
     if (!/^\d{4,6}$/.test(pin)) {
-      Alert.alert('Invalid PIN', 'Pick a 4–6 digit staff PIN.');
+      appAlert('Invalid PIN', 'Pick a 4–6 digit staff PIN.');
       return;
     }
     setSubmitting(true);
     try {
       await createStore(name.trim(), pin);
     } catch (err) {
-      Alert.alert('Could not create store', err instanceof Error ? err.message : 'Please try again.');
+      appAlert('Could not create store', err instanceof Error ? err.message : 'Please try again.');
     } finally {
       setSubmitting(false);
     }

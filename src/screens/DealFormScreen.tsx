@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,6 +12,7 @@ import {
 import { useDeals } from '../context/DealsContext';
 import { usePieces } from '../context/PiecesContext';
 import { AppliesTo } from '../lib/deals';
+import { appAlert } from '../lib/alert';
 import { Deal, DealType, PieceType } from '../types/database';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 
@@ -106,11 +106,11 @@ export default function DealFormScreen({
     const count = parseInt(triggerCount, 10);
     const value = parseFloat(discountValue);
 
-    if (!name.trim()) return Alert.alert('Missing name', 'Give this deal a name.');
-    if (!count || count <= 0) return Alert.alert('Invalid trigger', TRIGGER_HELP[type]);
-    if (isNaN(value) || value < 0) return Alert.alert('Invalid discount', 'Enter a discount value.');
+    if (!name.trim()) return appAlert('Missing name', 'Give this deal a name.');
+    if (!count || count <= 0) return appAlert('Invalid trigger', TRIGGER_HELP[type]);
+    if (isNaN(value) || value < 0) return appAlert('Invalid discount', 'Enter a discount value.');
     if (scope === 'skus' && !skusText.trim()) {
-      return Alert.alert('Missing SKUs', 'Enter at least one SKU, comma-separated.');
+      return appAlert('Missing SKUs', 'Enter at least one SKU, comma-separated.');
     }
 
     const payload = {
@@ -134,7 +134,7 @@ export default function DealFormScreen({
       }
       onClose();
     } catch (err) {
-      Alert.alert('Save failed', err instanceof Error ? err.message : 'Could not save this deal.');
+      appAlert('Save failed', err instanceof Error ? err.message : 'Could not save this deal.');
     } finally {
       setSubmitting(false);
     }
@@ -142,7 +142,7 @@ export default function DealFormScreen({
 
   function handleDelete() {
     if (!deal) return;
-    Alert.alert('Delete this deal?', deal.name, [
+    appAlert('Delete this deal?', deal.name, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
@@ -153,7 +153,7 @@ export default function DealFormScreen({
             await deleteDeal(deal.id);
             onClose();
           } catch (err) {
-            Alert.alert('Delete failed', err instanceof Error ? err.message : 'Could not delete this deal.');
+            appAlert('Delete failed', err instanceof Error ? err.message : 'Could not delete this deal.');
           } finally {
             setSubmitting(false);
           }

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Platform,
   Pressable,
   ScrollView,
@@ -13,6 +12,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { PaymentMethod } from '../types/database';
 import { startStripeOnboarding, checkStripeAccountStatus } from '../lib/payments';
+import { appAlert } from '../lib/alert';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 
 const METHOD_LABELS: Record<PaymentMethod, string> = {
@@ -64,7 +64,7 @@ export default function PaymentSettingsScreen() {
 
   async function handleConnectStripe() {
     if (Platform.OS !== 'web') {
-      Alert.alert('Web only', 'Connect Stripe from the web app.');
+      appAlert('Web only', 'Connect Stripe from the web app.');
       return;
     }
     setConnecting(true);
@@ -80,24 +80,24 @@ export default function PaymentSettingsScreen() {
       const url = await startStripeOnboarding(returnUrl, returnUrl);
       window.location.href = url;
     } catch (err) {
-      Alert.alert('Could not start Stripe setup', err instanceof Error ? err.message : 'Please try again.');
+      appAlert('Could not start Stripe setup', err instanceof Error ? err.message : 'Please try again.');
       setConnecting(false);
     }
   }
 
   async function handleSave() {
     if (enabled.includes('card') && !store?.stripe_onboarding_complete) {
-      Alert.alert('Finish connecting Stripe', 'Card can\'t be enabled until Stripe setup is complete.');
+      appAlert('Finish connecting Stripe', 'Card can\'t be enabled until Stripe setup is complete.');
       return;
     }
     if (enabled.includes('venmo') && !venmoUsername.trim()) {
-      return Alert.alert('Missing Venmo username', 'Enter the username to show a Venmo QR at checkout.');
+      return appAlert('Missing Venmo username', 'Enter the username to show a Venmo QR at checkout.');
     }
     if (enabled.includes('paypal') && !paypalUsername.trim()) {
-      return Alert.alert('Missing PayPal.me username', 'Enter the username to show a PayPal QR at checkout.');
+      return appAlert('Missing PayPal.me username', 'Enter the username to show a PayPal QR at checkout.');
     }
     if (enabled.includes('cash_app') && !stripeReady) {
-      return Alert.alert('Finish connecting Stripe', "Cash App Pay can't be enabled until Stripe setup is complete.");
+      return appAlert('Finish connecting Stripe', "Cash App Pay can't be enabled until Stripe setup is complete.");
     }
 
     setSubmitting(true);
@@ -108,9 +108,9 @@ export default function PaymentSettingsScreen() {
         venmo_username: venmoUsername.trim() || null,
         paypal_me_username: paypalUsername.trim() || null,
       });
-      Alert.alert('Saved', 'Payment settings updated.');
+      appAlert('Saved', 'Payment settings updated.');
     } catch (err) {
-      Alert.alert('Save failed', err instanceof Error ? err.message : 'Could not save changes.');
+      appAlert('Save failed', err instanceof Error ? err.message : 'Could not save changes.');
     } finally {
       setSubmitting(false);
     }

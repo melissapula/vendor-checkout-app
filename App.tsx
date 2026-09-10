@@ -12,6 +12,7 @@ import RootNavigator from './src/navigation/RootNavigator';
 import AuthScreen from './src/screens/auth/AuthScreen';
 import CreateStoreScreen from './src/screens/auth/CreateStoreScreen';
 import ResetPasswordScreen from './src/screens/auth/ResetPasswordScreen';
+import AlertHost from './src/components/AlertHost';
 
 function AppGate() {
   const { session, authLoading, store, storeLoading } = useAuth();
@@ -66,6 +67,7 @@ export default function App() {
         <AppGate />
         <StatusBar style="auto" />
       </AuthProvider>
+      <AlertHost />
     </SafeAreaProvider>
   );
 }

@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,6 +11,7 @@ import {
 import { usePieces } from '../context/PiecesContext';
 import { Piece, PieceStatus, PieceType } from '../types/database';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
+import { appAlert } from '../lib/alert';
 
 const STATUSES: PieceStatus[] = ['available', 'sold', 'reserved'];
 
@@ -91,12 +91,12 @@ export default function PieceFormScreen({
     const quantityValue = parseInt(quantity, 10);
     const resolvedType = type === 'other' ? customType.trim() : type;
 
-    if (!title.trim()) return Alert.alert('Missing title', 'Give this piece a title.');
-    if (!sku.trim()) return Alert.alert('Missing SKU', 'Every piece needs a unique SKU.');
-    if (!resolvedType) return Alert.alert('Missing type', 'Pick a type or enter a custom one.');
-    if (isNaN(priceValue) || priceValue < 0) return Alert.alert('Invalid price', 'Enter a price of $0 or more.');
+    if (!title.trim()) return appAlert('Missing title', 'Give this piece a title.');
+    if (!sku.trim()) return appAlert('Missing SKU', 'Every piece needs a unique SKU.');
+    if (!resolvedType) return appAlert('Missing type', 'Pick a type or enter a custom one.');
+    if (isNaN(priceValue) || priceValue < 0) return appAlert('Invalid price', 'Enter a price of $0 or more.');
     if (isNaN(quantityValue) || quantityValue < 0) {
-      return Alert.alert('Invalid quantity', 'Enter a quantity of 0 or more.');
+      return appAlert('Invalid quantity', 'Enter a quantity of 0 or more.');
     }
 
     const payload = {
@@ -130,7 +130,7 @@ export default function PieceFormScreen({
       }
       onClose();
     } catch (err) {
-      Alert.alert('Save failed', err instanceof Error ? err.message : 'Could not save this piece.');
+      appAlert('Save failed', err instanceof Error ? err.message : 'Could not save this piece.');
     } finally {
       setSubmitting(false);
     }
@@ -139,14 +139,14 @@ export default function PieceFormScreen({
   function handleDelete() {
     if (!piece) return;
     if (dependents.length > 0) {
-      Alert.alert(
+      appAlert(
         "Can't delete yet",
         `${dependents.length} item(s) are linked to this as their original ` +
           `(${dependents.map((d) => d.title).join(', ')}). Delete or reassign those first.`
       );
       return;
     }
-    Alert.alert('Delete this piece?', piece.title, [
+    appAlert('Delete this piece?', piece.title, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
@@ -157,7 +157,7 @@ export default function PieceFormScreen({
             await deletePiece(piece.id);
             onClose();
           } catch (err) {
-            Alert.alert('Delete failed', err instanceof Error ? err.message : 'Could not delete this piece.');
+            appAlert('Delete failed', err instanceof Error ? err.message : 'Could not delete this piece.');
           } finally {
             setSubmitting(false);
           }

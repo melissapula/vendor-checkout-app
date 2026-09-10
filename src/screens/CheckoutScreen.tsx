@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -20,6 +19,7 @@ import { calculateFee } from '../lib/fees';
 import { venmoPayUrl, paypalPayUrl, renderQrDataUrl } from '../lib/payLinks';
 import { createStripeCheckout, checkStripeCheckoutStatus } from '../lib/payments';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
+import { appAlert } from '../lib/alert';
 import { PaymentMethod, Sale } from '../types/database';
 
 type NewSale = Omit<Sale, 'id' | 'store_id'>;
@@ -150,12 +150,12 @@ export default function CheckoutScreen({
       const net = effectiveSubtotal - (passFeeToBuyer ? 0 : actualFee);
       clear();
       onClose();
-      Alert.alert(
+      appAlert(
         'Sale recorded',
         `Charged $${total.toFixed(2)} via ${METHOD_LABELS[m]}.\nNet after fees: $${net.toFixed(2)}`
       );
     } catch (err) {
-      Alert.alert(
+      appAlert(
         'Checkout failed',
         err instanceof Error ? err.message : 'Could not save this sale — check your connection and try again.'
       );

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -10,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
+import { appAlert } from '../lib/alert';
 import PaymentSettingsScreen from './PaymentSettingsScreen';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 
@@ -33,15 +33,15 @@ export default function StoreSettingsScreen() {
   }
 
   async function handleSave() {
-    if (!name.trim()) return Alert.alert('Missing name', 'Give your store a name.');
-    if (!/^\d{4,6}$/.test(pin)) return Alert.alert('Invalid PIN', 'Pick a 4–6 digit staff PIN.');
+    if (!name.trim()) return appAlert('Missing name', 'Give your store a name.');
+    if (!/^\d{4,6}$/.test(pin)) return appAlert('Invalid PIN', 'Pick a 4–6 digit staff PIN.');
 
     setSubmitting(true);
     try {
       await updateStore({ name: name.trim(), admin_pin: pin });
-      Alert.alert('Saved', 'Store settings updated.');
+      appAlert('Saved', 'Store settings updated.');
     } catch (err) {
-      Alert.alert('Save failed', err instanceof Error ? err.message : 'Could not save changes.');
+      appAlert('Save failed', err instanceof Error ? err.message : 'Could not save changes.');
     } finally {
       setSubmitting(false);
     }
