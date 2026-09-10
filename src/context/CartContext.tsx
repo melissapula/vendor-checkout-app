@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Piece } from '../types/database';
 import { usePieces } from './PiecesContext';
+import { useAuth } from './AuthContext';
 
 export interface CartItem {
   piece: Piece;
@@ -39,10 +41,62 @@ interface CartContextValue {
 
 const CartContext = createContext<CartContextValue | null>(null);
 
+function cartStorageKey(storeId: string): string {
+  return `cart:${storeId}`;
+}
+
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [location, setLocation] = useState('');
+  const [hydrated, setHydrated] = useState(false);
   const { pieces } = usePieces();
+  const { store } = useAuth();
+
+  // A cart left mid-sale used to vanish on any page reload — this is a
+  // kiosk-style app left running in a browser tab, so an accidental
+  // refresh, a WiFi hiccup, or the browser reclaiming the tab could wipe
+  // an in-progress sale for no reason. Persist it (scoped per store, so a
+  // shared device switching vendors never shows the wrong cart) and only
+  // ever clear it the two ways staff actually expect: a completed
+  // checkout (CheckoutScreen.finalizeSale calls clear()) or the explicit
+  // "Clear cart" button in CartScreen (admin-only — it doesn't exist
+  // anywhere in CustomerScreen).
+  //
+  // Loading is async (AsyncStorage), so `hydrated` gates the save effect
+  // below — without it, the very first render's empty `items`/`location`
+  // defaults would get written to storage and clobber whatever was there
+  // before the load even finishes.
+  useEffect(() => {
+    if (!store) return;
+    let cancelled = false;
+    setHydrated(false);
+    setItems([]);
+    setLocation('');
+    AsyncStorage.getItem(cartStorageKey(store.id))
+      .then((raw) => {
+        if (cancelled || !raw) return;
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed.items)) setItems(parsed.items);
+        if (typeof parsed.location === 'string') setLocation(parsed.location);
+      })
+      .catch(() => {
+        // Corrupt/unreadable data — start fresh rather than crash the cart.
+      })
+      .finally(() => {
+        if (!cancelled) setHydrated(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [store]);
+
+  useEffect(() => {
+    if (!store || !hydrated) return;
+    AsyncStorage.setItem(cartStorageKey(store.id), JSON.stringify({ items, location })).catch(() => {
+      // Best-effort — a failed write just means the next reload won't
+      // recover this state; nothing in the current session breaks.
+    });
+  }, [store, hydrated, items, location]);
 
   // A cart line's `piece` is a snapshot from whenever it was added — but
   // stock can change after that (another sale on this device, or staff
@@ -51,14 +105,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // PiecesContext's live data any time it changes, so the cap (and the
   // displayed price/title) stay current for the rest of the checkout
   // session; a line whose stock has dropped to 0 is dropped the same way
-  // updateQuantity(..., 0) drops it.
+  // updateQuantity(..., 0) drops it. A piece deleted outright (not just
+  // sold out) is dropped too — with the cart now persisting across
+  // reloads, a stale line with no live piece behind it could otherwise
+  // sit there indefinitely instead of failing fast the moment it happens.
   useEffect(() => {
     setItems((prev) =>
       prev
-        .map((item) => {
+        .flatMap((item) => {
           const live = pieces.find((p) => p.id === item.piece.id);
-          if (!live) return item;
-          return { ...item, piece: live, quantity: Math.min(item.quantity, live.quantity_remaining) };
+          if (!live) return [];
+          return [{ ...item, piece: live, quantity: Math.min(item.quantity, live.quantity_remaining) }];
         })
         .filter((item) => item.quantity > 0)
     );
