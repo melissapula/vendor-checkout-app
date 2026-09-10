@@ -21,7 +21,11 @@ export function venmoPayUrl(username: string, amount: number, note: string): str
 }
 
 export function paypalPayUrl(username: string, amount: number): string {
-  return `https://paypal.me/${encodeURIComponent(username)}/${amount.toFixed(2)}`;
+  // PayPal.me only reliably prefills the amount when a currency code is
+  // appended directly (no separator) — without it, QR-scan handoffs
+  // straight into the PayPal app sometimes drop the amount and land the
+  // buyer on a blank "enter amount" screen.
+  return `https://paypal.me/${encodeURIComponent(username)}/${amount.toFixed(2)}USD`;
 }
 
 export function cashAppPayUrl(cashtag: string, amount: number): string {
