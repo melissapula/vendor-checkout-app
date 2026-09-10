@@ -45,7 +45,17 @@ const TIP_PRESETS = [0.15, 0.2, 0.25];
 // How often to ask Stripe whether the buyer has paid yet, once the QR is up.
 const CARD_POLL_INTERVAL_MS = 2000;
 
-export default function CheckoutScreen({ onClose }: { onClose: () => void }) {
+export default function CheckoutScreen({
+  onClose,
+  initialStep = 'staffSetup',
+}: {
+  onClose: () => void;
+  // Customer View's own "Confirm Cart" button jumps straight to 'buyerTip' —
+  // the live cart the buyer's already looking at stands in for the
+  // 'buyerReview' step, and 'staffSetup' (the optional show/venue field)
+  // doesn't apply when the buyer starts checkout themselves.
+  initialStep?: Step;
+}) {
   const { items, subtotal, clear, location, setLocation } = useCart();
   const { sellUnits } = usePieces();
   const { addSales } = useSales();
@@ -54,7 +64,7 @@ export default function CheckoutScreen({ onClose }: { onClose: () => void }) {
   const enabledMethods = store?.enabled_payment_methods ?? [];
   const { isTabletUp } = useBreakpoint();
 
-  const [step, setStep] = useState<Step>('staffSetup');
+  const [step, setStep] = useState<Step>(initialStep);
   const [method, setMethod] = useState<PaymentMethod | null>(null);
   const [tipText, setTipText] = useState('');
   const [customTipText, setCustomTipText] = useState('');
@@ -346,6 +356,10 @@ export default function CheckoutScreen({ onClose }: { onClose: () => void }) {
     return (
       <View style={styles.container}>
         <ScrollView contentContainerStyle={[styles.scroll, centeredColumn(isTabletUp, CONTENT_WIDTH.wide)]}>
+          <Text style={styles.totalPreviewLabel}>Total</Text>
+          <Text style={[styles.totalPreview, isTabletUp && styles.totalPreviewTabletUp]}>
+            ${(effectiveSubtotal + tipAmount).toFixed(2)}
+          </Text>
           <Text style={[styles.heading, isTabletUp && styles.headingTabletUp]}>How would you like to pay?</Text>
           <View style={styles.methodList}>
             {enabledMethods.map((m) => (
@@ -462,6 +476,9 @@ const styles = StyleSheet.create({
   qrScroll: { padding: 16, alignItems: 'center' },
   heading: { fontSize: 20, fontWeight: '700', marginBottom: 16 },
   headingTabletUp: { fontSize: 24 },
+  totalPreviewLabel: { fontSize: 13, color: '#666', textAlign: 'center' },
+  totalPreview: { fontSize: 40, fontWeight: '800', textAlign: 'center', marginTop: 4, marginBottom: 24 },
+  totalPreviewTabletUp: { fontSize: 52 },
   sectionLabel: { fontSize: 13, color: '#666', marginTop: 16, marginBottom: 8 },
   tipInput: {
     borderWidth: 1,

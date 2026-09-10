@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCart, CartItem } from '../context/CartContext';
 import { useDeals } from '../context/DealsContext';
@@ -7,11 +7,18 @@ import { evaluateDeals } from '../lib/deals';
 import { useAppMode } from '../context/AppModeContext';
 import { useAuth } from '../context/AuthContext';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
+import { thumbUrl } from '../lib/images';
+import CheckoutScreen from './CheckoutScreen';
 
 function CustomerRow({ item }: { item: CartItem }) {
   const lineTotal = item.piece.price * item.quantity;
   return (
     <View style={styles.row}>
+      {item.piece.image_url ? (
+        <Image source={{ uri: thumbUrl(item.piece.image_url) }} style={styles.thumb} />
+      ) : (
+        <View style={styles.thumbPlaceholder} />
+      )}
       <View style={styles.rowInfo}>
         <Text style={styles.title}>{item.piece.title}</Text>
         <Text style={styles.meta}>
@@ -29,9 +36,15 @@ export default function CustomerScreen() {
   const { requestAdmin } = useAppMode();
   const { store } = useAuth();
   const { isTabletUp } = useBreakpoint();
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
 
   const dealsResult = useMemo(() => evaluateDeals(items, deals), [items, deals]);
   const total = subtotal - dealsResult.totalDiscount;
+  const hasPaymentMethods = (store?.enabled_payment_methods ?? []).length > 0;
+
+  if (checkoutOpen) {
+    return <CheckoutScreen onClose={() => setCheckoutOpen(false)} initialStep="buyerTip" />;
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -69,6 +82,16 @@ export default function CustomerScreen() {
               <Text style={styles.totalLabel}>Total</Text>
               <Text style={styles.totalValue}>${total.toFixed(2)}</Text>
             </View>
+            {hasPaymentMethods && (
+              <Pressable
+                style={[styles.confirmCartButton, isTabletUp && styles.confirmCartButtonTabletUp]}
+                onPress={() => setCheckoutOpen(true)}
+              >
+                <Text style={[styles.confirmCartButtonText, isTabletUp && styles.confirmCartButtonTextTabletUp]}>
+                  Confirm Cart
+                </Text>
+              </Pressable>
+            )}
           </View>
         )}
       </View>
@@ -87,7 +110,9 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 22, fontWeight: '700' },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   emptyText: { color: '#999', fontSize: 18 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 24, paddingVertical: 16 },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingVertical: 16 },
+  thumb: { width: 56, height: 56, borderRadius: 8, marginRight: 16, backgroundColor: '#f0f0f0' },
+  thumbPlaceholder: { width: 56, height: 56, borderRadius: 8, marginRight: 16, backgroundColor: '#f0f0f0' },
   rowInfo: { flex: 1, marginRight: 12 },
   title: { fontSize: 18, fontWeight: '600' },
   meta: { fontSize: 14, color: '#666', marginTop: 4 },
@@ -102,6 +127,16 @@ const styles = StyleSheet.create({
   totalRow: { marginTop: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#eee' },
   totalLabel: { fontSize: 20, fontWeight: '700' },
   totalValue: { fontSize: 20, fontWeight: '700' },
+  confirmCartButton: {
+    backgroundColor: '#1a1a1a',
+    paddingVertical: 16,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  confirmCartButtonTabletUp: { paddingVertical: 20 },
+  confirmCartButtonText: { color: '#fff', fontWeight: '700', fontSize: 17 },
+  confirmCartButtonTextTabletUp: { fontSize: 19 },
   staffButton: { alignSelf: 'center', paddingVertical: 14, paddingHorizontal: 16 },
   staffButtonText: { color: '#999', fontSize: 13, fontWeight: '500' },
 });

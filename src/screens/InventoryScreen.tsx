@@ -6,18 +6,13 @@ import { useCart } from '../context/CartContext';
 import PieceFormScreen from './PieceFormScreen';
 import PrintLabelsOverlay from '../components/PrintLabelsOverlay';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
+import { thumbUrl } from '../lib/images';
 
 function statusLabel(piece: Piece): string {
   if (piece.status === 'sold') return 'Sold';
   if (piece.status === 'reserved') return 'Reserved';
   if (piece.quantity_remaining === 0) return 'Out of stock';
   return `${piece.quantity_remaining} left`;
-}
-
-// Sanity's CDN accepts on-the-fly resize params, so the list requests a
-// small thumbnail instead of the full-resolution site image.
-function thumbUrl(url: string): string {
-  return `${url}?w=112&h=112&fit=crop&auto=format`;
 }
 
 function PieceRow({
