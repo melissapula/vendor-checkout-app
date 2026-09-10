@@ -4,7 +4,8 @@ import { Piece } from '../types/database';
 import { usePieces, isSellable } from '../context/PiecesContext';
 import { useCart } from '../context/CartContext';
 import PieceFormScreen from './PieceFormScreen';
-import PrintLabelsOverlay from '../components/PrintLabelsOverlay';
+import PrintLabelsOverlay, { LabelFields } from '../components/PrintLabelsOverlay';
+import PrintLabelsBuilderScreen from './PrintLabelsBuilderScreen';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 import { thumbUrl } from '../lib/images';
 
@@ -82,7 +83,9 @@ export default function InventoryScreen() {
   const [editingPiece, setEditingPiece] = useState<Piece | null>(null);
   const [presetOriginalId, setPresetOriginalId] = useState<string | undefined>(undefined);
   const [formOpen, setFormOpen] = useState(false);
-  const [printQueue, setPrintQueue] = useState<Piece[] | null>(null);
+  const [builderOpen, setBuilderOpen] = useState(false);
+  const [builderInitialPiece, setBuilderInitialPiece] = useState<Piece | undefined>(undefined);
+  const [printJob, setPrintJob] = useState<{ pieces: Piece[]; fields: LabelFields } | null>(null);
   const [addedMessage, setAddedMessage] = useState<string | null>(null);
   const { isTabletUp } = useBreakpoint();
 
@@ -126,9 +129,9 @@ export default function InventoryScreen() {
     setFormOpen(true);
   }
 
-  function printAllLabels() {
-    // Skip sold pieces — no need to re-tag something that's already gone.
-    setPrintQueue(pieces.filter((p) => p.status !== 'sold'));
+  function openBuilder(piece?: Piece) {
+    setBuilderInitialPiece(piece);
+    setBuilderOpen(true);
   }
 
   return (
@@ -148,14 +151,14 @@ export default function InventoryScreen() {
             piece={item}
             onEdit={() => openEdit(item)}
             onAddVariant={() => openAddVariant(item.id)}
-            onPrintLabel={() => setPrintQueue([item])}
+            onPrintLabel={() => openBuilder(item)}
             onAdded={(piece) => setAddedMessage(`Added "${piece.title}" to the customer's cart`)}
           />
         )}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
       <View style={[styles.footer, centeredColumn(isTabletUp, CONTENT_WIDTH.wide)]}>
-        <Pressable style={styles.printAllButton} onPress={printAllLabels}>
+        <Pressable style={styles.printAllButton} onPress={() => openBuilder()}>
           <Text style={styles.printAllButtonText}>Print Labels</Text>
         </Pressable>
         <Pressable style={styles.addPieceButton} onPress={openAddNew}>
@@ -169,7 +172,21 @@ export default function InventoryScreen() {
           onClose={() => setFormOpen(false)}
         />
       </Modal>
-      <PrintLabelsOverlay pieces={printQueue} onDone={() => setPrintQueue(null)} />
+      <Modal visible={builderOpen} animationType="slide" onRequestClose={() => setBuilderOpen(false)}>
+        <PrintLabelsBuilderScreen
+          initialPiece={builderInitialPiece}
+          onClose={() => setBuilderOpen(false)}
+          onPrint={(pieces, fields) => {
+            setPrintJob({ pieces, fields });
+            setBuilderOpen(false);
+          }}
+        />
+      </Modal>
+      <PrintLabelsOverlay
+        pieces={printJob?.pieces ?? null}
+        fields={printJob?.fields ?? null}
+        onDone={() => setPrintJob(null)}
+      />
     </>
   );
 }
