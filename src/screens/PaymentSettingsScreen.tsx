@@ -102,7 +102,26 @@ export default function PaymentSettingsScreen() {
       const url = await startStripeOnboarding(returnUrl, returnUrl);
       window.location.href = url;
     } catch (err) {
-      appAlert('Could not start Stripe setup', err instanceof Error ? err.message : 'Please try again.');
+      const message = err instanceof Error ? err.message : 'Please try again.';
+      // Stripe refuses to create live connected accounts until the
+      // *platform's own* profile (business details, not any one vendor's)
+      // is filled out in the Stripe dashboard — a one-time setup step, and
+      // the raw error text already includes the exact dashboard link to
+      // finish it. Surface that as an actionable button instead of just
+      // dumping Stripe's sentence into a plain alert.
+      const platformProfileUrl = /platform profile/i.test(message) ? message.match(/https?:\/\/\S+/)?.[0] : null;
+      if (platformProfileUrl) {
+        appAlert(
+          'Finish setting up Stripe Connect',
+          'Stripe needs a few more details about your business before vendors can connect their accounts — a one-time setup step.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Complete Setup', onPress: () => window.open(platformProfileUrl, '_blank') },
+          ]
+        );
+      } else {
+        appAlert('Could not start Stripe setup', message);
+      }
       setConnecting(false);
     }
   }
