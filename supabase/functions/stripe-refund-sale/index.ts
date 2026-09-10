@@ -61,9 +61,14 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Deterministic key (derived from the sale, not crypto.randomUUID() —
+    // unlike stripe-create-checkout, where every attempt is a genuinely new
+    // payment) so two overlapping invocations for the same sale (a client
+    // retry, or the race this refund_sale() itself now closes on the DB
+    // side) collapse into one real Stripe refund instead of two.
     await stripe.refunds.create(
       { payment_intent: sale.processor_payment_id },
-      { stripeAccount: store.stripe_account_id }
+      { stripeAccount: store.stripe_account_id, idempotencyKey: `refund-sale-${sale.id}` }
     );
 
     const { data: result, error: refundError } = await supabase.rpc('refund_sale', { p_sale_id: saleId });

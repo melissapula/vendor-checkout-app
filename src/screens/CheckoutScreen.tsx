@@ -88,6 +88,12 @@ export default function CheckoutScreen({
   // for the device back — until then they're still looking at their QR.
   const [buyerDone, setBuyerDone] = useState(false);
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  // A ref, not state: pollCardStatus's own promise chain needs this to stay
+  // current across overlapping ticks (a slow network response can leave two
+  // in flight at once, both independently seeing 'paid' — clearInterval only
+  // stops *future* ticks, not one already awaiting a response), and state
+  // read inside an async callback risks a stale closure anyway.
+  const finalizingRef = useRef(false);
 
   const dealsResult = useMemo(() => evaluateDeals(items, deals), [items, deals]);
   const effectiveSubtotal = subtotal - dealsResult.totalDiscount;
@@ -223,6 +229,7 @@ export default function CheckoutScreen({
     setQrDataUrl(null);
     setQrError(null);
     setCardPaid(false);
+    finalizingRef.current = false;
 
     if (selected === 'cash') return; // nothing to generate — the render branch handles cash directly
 
@@ -258,7 +265,13 @@ export default function CheckoutScreen({
   async function pollCardStatus(sessionId: string, m: PaymentMethod) {
     try {
       const status = await checkStripeCheckoutStatus(sessionId);
-      if (status.paymentStatus === 'paid') {
+      // A slow network response can leave two ticks in flight at once —
+      // clearInterval below only stops *future* ticks, so without this
+      // guard both could independently see 'paid' and double-record the
+      // same charge. finalizingRef (not state) so a stale closure can't
+      // slip past it.
+      if (status.paymentStatus === 'paid' && !finalizingRef.current) {
+        finalizingRef.current = true;
         if (pollTimer.current) clearInterval(pollTimer.current);
         setCardPaid(true);
         const realFee = status.feeAmountCents != null ? status.feeAmountCents / 100 : feeFor(m);
@@ -289,6 +302,7 @@ export default function CheckoutScreen({
       setCheckoutSessionId(null);
       setCardPaid(false);
       setBuyerDone(false);
+      finalizingRef.current = false;
     }
 
     setStep(STEP_ORDER[currentIndex - 1]);

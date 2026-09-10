@@ -175,10 +175,10 @@ identically in Expo Go and any future standalone build. **Requires** editing
 the Supabase project's "Reset Password" email template to actually display
 `{{ .Token }}` (the stock template only shows a clickable link, not the code).
 
-Deferred (not in scope yet): per-store fee rates (`src/lib/fees.ts` is still
-one global rate table for everyone), multi-staff accounts per store, store
+Deferred (not in scope yet): multi-staff accounts per store, store
 deletion/data export, in-app billing (subscriptions are handled outside the
-app, e.g. Stripe/invoice).
+app, e.g. Stripe/invoice). Per-store fee rates *were* on this list but have
+since shipped — see "Checkout payments" below.
 
 ## Barcode labels
 
@@ -510,10 +510,11 @@ a raw `<div>` rather than going through `<Modal>` at all.
   history from view (the rows were still safely in the database, just not
   visible in the app). Now fetches on mount like the other contexts.
 - `src/lib/fees.ts` — per-method fee estimate (Square/Venmo/PayPal/cash rates
-  from the design doc), one global rate table shared by every store for now
-  (see "Multi-tenant" above). Fee currently reduces the seller's net rather
-  than being passed to the buyer — an open business decision, easy to flip in
-  `CheckoutScreen.tsx`.
+  from the design doc), with a default table any store can override per
+  method via `stores.fee_overrides` (Settings > Payment Methods > "Customize
+  fee rates per method" — see "Checkout payments" below). Whether the fee
+  reduces the seller's net or gets passed to the buyer is a per-store toggle
+  (`pass_fee_to_buyer`), not hardcoded.
 - `supabase/migrations/0001_init.sql` — original single-tenant `pieces` /
   `sales` / `deals` tables + RLS; `0002_stores_and_tenant_columns.sql` /
   `0003_enforce_tenant_isolation.sql` layer multi-tenancy on top (see
