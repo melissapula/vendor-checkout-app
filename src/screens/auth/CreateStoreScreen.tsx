@@ -47,6 +47,7 @@ export default function CreateStoreScreen() {
         value={name}
         onChangeText={setName}
         placeholder="e.g. Four Seasons Studio"
+        onSubmitEditing={handleCreate}
       />
 
       <Text style={styles.label}>Staff PIN</Text>
@@ -60,6 +61,7 @@ export default function CreateStoreScreen() {
         placeholder="4–6 digit PIN"
         keyboardType="number-pad"
         secureTextEntry
+        onSubmitEditing={handleCreate}
       />
 
       <Pressable style={[styles.submitButton, submitting && styles.disabled]} disabled={submitting} onPress={handleCreate}>

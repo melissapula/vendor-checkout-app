@@ -371,7 +371,19 @@ npx supabase functions deploy stripe-account-status
 npx supabase functions deploy stripe-create-checkout
 npx supabase functions deploy stripe-checkout-status
 npx supabase functions deploy stripe-refund-sale
+npx supabase functions deploy stripe-account-balance
 ```
+
+**Stripe balance**: Payment Settings shows the vendor how much money is
+currently sitting in their Stripe account (available for the next payout,
+plus anything still clearing) via `stripe-account-balance` — read-only,
+refreshed by the same "Refresh" link as connection status. Stripe's own
+payout schedule (set in the vendor's own Stripe dashboard) is what actually
+moves it to their bank; nothing in this app triggers or changes a payout.
+Requires "Balance: Read" added under **Connect Permissions** on the
+platform's restricted key — not part of the original permission set, so an
+existing restricted key needs that added once in the Stripe dashboard or
+this will fail with a permission error surfaced in Settings.
 
 Refunds: a sale can be refunded from Reports (`ReportsScreen.tsx`'s
 `SaleRow` — "Refund" link, confirm dialog, then `src/lib/refunds.ts`). For

@@ -72,6 +72,7 @@ export default function ResetPasswordScreen({ onCancel }: { onCancel: () => void
           keyboardType="email-address"
           autoCapitalize="none"
           autoCorrect={false}
+          onSubmitEditing={handleRequestCode}
         />
 
         <Pressable style={[styles.submitButton, submitting && styles.disabled]} disabled={submitting} onPress={handleRequestCode}>
@@ -96,6 +97,7 @@ export default function ResetPasswordScreen({ onCancel }: { onCancel: () => void
         onChangeText={setCode}
         placeholder="6-digit code"
         keyboardType="number-pad"
+        onSubmitEditing={handleConfirm}
       />
       <TextInput
         style={styles.input}
@@ -104,6 +106,7 @@ export default function ResetPasswordScreen({ onCancel }: { onCancel: () => void
         placeholder="New password"
         secureTextEntry
         autoCapitalize="none"
+        onSubmitEditing={handleConfirm}
       />
       <TextInput
         style={styles.input}
@@ -112,6 +115,7 @@ export default function ResetPasswordScreen({ onCancel }: { onCancel: () => void
         placeholder="Confirm new password"
         secureTextEntry
         autoCapitalize="none"
+        onSubmitEditing={handleConfirm}
       />
 
       <Pressable style={[styles.submitButton, submitting && styles.disabled]} disabled={submitting} onPress={handleConfirm}>

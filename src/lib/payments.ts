@@ -49,6 +49,19 @@ export async function checkStripeAccountStatus(): Promise<StripeAccountStatus> {
   return data!;
 }
 
+export interface StripeAccountBalance {
+  availableCents: number;
+  pendingCents: number;
+}
+
+export async function getStripeAccountBalance(): Promise<StripeAccountBalance> {
+  const { data, error } = await supabase.functions.invoke<StripeAccountBalance>('stripe-account-balance', {
+    body: {},
+  });
+  if (error) throw await unwrapFunctionError(error);
+  return data!;
+}
+
 export async function createStripeCheckout(
   amountCents: number,
   idempotencyKey: string,

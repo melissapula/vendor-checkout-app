@@ -173,6 +173,7 @@ export default function DealFormScreen({
           value={name}
           onChangeText={setName}
           placeholder='e.g. "3+ Prints — 15% Off"'
+          onSubmitEditing={handleSave}
         />
 
         <Text style={styles.label}>Deal type</Text>
@@ -197,6 +198,7 @@ export default function DealFormScreen({
           onChangeText={setTriggerCount}
           keyboardType="number-pad"
           placeholder="e.g. 3"
+          onSubmitEditing={handleSave}
         />
 
         <Text style={styles.label}>{DISCOUNT_LABEL[type]}</Text>
@@ -206,6 +208,7 @@ export default function DealFormScreen({
           onChangeText={setDiscountValue}
           keyboardType="decimal-pad"
           placeholder="e.g. 15"
+          onSubmitEditing={handleSave}
         />
 
         <Text style={styles.label}>Applies to</Text>
@@ -259,6 +262,7 @@ export default function DealFormScreen({
             onChangeText={setSkusText}
             placeholder="e.g. FSS-0001, FSS-0002-4X6"
             autoCapitalize="characters"
+            onSubmitEditing={handleSave}
           />
         )}
 
@@ -277,6 +281,7 @@ export default function DealFormScreen({
           value={startDate}
           onChangeText={setStartDate}
           placeholder="2026-08-01"
+          onSubmitEditing={handleSave}
         />
         <Text style={styles.label}>End date (optional, YYYY-MM-DD)</Text>
         <TextInput
@@ -284,6 +289,7 @@ export default function DealFormScreen({
           value={endDate}
           onChangeText={setEndDate}
           placeholder="2026-08-31"
+          onSubmitEditing={handleSave}
         />
       </ScrollView>
 

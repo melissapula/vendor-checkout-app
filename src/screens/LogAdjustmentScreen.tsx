@@ -73,6 +73,7 @@ export default function LogAdjustmentScreen({ piece, onClose }: { piece: Piece; 
         onChangeText={setQuantityText}
         keyboardType="number-pad"
         placeholder="1"
+        onSubmitEditing={handleSave}
       />
 
       <Text style={styles.label}>Reason (optional)</Text>
@@ -81,6 +82,7 @@ export default function LogAdjustmentScreen({ piece, onClose }: { piece: Piece; 
         value={reason}
         onChangeText={setReason}
         placeholder={type === 'loss' ? 'e.g. Damaged at the last show' : 'e.g. Raffle prize'}
+        onSubmitEditing={handleSave}
       />
 
       <Pressable style={[styles.saveButton, submitting && styles.disabled]} disabled={submitting} onPress={handleSave}>

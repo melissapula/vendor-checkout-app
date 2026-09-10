@@ -172,7 +172,13 @@ export default function PieceFormScreen({
         <Text style={styles.heading}>{piece ? 'Edit Piece' : 'New Piece'}</Text>
 
         <Text style={styles.label}>Title</Text>
-        <TextInput style={styles.input} value={title} onChangeText={setTitle} placeholder="e.g. Loon at Dawn" />
+        <TextInput
+          style={styles.input}
+          value={title}
+          onChangeText={setTitle}
+          placeholder="e.g. Loon at Dawn"
+          onSubmitEditing={handleSave}
+        />
 
         <Text style={styles.label}>SKU</Text>
         <TextInput
@@ -181,6 +187,7 @@ export default function PieceFormScreen({
           onChangeText={setSku}
           placeholder="e.g. SKU-0129"
           autoCapitalize="characters"
+          onSubmitEditing={handleSave}
         />
 
         <Text style={styles.label}>Type</Text>
@@ -203,20 +210,39 @@ export default function PieceFormScreen({
             value={customType}
             onChangeText={setCustomType}
             placeholder="Custom type name"
+            onSubmitEditing={handleSave}
           />
         )}
 
         <Text style={styles.label}>Medium</Text>
-        <TextInput style={styles.input} value={medium} onChangeText={setMedium} placeholder="e.g. Acrylic on Canvas" />
+        <TextInput
+          style={styles.input}
+          value={medium}
+          onChangeText={setMedium}
+          placeholder="e.g. Acrylic on Canvas"
+          onSubmitEditing={handleSave}
+        />
 
         <View style={styles.row}>
           <View style={styles.half}>
             <Text style={styles.label}>Price ($)</Text>
-            <TextInput style={styles.input} value={price} onChangeText={setPrice} keyboardType="decimal-pad" />
+            <TextInput
+              style={styles.input}
+              value={price}
+              onChangeText={setPrice}
+              keyboardType="decimal-pad"
+              onSubmitEditing={handleSave}
+            />
           </View>
           <View style={styles.half}>
             <Text style={styles.label}>Quantity remaining</Text>
-            <TextInput style={styles.input} value={quantity} onChangeText={setQuantity} keyboardType="number-pad" />
+            <TextInput
+              style={styles.input}
+              value={quantity}
+              onChangeText={setQuantity}
+              keyboardType="number-pad"
+              onSubmitEditing={handleSave}
+            />
           </View>
         </View>
 
@@ -268,24 +294,55 @@ export default function PieceFormScreen({
         )}
 
         <Text style={styles.label}>Series (optional)</Text>
-        <TextInput style={styles.input} value={series} onChangeText={setSeries} placeholder="e.g. Northern Skies" />
+        <TextInput
+          style={styles.input}
+          value={series}
+          onChangeText={setSeries}
+          placeholder="e.g. Northern Skies"
+          onSubmitEditing={handleSave}
+        />
 
         <View style={styles.row}>
           <View style={styles.half}>
             <Text style={styles.label}>Width (in)</Text>
-            <TextInput style={styles.input} value={widthIn} onChangeText={setWidthIn} keyboardType="decimal-pad" />
+            <TextInput
+              style={styles.input}
+              value={widthIn}
+              onChangeText={setWidthIn}
+              keyboardType="decimal-pad"
+              onSubmitEditing={handleSave}
+            />
           </View>
           <View style={styles.half}>
             <Text style={styles.label}>Height (in)</Text>
-            <TextInput style={styles.input} value={heightIn} onChangeText={setHeightIn} keyboardType="decimal-pad" />
+            <TextInput
+              style={styles.input}
+              value={heightIn}
+              onChangeText={setHeightIn}
+              keyboardType="decimal-pad"
+              onSubmitEditing={handleSave}
+            />
           </View>
         </View>
 
         <Text style={styles.label}>Cost basis ($, optional)</Text>
-        <TextInput style={styles.input} value={costBasis} onChangeText={setCostBasis} keyboardType="decimal-pad" />
+        <TextInput
+          style={styles.input}
+          value={costBasis}
+          onChangeText={setCostBasis}
+          keyboardType="decimal-pad"
+          onSubmitEditing={handleSave}
+        />
 
         <Text style={styles.label}>Image URL (optional)</Text>
-        <TextInput style={styles.input} value={imageUrl} onChangeText={setImageUrl} placeholder="https://…" autoCapitalize="none" />
+        <TextInput
+          style={styles.input}
+          value={imageUrl}
+          onChangeText={setImageUrl}
+          placeholder="https://…"
+          autoCapitalize="none"
+          onSubmitEditing={handleSave}
+        />
 
         <Text style={styles.label}>Notes (optional)</Text>
         <TextInput

@@ -52,7 +52,13 @@ export default function StoreSettingsScreen() {
       <Text style={styles.heading}>Store Settings</Text>
 
       <Text style={styles.label}>Store name</Text>
-      <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Your store name" />
+      <TextInput
+        style={styles.input}
+        value={name}
+        onChangeText={setName}
+        placeholder="Your store name"
+        onSubmitEditing={handleSave}
+      />
 
       <Text style={styles.label}>Staff PIN</Text>
       <TextInput
@@ -61,6 +67,7 @@ export default function StoreSettingsScreen() {
         onChangeText={setPin}
         placeholder="4–6 digit PIN"
         keyboardType="number-pad"
+        onSubmitEditing={handleSave}
       />
 
       <Pressable style={[styles.saveButton, submitting && styles.disabled]} disabled={submitting} onPress={handleSave}>

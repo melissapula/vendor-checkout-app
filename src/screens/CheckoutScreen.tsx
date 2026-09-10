@@ -320,6 +320,9 @@ export default function CheckoutScreen({
             value={location}
             onChangeText={setLocation}
             placeholder="e.g. Bemidji Farmers Market"
+            onSubmitEditing={() => {
+              if (enabledMethods.length > 0) setStep('buyerReview');
+            }}
           />
           {enabledMethods.length === 0 && (
             <Text style={styles.error}>No payment methods enabled — set some up in Admin &gt; Settings &gt; Payment Methods.</Text>
@@ -411,6 +414,9 @@ export default function CheckoutScreen({
             onChangeText={setCustomTipText}
             placeholder="0.00"
             keyboardType="decimal-pad"
+            onSubmitEditing={() => {
+              if (customTipText.trim()) confirmCustomTip();
+            }}
           />
           <Pressable
             style={[styles.confirmButton, isTabletUp && styles.confirmButtonTabletUp, !customTipText.trim() && styles.confirmButtonDisabled]}

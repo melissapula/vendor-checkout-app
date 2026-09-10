@@ -61,6 +61,7 @@ export default function AuthScreen({ onForgotPassword }: { onForgotPassword: () 
         keyboardType="email-address"
         autoCapitalize="none"
         autoCorrect={false}
+        onSubmitEditing={handleSubmit}
       />
       <TextInput
         style={styles.input}
@@ -69,6 +70,7 @@ export default function AuthScreen({ onForgotPassword }: { onForgotPassword: () 
         placeholder="Password"
         secureTextEntry
         autoCapitalize="none"
+        onSubmitEditing={handleSubmit}
       />
       {mode === 'sign-up' && (
         <TextInput
@@ -78,6 +80,7 @@ export default function AuthScreen({ onForgotPassword }: { onForgotPassword: () 
           placeholder="Confirm password"
           secureTextEntry
           autoCapitalize="none"
+          onSubmitEditing={handleSubmit}
         />
       )}
 

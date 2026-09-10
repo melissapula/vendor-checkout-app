@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { FeeRate, PaymentMethod } from '../types/database';
-import { startStripeOnboarding, checkStripeAccountStatus } from '../lib/payments';
+import { startStripeOnboarding, checkStripeAccountStatus, getStripeAccountBalance, StripeAccountBalance } from '../lib/payments';
 import { feeRateFor } from '../lib/fees';
 import { appAlert } from '../lib/alert';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
@@ -57,6 +57,8 @@ export default function PaymentSettingsScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(false);
+  const [balance, setBalance] = useState<StripeAccountBalance | null>(null);
+  const [balanceError, setBalanceError] = useState(false);
   const { isTabletUp } = useBreakpoint();
 
   useEffect(() => {
@@ -81,6 +83,15 @@ export default function PaymentSettingsScreen() {
       // below still reflects last-known state either way.
     } finally {
       setCheckingStatus(false);
+    }
+    try {
+      setBalance(await getStripeAccountBalance());
+      setBalanceError(false);
+    } catch {
+      // Most likely cause: the platform's restricted key hasn't been
+      // granted "Balance: Read" yet — surfaced in the UI rather than
+      // silently hidden, since it needs a one-time dashboard fix.
+      setBalanceError(true);
     }
   }
 
@@ -179,12 +190,30 @@ export default function PaymentSettingsScreen() {
 
       <Text style={styles.sectionLabel}>Card &amp; Cash App Pay (via Stripe)</Text>
       {stripeReady ? (
-        <View style={styles.statusRow}>
-          <Text style={styles.statusReady}>✓ Connected — ready to accept cards and Cash App Pay</Text>
-          <Pressable onPress={handleRefreshStatus} disabled={checkingStatus}>
-            <Text style={styles.link}>{checkingStatus ? 'Checking…' : 'Refresh'}</Text>
-          </Pressable>
-        </View>
+        <>
+          <View style={styles.statusRow}>
+            <Text style={styles.statusReady}>✓ Connected — ready to accept cards and Cash App Pay</Text>
+            <Pressable onPress={handleRefreshStatus} disabled={checkingStatus}>
+              <Text style={styles.link}>{checkingStatus ? 'Checking…' : 'Refresh'}</Text>
+            </Pressable>
+          </View>
+          {balance ? (
+            <View style={styles.balanceBox}>
+              <Text style={styles.balanceLabel}>In Stripe, not yet paid out</Text>
+              <Text style={styles.balanceValue}>
+                ${((balance.availableCents + balance.pendingCents) / 100).toFixed(2)}
+              </Text>
+              <Text style={styles.balanceBreakdown}>
+                ${(balance.availableCents / 100).toFixed(2)} available for next payout · $
+                {(balance.pendingCents / 100).toFixed(2)} still clearing
+              </Text>
+            </View>
+          ) : balanceError ? (
+            <Text style={styles.helperText}>
+              Could not load Stripe balance — the platform key may be missing Balance read access.
+            </Text>
+          ) : null}
+        </>
       ) : (
         <View>
           <Text style={styles.helperText}>
@@ -241,6 +270,7 @@ export default function PaymentSettingsScreen() {
             onChangeText={setVenmoUsername}
             placeholder="e.g. Four-Seasons-Studio"
             autoCapitalize="none"
+            onSubmitEditing={handleSave}
           />
         </>
       )}
@@ -253,6 +283,7 @@ export default function PaymentSettingsScreen() {
             onChangeText={setPaypalUsername}
             placeholder="e.g. FourSeasonsStudio"
             autoCapitalize="none"
+            onSubmitEditing={handleSave}
           />
         </>
       )}
@@ -288,6 +319,7 @@ export default function PaymentSettingsScreen() {
                     onChangeText={(t) => setFeeRateText((prev) => ({ ...prev, [m]: t }))}
                     placeholder={`${formatRatePercent(def.rate)}%`}
                     keyboardType="decimal-pad"
+                    onSubmitEditing={handleSave}
                   />
                   <Text style={styles.feeRowPlus}>%  +  $</Text>
                   <TextInput
@@ -296,6 +328,7 @@ export default function PaymentSettingsScreen() {
                     onChangeText={(t) => setFeeFixedText((prev) => ({ ...prev, [m]: t }))}
                     placeholder={def.fixed.toString()}
                     keyboardType="decimal-pad"
+                    onSubmitEditing={handleSave}
                   />
                 </View>
               </View>
@@ -326,6 +359,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   connectButtonText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  balanceBox: {
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: '#f7f7f7',
+  },
+  balanceLabel: { fontSize: 12, color: '#666' },
+  balanceValue: { fontSize: 22, fontWeight: '700', color: '#1a1a1a', marginTop: 2 },
+  balanceBreakdown: { fontSize: 12, color: '#888', marginTop: 4 },
   divider: { height: 1, backgroundColor: '#eee', marginTop: 20 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 8, backgroundColor: '#f0f0f0' },
