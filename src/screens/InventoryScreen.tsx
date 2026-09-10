@@ -21,13 +21,15 @@ function PieceRow({
   onEdit,
   onAddVariant,
   onPrintLabel,
+  justAdded,
   onAdded,
 }: {
   piece: Piece;
   onEdit: () => void;
   onAddVariant: () => void;
   onPrintLabel: () => void;
-  onAdded: (piece: Piece) => void;
+  justAdded: boolean;
+  onAdded: () => void;
 }) {
   const { addItem } = useCart();
   const sellable = isSellable(piece);
@@ -59,16 +61,23 @@ function PieceRow({
           <Pressable style={styles.editButton} onPress={onEdit}>
             <Text style={styles.editButtonText}>Edit</Text>
           </Pressable>
-          <Pressable
-            style={[styles.addButton, !sellable && styles.addButtonDisabled]}
-            disabled={!sellable}
-            onPress={() => {
-              addItem(piece);
-              onAdded(piece);
-            }}
-          >
-            <Text style={styles.addButtonText}>Add</Text>
-          </Pressable>
+          <View style={styles.addButtonWrap}>
+            {justAdded && (
+              <View style={styles.addedBadge} pointerEvents="none">
+                <Text style={styles.addedBadgeText}>✓ Added to cart</Text>
+              </View>
+            )}
+            <Pressable
+              style={[styles.addButton, !sellable && styles.addButtonDisabled]}
+              disabled={!sellable}
+              onPress={() => {
+                addItem(piece);
+                onAdded();
+              }}
+            >
+              <Text style={styles.addButtonText}>Add</Text>
+            </Pressable>
+          </View>
         </View>
         <Pressable onPress={onPrintLabel}>
           <Text style={styles.labelLink}>Print label</Text>
@@ -86,14 +95,14 @@ export default function InventoryScreen() {
   const [builderOpen, setBuilderOpen] = useState(false);
   const [builderInitialPiece, setBuilderInitialPiece] = useState<Piece | undefined>(undefined);
   const [printJob, setPrintJob] = useState<{ pieces: Piece[]; fields: LabelFields } | null>(null);
-  const [addedMessage, setAddedMessage] = useState<string | null>(null);
+  const [justAddedId, setJustAddedId] = useState<string | null>(null);
   const { isTabletUp } = useBreakpoint();
 
   useEffect(() => {
-    if (!addedMessage) return;
-    const timer = setTimeout(() => setAddedMessage(null), 2500);
+    if (!justAddedId) return;
+    const timer = setTimeout(() => setJustAddedId(null), 2500);
     return () => clearTimeout(timer);
-  }, [addedMessage]);
+  }, [justAddedId]);
 
   if (loading) {
     return (
@@ -136,11 +145,6 @@ export default function InventoryScreen() {
 
   return (
     <>
-      {addedMessage && (
-        <View style={styles.addedBanner}>
-          <Text style={styles.addedBannerText}>✓ {addedMessage}</Text>
-        </View>
-      )}
       <FlatList
         style={styles.list}
         contentContainerStyle={centeredColumn(isTabletUp, CONTENT_WIDTH.wide)}
@@ -152,7 +156,8 @@ export default function InventoryScreen() {
             onEdit={() => openEdit(item)}
             onAddVariant={() => openAddVariant(item.id)}
             onPrintLabel={() => openBuilder(item)}
-            onAdded={(piece) => setAddedMessage(`Added "${piece.title}" to the customer's cart`)}
+            justAdded={item.id === justAddedId}
+            onAdded={() => setJustAddedId(item.id)}
           />
         )}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -194,8 +199,6 @@ export default function InventoryScreen() {
 const styles = StyleSheet.create({
   list: { flex: 1, backgroundColor: '#fff' },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  addedBanner: { backgroundColor: '#e8f5e8', paddingHorizontal: 16, paddingVertical: 10 },
-  addedBannerText: { color: '#2a7a2a', fontWeight: '600', fontSize: 13 },
   errorText: { color: '#b00020', textAlign: 'center' },
   row: {
     flexDirection: 'row',
@@ -237,6 +240,21 @@ const styles = StyleSheet.create({
   },
   addButtonDisabled: { backgroundColor: '#ddd' },
   addButtonText: { color: '#fff', fontWeight: '600' },
+  addButtonWrap: { position: 'relative' },
+  addedBadge: {
+    position: 'absolute',
+    bottom: '100%',
+    right: 0,
+    marginBottom: 6,
+    backgroundColor: '#2a7a2a',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    zIndex: 10,
+    width: 140,
+    alignItems: 'center',
+  },
+  addedBadgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
   labelLink: { fontSize: 12, color: '#666', marginTop: 8, textDecorationLine: 'underline' },
   separator: { height: 1, backgroundColor: '#eee', marginLeft: 16 },
   footer: { flexDirection: 'row', gap: 8, padding: 16, borderTopWidth: 1, borderTopColor: '#eee' },
