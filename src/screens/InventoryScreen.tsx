@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Piece } from '../types/database';
 import { usePieces, isSellable } from '../context/PiecesContext';
 import { useCart } from '../context/CartContext';
 import PieceFormScreen from './PieceFormScreen';
+import AppModal from '../components/AppModal';
 import PrintLabelsOverlay, { LabelFields } from '../components/PrintLabelsOverlay';
 import PrintLabelsBuilderScreen from './PrintLabelsBuilderScreen';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
@@ -161,6 +162,9 @@ export default function InventoryScreen() {
           />
         )}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>No pieces yet — tap "+ Add Piece" to create one.</Text>
+        }
       />
       <View style={[styles.footer, centeredColumn(isTabletUp, CONTENT_WIDTH.wide)]}>
         <Pressable style={styles.printAllButton} onPress={() => openBuilder()}>
@@ -170,14 +174,14 @@ export default function InventoryScreen() {
           <Text style={styles.addPieceButtonText}>+ Add Piece</Text>
         </Pressable>
       </View>
-      <Modal visible={formOpen} animationType="slide" onRequestClose={() => setFormOpen(false)}>
+      <AppModal visible={formOpen} onRequestClose={() => setFormOpen(false)}>
         <PieceFormScreen
           piece={editingPiece ?? undefined}
           presetOriginalId={presetOriginalId}
           onClose={() => setFormOpen(false)}
         />
-      </Modal>
-      <Modal visible={builderOpen} animationType="slide" onRequestClose={() => setBuilderOpen(false)}>
+      </AppModal>
+      <AppModal visible={builderOpen} onRequestClose={() => setBuilderOpen(false)}>
         <PrintLabelsBuilderScreen
           initialPiece={builderInitialPiece}
           onClose={() => setBuilderOpen(false)}
@@ -186,7 +190,7 @@ export default function InventoryScreen() {
             setBuilderOpen(false);
           }}
         />
-      </Modal>
+      </AppModal>
       <PrintLabelsOverlay
         pieces={printJob?.pieces ?? null}
         fields={printJob?.fields ?? null}
@@ -200,6 +204,7 @@ const styles = StyleSheet.create({
   list: { flex: 1, backgroundColor: '#fff' },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   errorText: { color: '#b00020', textAlign: 'center' },
+  emptyText: { color: '#666', fontSize: 15, textAlign: 'center', padding: 24 },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',

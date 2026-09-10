@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import AppModal from '../components/AppModal';
 import { useDeals } from '../context/DealsContext';
 import { AppliesTo } from '../lib/deals';
 import { Deal } from '../types/database';
@@ -107,9 +108,9 @@ export default function DealsScreen() {
         </Pressable>
       </View>
 
-      <Modal visible={formOpen} animationType="slide" onRequestClose={() => setFormOpen(false)}>
+      <AppModal visible={formOpen} onRequestClose={() => setFormOpen(false)}>
         <DealFormScreen deal={editingDeal} onClose={() => setFormOpen(false)} />
-      </Modal>
+      </AppModal>
     </View>
   );
 }

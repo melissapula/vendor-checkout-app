@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { Piece } from '../types/database';
+import { usePieces } from './PiecesContext';
 
 export interface CartItem {
   piece: Piece;
@@ -41,18 +42,40 @@ const CartContext = createContext<CartContextValue | null>(null);
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [location, setLocation] = useState('');
+  const { pieces } = usePieces();
+
+  // A cart line's `piece` is a snapshot from whenever it was added — but
+  // stock can change after that (another sale on this device, or staff
+  // editing quantity_remaining in Inventory), and the quantity cap used to
+  // be checked against that stale snapshot forever. Re-sync against
+  // PiecesContext's live data any time it changes, so the cap (and the
+  // displayed price/title) stay current for the rest of the checkout
+  // session; a line whose stock has dropped to 0 is dropped the same way
+  // updateQuantity(..., 0) drops it.
+  useEffect(() => {
+    setItems((prev) =>
+      prev
+        .map((item) => {
+          const live = pieces.find((p) => p.id === item.piece.id);
+          if (!live) return item;
+          return { ...item, piece: live, quantity: Math.min(item.quantity, live.quantity_remaining) };
+        })
+        .filter((item) => item.quantity > 0)
+    );
+  }, [pieces]);
 
   function addItem(piece: Piece) {
     setItems((prev) => {
-      const existing = prev.find((i) => i.piece.id === piece.id);
-      const maxQuantity = piece.quantity_remaining;
+      const live = pieces.find((p) => p.id === piece.id) ?? piece;
+      const existing = prev.find((i) => i.piece.id === live.id);
       if (existing) {
-        if (existing.quantity >= maxQuantity) return prev;
+        if (existing.quantity >= live.quantity_remaining) return prev;
         return prev.map((i) =>
-          i.piece.id === piece.id ? { ...i, quantity: i.quantity + 1 } : i
+          i.piece.id === live.id ? { ...i, piece: live, quantity: i.quantity + 1 } : i
         );
       }
-      return [...prev, { piece, quantity: 1 }];
+      if (live.quantity_remaining <= 0) return prev;
+      return [...prev, { piece: live, quantity: 1 }];
     });
   }
 
@@ -63,11 +86,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   function updateQuantity(pieceId: string, quantity: number) {
     setItems((prev) => {
       if (quantity <= 0) return prev.filter((i) => i.piece.id !== pieceId);
-      return prev.map((i) =>
-        i.piece.id === pieceId
-          ? { ...i, quantity: Math.min(quantity, i.piece.quantity_remaining) }
-          : i
-      );
+      return prev.map((i) => {
+        if (i.piece.id !== pieceId) return i;
+        const live = pieces.find((p) => p.id === pieceId) ?? i.piece;
+        return { ...i, piece: live, quantity: Math.min(quantity, live.quantity_remaining) };
+      });
     });
   }
 

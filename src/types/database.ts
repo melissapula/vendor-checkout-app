@@ -2,10 +2,13 @@
 // Once the Supabase project exists, replace this with the generated version:
 //   npx supabase gen types typescript --project-id <id> > src/types/database.ts
 
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+
 export type PieceType = 'original' | 'print' | 'sticker' | 'pin' | 'postcard' | string;
 export type PieceStatus = 'available' | 'sold' | 'reserved';
 export type SaleChannel = 'show' | 'online' | 'studio';
 export type PaymentMethod = 'card' | 'venmo' | 'paypal' | 'cash_app' | 'cash';
+export type FeeRate = { rate: number; fixed: number };
 export type DealType = 'bundle_price' | 'percent_off' | 'amount_off' | 'bogo';
 
 // `type` rather than `interface`: interfaces don't satisfy TS's implicit
@@ -46,6 +49,9 @@ export type Sale = {
   sale_date: string;
   processor_payment_id: string | null;
   location: string | null;
+  // null = active sale. See supabase/migrations/0007_refund_void.sql.
+  refunded_at: string | null;
+  refund_reason: string | null;
 };
 
 export type Deal = {
@@ -75,6 +81,9 @@ export type Store = {
   venmo_username: string | null;
   paypal_me_username: string | null;
   cash_app_cashtag: string | null;
+  // Sparse — a method missing here falls back to fees.ts's own default rate
+  // for that method. See supabase/migrations/0006_per_store_fee_overrides.sql.
+  fee_overrides: Partial<Record<PaymentMethod, FeeRate>>;
 };
 
 // supabase-js v2's client generic expects this full shape (Relationships,
@@ -109,7 +118,25 @@ export type Database = {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      // Decrements each sold piece's quantity_remaining and inserts the
+      // sale rows in one DB transaction — see
+      // supabase/migrations/0005_atomic_finalize_sale.sql for why.
+      finalize_sale: {
+        Args: { sale_rows: Json };
+        Returns: { sales: Sale[]; pieces: Piece[] };
+      };
+      // Marks a sale refunded and restores the sold piece's quantity_
+      // remaining in one DB transaction — see
+      // supabase/migrations/0007_refund_void.sql. For Stripe-paid sales,
+      // call the stripe-refund-sale Edge Function instead (it calls this
+      // itself after the real Stripe refund succeeds); call this directly
+      // only for the self-reported methods (venmo/paypal/cash).
+      refund_sale: {
+        Args: { p_sale_id: string };
+        Returns: { sale: Sale; piece: Piece | null };
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

@@ -13,6 +13,8 @@ interface AuthContextValue {
   confirmPasswordReset: (email: string, code: string, newPassword: string) => Promise<void>;
   store: Store | null;
   storeLoading: boolean;
+  storeError: string | null;
+  retryStoreFetch: () => void;
   createStore: (name: string, adminPin: string) => Promise<void>;
   updateStore: (
     updates: Partial<
@@ -25,6 +27,7 @@ interface AuthContextValue {
         | 'venmo_username'
         | 'paypal_me_username'
         | 'cash_app_cashtag'
+        | 'fee_overrides'
       >
     >
   ) => Promise<void>;
@@ -41,6 +44,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [authLoading, setAuthLoading] = useState(true);
   const [store, setStore] = useState<Store | null>(null);
   const [storeLoading, setStoreLoading] = useState(true);
+  const [storeError, setStoreError] = useState<string | null>(null);
+  const [storeFetchAttempt, setStoreFetchAttempt] = useState(0);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -58,29 +63,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!session) {
       setStore(null);
+      setStoreError(null);
       setStoreLoading(false);
       return;
     }
 
     let cancelled = false;
     setStoreLoading(true);
+    setStoreError(null);
 
-    supabase
-      .from('stores')
-      .select('*')
-      .eq('owner_id', session.user.id)
-      .maybeSingle()
-      .then(({ data, error }) => {
+    async function fetchStore() {
+      try {
+        const { data, error } = await supabase
+          .from('stores')
+          .select('*')
+          .eq('owner_id', session!.user.id)
+          .maybeSingle();
         if (cancelled) return;
-        if (error) throw error;
-        setStore(data);
-        setStoreLoading(false);
-      });
+        if (error) {
+          setStoreError(error.message);
+        } else {
+          setStore(data);
+        }
+      } catch (error) {
+        if (cancelled) return;
+        setStoreError(error instanceof Error ? error.message : 'Failed to load store');
+      } finally {
+        if (!cancelled) setStoreLoading(false);
+      }
+    }
+
+    fetchStore();
 
     return () => {
       cancelled = true;
     };
-  }, [session]);
+  }, [session, storeFetchAttempt]);
+
+  function retryStoreFetch() {
+    setStoreFetchAttempt((n) => n + 1);
+  }
 
   async function signIn(email: string, password: string) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -170,6 +192,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         confirmPasswordReset,
         store,
         storeLoading,
+        storeError,
+        retryStoreFetch,
         createStore,
         updateStore,
         refreshStore,

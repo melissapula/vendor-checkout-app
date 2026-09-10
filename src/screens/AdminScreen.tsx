@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AppModal from '../components/AppModal';
 import InventoryScreen from './InventoryScreen';
 import CartScreen from './CartScreen';
 import DealsScreen from './DealsScreen';
@@ -49,7 +50,7 @@ export default function AdminScreen() {
         {page === 'settings' && <StoreSettingsScreen />}
       </View>
 
-      <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={() => setMenuOpen(false)}>
+      <AppModal visible={menuOpen} transparent onRequestClose={() => setMenuOpen(false)}>
         <Pressable style={styles.backdrop} onPress={() => setMenuOpen(false)}>
           <SafeAreaView edges={['top']} style={styles.menuWrap}>
             <View style={styles.menu}>
@@ -74,7 +75,7 @@ export default function AdminScreen() {
             </View>
           </SafeAreaView>
         </Pressable>
-      </Modal>
+      </AppModal>
     </SafeAreaView>
   );
 }

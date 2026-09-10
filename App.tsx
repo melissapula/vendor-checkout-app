@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Platform, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
@@ -15,7 +15,7 @@ import ResetPasswordScreen from './src/screens/auth/ResetPasswordScreen';
 import AlertHost from './src/components/AlertHost';
 
 function AppGate() {
-  const { session, authLoading, store, storeLoading } = useAuth();
+  const { session, authLoading, store, storeLoading, storeError, retryStoreFetch } = useAuth();
   const [authView, setAuthView] = useState<'auth' | 'reset'>('auth');
 
   // Browser tab title / "Add to Home Screen" suggested name — each vendor's
@@ -43,6 +43,21 @@ function AppGate() {
       <AuthScreen onForgotPassword={() => setAuthView('reset')} />
     );
   }
+
+  if (storeError) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 16 }}>
+        <Text style={{ textAlign: 'center' }}>Couldn't load your store: {storeError}</Text>
+        <Pressable
+          onPress={retryStoreFetch}
+          style={{ backgroundColor: '#111', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8 }}
+        >
+          <Text style={{ color: '#fff' }}>Retry</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
   if (!store) return <CreateStoreScreen />;
 
   return (

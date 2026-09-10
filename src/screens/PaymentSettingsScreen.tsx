@@ -10,8 +10,9 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
-import { PaymentMethod } from '../types/database';
+import { FeeRate, PaymentMethod } from '../types/database';
 import { startStripeOnboarding, checkStripeAccountStatus } from '../lib/payments';
+import { feeRateFor } from '../lib/fees';
 import { appAlert } from '../lib/alert';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 
@@ -26,12 +27,33 @@ const METHOD_LABELS: Record<PaymentMethod, string> = {
 // Methods in this order in the UI, matching how they'll appear at checkout.
 const ALL_METHODS: PaymentMethod[] = ['card', 'venmo', 'paypal', 'cash_app', 'cash'];
 
+// A rate is stored as a fraction (0.029) but shown as a percent (2.9) —
+// multiplying by 100 reintroduces float noise (0.029 * 100 ===
+// 2.9000000000000004), so round back to a sane number of decimal places
+// before display.
+function formatRatePercent(rate: number): string {
+  return parseFloat((rate * 100).toFixed(4)).toString();
+}
+
 export default function PaymentSettingsScreen() {
   const { store, updateStore, refreshStore } = useAuth();
   const [enabled, setEnabled] = useState<PaymentMethod[]>(store?.enabled_payment_methods ?? []);
   const [passFeeToBuyer, setPassFeeToBuyer] = useState(store?.pass_fee_to_buyer ?? false);
   const [venmoUsername, setVenmoUsername] = useState(store?.venmo_username ?? '');
   const [paypalUsername, setPaypalUsername] = useState(store?.paypal_me_username ?? '');
+  const [showFeeOverrides, setShowFeeOverrides] = useState(false);
+  // Blank means "use the app default for this method" — only a method the
+  // vendor actually typed a value for ends up in fee_overrides on save.
+  const [feeRateText, setFeeRateText] = useState<Record<PaymentMethod, string>>(() =>
+    Object.fromEntries(
+      ALL_METHODS.map((m) => [m, store?.fee_overrides?.[m] ? formatRatePercent(store.fee_overrides[m]!.rate) : ''])
+    ) as Record<PaymentMethod, string>
+  );
+  const [feeFixedText, setFeeFixedText] = useState<Record<PaymentMethod, string>>(() =>
+    Object.fromEntries(
+      ALL_METHODS.map((m) => [m, store?.fee_overrides?.[m] ? String(store.fee_overrides[m]!.fixed) : ''])
+    ) as Record<PaymentMethod, string>
+  );
   const [submitting, setSubmitting] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(false);
@@ -100,6 +122,19 @@ export default function PaymentSettingsScreen() {
       return appAlert('Finish connecting Stripe', "Cash App Pay can't be enabled until Stripe setup is complete.");
     }
 
+    const feeOverrides: Partial<Record<PaymentMethod, FeeRate>> = {};
+    for (const m of ALL_METHODS) {
+      const rateStr = feeRateText[m].trim();
+      const fixedStr = feeFixedText[m].trim();
+      if (!rateStr && !fixedStr) continue;
+      const rate = rateStr ? parseFloat(rateStr) / 100 : feeRateFor(m).rate;
+      const fixed = fixedStr ? parseFloat(fixedStr) : feeRateFor(m).fixed;
+      if (!Number.isFinite(rate) || rate < 0 || !Number.isFinite(fixed) || fixed < 0) {
+        return appAlert('Invalid fee rate', `Check the ${METHOD_LABELS[m]} fee rate — it should be a plain, non-negative number.`);
+      }
+      feeOverrides[m] = { rate, fixed };
+    }
+
     setSubmitting(true);
     try {
       await updateStore({
@@ -107,6 +142,7 @@ export default function PaymentSettingsScreen() {
         pass_fee_to_buyer: passFeeToBuyer,
         venmo_username: venmoUsername.trim() || null,
         paypal_me_username: paypalUsername.trim() || null,
+        fee_overrides: feeOverrides,
       });
       appAlert('Saved', 'Payment settings updated.');
     } catch (err) {
@@ -211,6 +247,44 @@ export default function PaymentSettingsScreen() {
         <Text style={styles.toggleLabel}>Add the processing fee to the buyer's total (instead of it coming out of your payout)</Text>
       </Pressable>
 
+      <Pressable style={{ marginTop: 14 }} onPress={() => setShowFeeOverrides((v) => !v)}>
+        <Text style={styles.link}>{showFeeOverrides ? 'Hide' : 'Customize'} fee rates per method</Text>
+      </Pressable>
+      {showFeeOverrides && (
+        <View style={{ marginTop: 10, gap: 14 }}>
+          <Text style={styles.helperText}>
+            Leave a field blank to use the default shown as its placeholder. This is what determines your net
+            revenue for Venmo/PayPal/cash, and — when the fee is passed to the buyer — the actual amount charged
+            for card/Cash App Pay.
+          </Text>
+          {ALL_METHODS.map((m) => {
+            const def = feeRateFor(m);
+            return (
+              <View key={m} style={styles.feeRow}>
+                <Text style={styles.feeRowLabel}>{METHOD_LABELS[m]}</Text>
+                <View style={styles.feeRowInputs}>
+                  <TextInput
+                    style={styles.feeInput}
+                    value={feeRateText[m]}
+                    onChangeText={(t) => setFeeRateText((prev) => ({ ...prev, [m]: t }))}
+                    placeholder={`${formatRatePercent(def.rate)}%`}
+                    keyboardType="decimal-pad"
+                  />
+                  <Text style={styles.feeRowPlus}>%  +  $</Text>
+                  <TextInput
+                    style={styles.feeInput}
+                    value={feeFixedText[m]}
+                    onChangeText={(t) => setFeeFixedText((prev) => ({ ...prev, [m]: t }))}
+                    placeholder={def.fixed.toString()}
+                    keyboardType="decimal-pad"
+                  />
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      )}
+
       <Pressable style={[styles.saveButton, submitting && styles.disabled]} disabled={submitting} onPress={handleSave}>
         {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveButtonText}>Save changes</Text>}
       </Pressable>
@@ -241,6 +315,19 @@ const styles = StyleSheet.create({
   chipText: { fontWeight: '600', color: '#1a1a1a', fontSize: 13 },
   chipTextSelected: { color: '#fff' },
   label: { fontSize: 13, color: '#666', marginTop: 14, marginBottom: 6 },
+  feeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  feeRowLabel: { fontSize: 14, color: '#1a1a1a', width: 90 },
+  feeRowInputs: { flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 },
+  feeRowPlus: { fontSize: 13, color: '#666' },
+  feeInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 14,
+  },
   input: {
     borderWidth: 1,
     borderColor: '#ddd',

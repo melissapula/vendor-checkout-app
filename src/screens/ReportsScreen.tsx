@@ -4,6 +4,8 @@ import { useSales } from '../context/SalesContext';
 import { usePieces } from '../context/PiecesContext';
 import { Sale, PaymentMethod, PieceType } from '../types/database';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
+import { refundSale } from '../lib/refunds';
+import { appAlert } from '../lib/alert';
 
 type DateRange = 'today' | '7days' | 'all' | 'custom';
 
@@ -47,8 +49,8 @@ function isWithinRange(iso: string, range: DateRange, from: string, to: string):
 }
 
 export default function ReportsScreen() {
-  const { sales, loading, error } = useSales();
-  const { pieces } = usePieces();
+  const { sales, loading, error, applySaleUpdate } = useSales();
+  const { pieces, applyPieceUpdates } = usePieces();
 
   const [dateRange, setDateRange] = useState<DateRange>('today');
   const [customFrom, setCustomFrom] = useState('');
@@ -78,16 +80,21 @@ export default function ReportsScreen() {
     });
   }, [sales, dateRange, customFrom, customTo, methodFilter, typeFilter, locationFilter, pieceById]);
 
+  // Refunded sales stay in the filtered list/count for the audit trail
+  // (staff can still see what happened), but shouldn't count toward
+  // gross/net/by-type — the money isn't actually the store's anymore.
+  const activeFiltered = useMemo(() => filtered.filter((s) => !s.refunded_at), [filtered]);
+
   const summary = useMemo(() => {
-    const gross = filtered.reduce((sum, s) => sum + s.sale_price, 0);
-    const fees = filtered.reduce((sum, s) => sum + s.fee_amount, 0);
-    const tips = filtered.reduce((sum, s) => sum + (s.tip_amount ?? 0), 0);
-    return { gross, fees, tips, net: gross - fees, count: filtered.length };
-  }, [filtered]);
+    const gross = activeFiltered.reduce((sum, s) => sum + s.sale_price, 0);
+    const fees = activeFiltered.reduce((sum, s) => sum + s.fee_amount, 0);
+    const tips = activeFiltered.reduce((sum, s) => sum + (s.tip_amount ?? 0), 0);
+    return { gross, fees, tips, net: gross - fees, count: activeFiltered.length };
+  }, [activeFiltered]);
 
   const byType = useMemo(() => {
     const map = new Map<string, { count: number; gross: number }>();
-    for (const s of filtered) {
+    for (const s of activeFiltered) {
       const type = pieceById.get(s.piece_id)?.type ?? 'unknown';
       const entry = map.get(type) ?? { count: 0, gross: 0 };
       entry.count += 1;
@@ -95,7 +102,17 @@ export default function ReportsScreen() {
       map.set(type, entry);
     }
     return Array.from(map.entries()).sort((a, b) => b[1].gross - a[1].gross);
-  }, [filtered, pieceById]);
+  }, [activeFiltered, pieceById]);
+
+  async function handleRefund(sale: Sale) {
+    try {
+      const result = await refundSale(sale);
+      applySaleUpdate(result.sale);
+      if (result.piece) applyPieceUpdates([result.piece]);
+    } catch (err) {
+      appAlert('Refund failed', err instanceof Error ? err.message : 'Could not refund this sale.');
+    }
+  }
 
   if (loading) {
     return (
@@ -119,7 +136,9 @@ export default function ReportsScreen() {
       contentContainerStyle={centeredColumn(isTabletUp, CONTENT_WIDTH.wide)}
       data={filtered}
       keyExtractor={(s) => s.id}
-      renderItem={({ item }) => <SaleRow sale={item} title={pieceById.get(item.piece_id)?.title ?? 'Unknown item'} />}
+      renderItem={({ item }) => (
+        <SaleRow sale={item} title={pieceById.get(item.piece_id)?.title ?? 'Unknown item'} onRefund={handleRefund} />
+      )}
       ItemSeparatorComponent={() => <View style={styles.separator} />}
       ListEmptyComponent={<Text style={styles.emptyText}>No sales match these filters.</Text>}
       ListHeaderComponent={
@@ -268,19 +287,56 @@ function SummaryRow({
   );
 }
 
-function SaleRow({ sale, title }: { sale: Sale; title: string }) {
+function SaleRow({
+  sale,
+  title,
+  onRefund,
+}: {
+  sale: Sale;
+  title: string;
+  onRefund: (sale: Sale) => Promise<void>;
+}) {
+  const [refunding, setRefunding] = useState(false);
+  const refunded = !!sale.refunded_at;
+
+  function confirmRefund() {
+    appAlert(
+      'Refund this sale?',
+      `${title} — $${sale.sale_price.toFixed(2)} via ${sale.payment_method}. This puts the item back in stock. Can't be undone from here.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Refund',
+          style: 'destructive',
+          onPress: () => {
+            setRefunding(true);
+            onRefund(sale).finally(() => setRefunding(false));
+          },
+        },
+      ]
+    );
+  }
+
   return (
     <View style={styles.saleRow}>
       <View style={styles.saleInfo}>
-        <Text style={styles.saleTitle}>{title}</Text>
+        <Text style={[styles.saleTitle, refunded && styles.refundedText]}>{title}</Text>
         <Text style={styles.saleMeta}>
           {new Date(sale.sale_date).toLocaleString()} · {sale.payment_method}
           {sale.location ? ` · ${sale.location}` : ''}
         </Text>
+        {refunded && (
+          <Text style={styles.refundedBadge}>Refunded {new Date(sale.refunded_at!).toLocaleDateString()}</Text>
+        )}
       </View>
       <View style={styles.saleAmounts}>
-        <Text style={styles.salePrice}>${sale.sale_price.toFixed(2)}</Text>
+        <Text style={[styles.salePrice, refunded && styles.refundedText]}>${sale.sale_price.toFixed(2)}</Text>
         {sale.tip_amount ? <Text style={styles.saleTip}>+${sale.tip_amount.toFixed(2)} tip</Text> : null}
+        {!refunded && (
+          <Pressable disabled={refunding} onPress={confirmRefund} style={styles.refundButton}>
+            <Text style={styles.refundLink}>{refunding ? 'Refunding…' : 'Refund'}</Text>
+          </Pressable>
+        )}
       </View>
     </View>
   );
@@ -326,5 +382,9 @@ const styles = StyleSheet.create({
   saleAmounts: { alignItems: 'flex-end' },
   salePrice: { fontSize: 15, fontWeight: '600' },
   saleTip: { fontSize: 12, color: '#2a7a2a', marginTop: 2 },
+  refundedText: { color: '#999', textDecorationLine: 'line-through' },
+  refundedBadge: { fontSize: 12, color: '#b00020', marginTop: 2, fontWeight: '600' },
+  refundButton: { marginTop: 6 },
+  refundLink: { fontSize: 12, color: '#b00020', fontWeight: '600', textDecorationLine: 'underline' },
   separator: { height: 1, backgroundColor: '#eee', marginLeft: 16 },
 });

@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { FlatList, Image, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import AppModal from '../components/AppModal';
 import { CartItem, effectivePrice, useCart } from '../context/CartContext';
 import { useDeals } from '../context/DealsContext';
 import { evaluateDeals } from '../lib/deals';
@@ -202,9 +203,9 @@ export default function CartScreen() {
         )}
       </View>
 
-      <Modal visible={checkoutOpen} animationType="slide" onRequestClose={() => setCheckoutOpen(false)}>
+      <AppModal visible={checkoutOpen} onRequestClose={() => setCheckoutOpen(false)}>
         <CheckoutScreen onClose={() => setCheckoutOpen(false)} />
-      </Modal>
+      </AppModal>
       <CameraScanner visible={cameraOpen} onScan={handleCameraScan} onClose={() => setCameraOpen(false)} />
     </View>
   );

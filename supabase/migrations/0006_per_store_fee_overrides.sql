@@ -1,0 +1,16 @@
+-- fees.ts had one hardcoded FEE_RATES table shared by every store — every
+-- vendor saw the same estimated card/Venmo/PayPal/Cash-App rates regardless
+-- of what they actually negotiated. This isn't just display: for card/Cash
+-- App Pay, that estimate is what gets charged (CheckoutScreen builds the
+-- Stripe Checkout Session's amount from it when pass_fee_to_buyer is on),
+-- and for the self-reported methods (venmo/paypal/cash) it's the real,
+-- final fee_amount recorded on the sale. So a store whose actual rate
+-- differs from the estimate was either over/under-charging buyers or
+-- misreporting net revenue.
+--
+-- Sparse by design (most stores use the defaults for most methods) so a
+-- jsonb column, not five more pairs of rate/fixed columns — same reasoning
+-- as deals.trigger_condition/applies_to in 0001_init.sql. Shape:
+-- { "card": { "rate": 0.029, "fixed": 0.3 }, ... } — a method missing from
+-- here just falls back to fees.ts's own default for that method.
+alter table stores add column fee_overrides jsonb not null default '{}'::jsonb;

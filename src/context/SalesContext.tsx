@@ -2,13 +2,17 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Sale } from '../types/database';
 import { supabase } from '../lib/supabase';
 
-type NewSale = Omit<Sale, 'id' | 'store_id'>;
-
 interface SalesContextValue {
   sales: Sale[];
   loading: boolean;
   error: string | null;
-  addSales: (sales: NewSale[]) => Promise<void>;
+  // Local-only merge — no DB write. The rows have already been inserted
+  // server-side (e.g. by CheckoutScreen's atomic finalize_sale RPC); this
+  // just brings local state in sync.
+  applySales: (sales: Sale[]) => void;
+  // Local-only merge for a single already-updated sale (e.g. after
+  // refund_sale marks one refunded server-side) — same reasoning.
+  applySaleUpdate: (sale: Sale) => void;
 }
 
 const SalesContext = createContext<SalesContextValue | null>(null);
@@ -38,14 +42,16 @@ export function SalesProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  async function addSales(newSales: NewSale[]) {
-    const { data, error } = await supabase.from('sales').insert(newSales).select();
-    if (error) throw error;
-    setSales((prev) => [...(data ?? []), ...prev]);
+  function applySales(newSales: Sale[]) {
+    setSales((prev) => [...newSales, ...prev]);
+  }
+
+  function applySaleUpdate(updated: Sale) {
+    setSales((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
   }
 
   return (
-    <SalesContext.Provider value={{ sales, loading, error, addSales }}>
+    <SalesContext.Provider value={{ sales, loading, error, applySales, applySaleUpdate }}>
       {children}
     </SalesContext.Provider>
   );

@@ -200,12 +200,8 @@ the cursor has focus, no camera or native code needed) expect, matching how
 small-business inventory tagging usually works. The optional **QR code**
 field encodes that *same* SKU string, not a URL (the app has no
 piece-detail page) — so a QR label is functionally equivalent to a barcode
-label, just a different visual format. **Note**: `CameraScanner.tsx`
-currently only accepts `BarcodeFormat.CODE_128`, so QR labels aren't yet
-scannable by the in-app camera scanner — add `BarcodeFormat.QR_CODE` to its
-`POSSIBLE_FORMATS` hint if/when that's needed; flagged as a natural,
-low-effort follow-up, not done yet since it's a separate feature
-(scan-to-cart) from label printing.
+label, just a different visual format, and the in-app camera scanner
+(`CameraScanner.tsx`) recognizes both.
 
 QR generation is **async** (`QRCode.toDataURL`, `src/lib/payLinks.ts`'s
 `renderQrDataUrl`), unlike the barcode's synchronous canvas render — printing
@@ -256,8 +252,9 @@ both entry points have identical add/error logic):
   camera permission, no extra library — it's just a text input.
 - **Phone camera** — a "Scan with camera" button opens a live camera view
   (`src/components/CameraScanner.tsx`, `@zxing/browser` +
-  `@zxing/library`, restricted to `CODE_128` to match what this app
-  prints) and adds items continuously as they're recognized. A 2-second
+  `@zxing/library`, recognizes both `CODE_128` and `QR_CODE` — the two
+  label formats this app prints) and adds items continuously as they're
+  recognized. A 2-second
   per-code cooldown (`RESCAN_COOLDOWN_MS`) stops one label held in frame
   from being decoded — and added — dozens of times a second; without it,
   every recognized video frame fires the callback again. `BrowserMultiFormatReader`'s
@@ -373,17 +370,29 @@ npx supabase functions deploy stripe-connect-onboarding
 npx supabase functions deploy stripe-account-status
 npx supabase functions deploy stripe-create-checkout
 npx supabase functions deploy stripe-checkout-status
+npx supabase functions deploy stripe-refund-sale
 ```
+
+Refunds: a sale can be refunded from Reports (`ReportsScreen.tsx`'s
+`SaleRow` — "Refund" link, confirm dialog, then `src/lib/refunds.ts`). For
+card/Cash App Pay sales this calls the `stripe-refund-sale` Edge Function
+(issues a real Stripe refund on the vendor's connected account, then marks
+the sale refunded); for the self-reported methods (venmo/paypal/cash) it
+calls the `refund_sale` DB function directly — staff attest they returned
+the money themselves, same trust model as the rest of self-reported
+checkout. Either way the piece's `quantity_remaining` is restored
+atomically alongside the refund (`supabase/migrations/0007_refund_void.sql`)
+and a refunded sale drops out of Reports' gross/net totals but stays
+visible in the list for the audit trail. No voiding a sale *before* it
+settles as a distinct flow from refunding one after — one "Refund" action
+covers both, kept deliberately simple rather than modeling them separately.
 
 **Deferred**: Stripe webhooks (polling `stripe-checkout-status` instead for
 v1 — fine for a buyer standing right there, less robust for a payment that
-resolves after the buyer's already walked off), refunds/voids (no
-sale-deletion feature exists at all yet, not card-specific), per-vendor
-custom fee-rate editing (the ask was pass-through on/off, not rate editing —
-`src/lib/fees.ts` stays one global table), receipt emailing/SMS, and native
-Tap to Pay (would still work as a future *optional* add-on for vendors on a
-qualifying Android device, layered on top of the same Stripe Connect
-accounts — not part of this build).
+resolves after the buyer's already walked off), receipt emailing/SMS, and
+native Tap to Pay (would still work as a future *optional* add-on for
+vendors on a qualifying Android device, layered on top of the same Stripe
+Connect accounts — not part of this build).
 
 ## Responsive breakpoints
 
@@ -531,8 +540,7 @@ a raw `<div>` rather than going through `<Modal>` at all.
 
 ## Not started yet
 
-Offline queueing, refund/void. See "Open / Next Steps" in
-`chrissy-art-inventory-app.md`.
+Offline queueing. See "Open / Next Steps" in `chrissy-art-inventory-app.md`.
 
 Square card payments and barcode scanning (`react-native-vision-camera`) are
 **not planned** — both are native-only modules, permanently ruled out by the

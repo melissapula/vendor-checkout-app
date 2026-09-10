@@ -20,9 +20,10 @@ import { venmoPayUrl, paypalPayUrl, renderQrDataUrl } from '../lib/payLinks';
 import { createStripeCheckout, checkStripeCheckoutStatus } from '../lib/payments';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 import { appAlert } from '../lib/alert';
+import { supabase } from '../lib/supabase';
 import { PaymentMethod, Sale } from '../types/database';
 
-type NewSale = Omit<Sale, 'id' | 'store_id'>;
+type NewSale = Omit<Sale, 'id' | 'store_id' | 'refunded_at' | 'refund_reason'>;
 type Step = 'staffSetup' | 'buyerReview' | 'buyerTip' | 'buyerMethod' | 'confirm';
 
 // Cancel steps backward one screen at a time (confirm → method → tip →
@@ -64,8 +65,8 @@ export default function CheckoutScreen({
   initialStep?: Step;
 }) {
   const { items, subtotal, clear, location, setLocation } = useCart();
-  const { sellUnits } = usePieces();
-  const { addSales } = useSales();
+  const { applyPieceUpdates } = usePieces();
+  const { applySales } = useSales();
   const { deals } = useDeals();
   const { store } = useAuth();
   const enabledMethods = store?.enabled_payment_methods ?? [];
@@ -92,7 +93,10 @@ export default function CheckoutScreen({
   const effectiveSubtotal = subtotal - dealsResult.totalDiscount;
 
   const tipAmount = parseFloat(tipText) || 0;
-  const fee = useMemo(() => (method ? calculateFee(effectiveSubtotal, method) : 0), [effectiveSubtotal, method]);
+  const fee = useMemo(
+    () => (method ? calculateFee(effectiveSubtotal, method, store?.fee_overrides) : 0),
+    [effectiveSubtotal, method, store?.fee_overrides]
+  );
   const passFeeToBuyer = store?.pass_fee_to_buyer ?? false;
   const buyerTotal = effectiveSubtotal + tipAmount + (passFeeToBuyer ? fee : 0);
   const netRevenue = effectiveSubtotal - (passFeeToBuyer ? 0 : fee);
@@ -107,7 +111,7 @@ export default function CheckoutScreen({
   // immediately, instead of racing the setMethod() state update that won't
   // have landed yet in this same synchronous handler.
   function feeFor(m: PaymentMethod) {
-    return calculateFee(effectiveSubtotal, m);
+    return calculateFee(effectiveSubtotal, m, store?.fee_overrides);
   }
   function buyerTotalFor(m: PaymentMethod) {
     const f = feeFor(m);
@@ -144,8 +148,41 @@ export default function CheckoutScreen({
 
     setSubmitting(true);
     try {
-      await Promise.all(items.map((item) => sellUnits(item.piece.id, item.quantity)));
-      await addSales(newSales);
+      // CartContext already re-syncs its quantity caps against this
+      // device's own PiecesContext, but that can't see a sale that just
+      // happened on a *different* device — so re-check live stock right
+      // before charging/recording anything, the last moment it actually
+      // matters. finalize_sale's own server-side clamp keeps quantity_
+      // remaining from ever going negative either way, but without this
+      // the sale would still get recorded (and the buyer charged) for more
+      // than what's actually in stock, with nothing telling staff that
+      // happened.
+      const requiredByPiece = new Map<string, number>();
+      items.forEach((item) => {
+        requiredByPiece.set(item.piece.id, (requiredByPiece.get(item.piece.id) ?? 0) + item.quantity);
+      });
+      const { data: liveStock, error: stockError } = await supabase
+        .from('pieces')
+        .select('id, title, quantity_remaining')
+        .in('id', Array.from(requiredByPiece.keys()));
+      if (stockError) throw stockError;
+      const shortfalls = (liveStock ?? [])
+        .filter((p) => (requiredByPiece.get(p.id) ?? 0) > p.quantity_remaining)
+        .map((p) => `${p.title} (${p.quantity_remaining} left, ${requiredByPiece.get(p.id)} in cart)`);
+      if (shortfalls.length > 0) {
+        throw new Error(
+          `Stock changed since this was added to the cart — ${shortfalls.join('; ')}. Go back and adjust the cart.`
+        );
+      }
+
+      // One DB transaction for both the inventory decrement and the sale
+      // insert — see supabase/migrations/0005_atomic_finalize_sale.sql.
+      // Previously these were two separate round trips with no rollback,
+      // so a failure between them could lose stock with no matching sale.
+      const { data, error } = await supabase.rpc('finalize_sale', { sale_rows: newSales });
+      if (error) throw error;
+      applyPieceUpdates(data.pieces);
+      applySales(data.sales);
       const total = effectiveSubtotal + tipAmount + (passFeeToBuyer ? actualFee : 0);
       const net = effectiveSubtotal - (passFeeToBuyer ? 0 : actualFee);
       clear();

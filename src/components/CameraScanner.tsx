@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import AppModal from './AppModal';
 import { BrowserMultiFormatReader } from '@zxing/browser';
 import type { IScannerControls } from '@zxing/browser';
 import { BarcodeFormat, DecodeHintType } from '@zxing/library';
@@ -38,7 +39,12 @@ export default function CameraScanner({
     let cancelled = false;
     setError(null);
     const hints = new Map();
-    hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.CODE_128]);
+    // Label printing can put either a CODE_128 barcode or a QR code on a
+    // label (same SKU text either way — see PrintLabelsOverlay.tsx), but
+    // this only ever recognized CODE_128, so QR-labeled pieces silently
+    // couldn't be scanned. Recognizing both isn't a tradeoff — zxing decodes
+    // whichever format is actually in frame, it doesn't need to guess first.
+    hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.CODE_128, BarcodeFormat.QR_CODE]);
     const reader = new BrowserMultiFormatReader(hints);
 
     reader
@@ -73,7 +79,7 @@ export default function CameraScanner({
   }, [visible]);
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+    <AppModal visible={visible} onRequestClose={onClose}>
       <View style={styles.container}>
         <Text style={styles.heading}>Scan a barcode</Text>
         {error ? (
@@ -87,7 +93,7 @@ export default function CameraScanner({
           <Text style={styles.closeButtonText}>Done</Text>
         </Pressable>
       </View>
-    </Modal>
+    </AppModal>
   );
 }
 

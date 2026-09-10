@@ -8,7 +8,11 @@ interface PiecesContextValue {
   pieces: Piece[];
   loading: boolean;
   error: string | null;
-  sellUnits: (pieceId: string, quantitySold: number) => Promise<void>;
+  // Local-only merge — no DB write. Callers that already changed these rows
+  // server-side (e.g. CheckoutScreen's atomic finalize_sale RPC) use this to
+  // bring local state in sync with what the DB now actually holds, instead
+  // of re-deriving the new quantity from a possibly-stale client snapshot.
+  applyPieceUpdates: (updated: Piece[]) => void;
   updatePiece: (pieceId: string, updates: Partial<Piece>) => Promise<void>;
   addPiece: (piece: NewPiece) => Promise<void>;
   deletePiece: (pieceId: string) => Promise<void>;
@@ -38,21 +42,9 @@ export function PiecesProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  async function sellUnits(pieceId: string, quantitySold: number) {
-    const piece = pieces.find((p) => p.id === pieceId);
-    if (!piece) return;
-
-    const remaining = Math.max(0, piece.quantity_remaining - quantitySold);
-    const updates: Partial<Piece> = {
-      quantity_remaining: remaining,
-      status: remaining === 0 ? 'sold' : piece.status,
-      date_sold: remaining === 0 ? new Date().toISOString() : piece.date_sold,
-    };
-
-    const { error } = await supabase.from('pieces').update(updates).eq('id', pieceId);
-    if (error) throw error;
-
-    setPieces((prev) => prev.map((p) => (p.id === pieceId ? { ...p, ...updates } : p)));
+  function applyPieceUpdates(updated: Piece[]) {
+    const byId = new Map(updated.map((p) => [p.id, p]));
+    setPieces((prev) => prev.map((p) => byId.get(p.id) ?? p));
   }
 
   async function updatePiece(pieceId: string, updates: Partial<Piece>) {
@@ -75,7 +67,7 @@ export function PiecesProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <PiecesContext.Provider
-      value={{ pieces, loading, error, sellUnits, updatePiece, addPiece, deletePiece }}
+      value={{ pieces, loading, error, applyPieceUpdates, updatePiece, addPiece, deletePiece }}
     >
       {children}
     </PiecesContext.Provider>
