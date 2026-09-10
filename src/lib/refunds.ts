@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { unwrapFunctionError } from './payments';
 import { Piece, Sale } from '../types/database';
 
 export interface RefundResult {
@@ -24,7 +25,7 @@ export async function refundSale(sale: Sale): Promise<RefundResult> {
     const { data, error } = await supabase.functions.invoke<RefundResult>('stripe-refund-sale', {
       body: { saleId: sale.id },
     });
-    if (error) throw error;
+    if (error) throw await unwrapFunctionError(error);
     return data!;
   }
 

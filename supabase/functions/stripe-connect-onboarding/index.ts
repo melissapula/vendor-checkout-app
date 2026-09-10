@@ -29,6 +29,23 @@ Deno.serve(async (req) => {
     }
 
     let accountId = store.stripe_account_id as string | null;
+
+    // A stored account_id can be stale — most commonly because it was
+    // created under a *different* Stripe key than the one configured now
+    // (e.g. the platform switched from a test key to a live key). Live and
+    // test accounts are entirely separate namespaces, so accounts.retrieve
+    // throws "No such account" in that case, and the old code below would
+    // have let that surface as an opaque failure from accountLinks.create
+    // instead. Treat "can't retrieve it" as "there's no usable account yet"
+    // and fall through to creating a fresh one.
+    if (accountId) {
+      try {
+        await stripe.accounts.retrieve(accountId);
+      } catch {
+        accountId = null;
+      }
+    }
+
     if (!accountId) {
       const account = await stripe.accounts.create({
         type: 'express',

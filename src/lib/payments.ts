@@ -1,3 +1,4 @@
+import { FunctionsHttpError } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 
 // Thin wrappers over the Stripe Edge Functions (supabase/functions/stripe-*)
@@ -6,11 +7,30 @@ import { supabase } from './supabase';
 // header automatically, which is what lets each function run as (and only
 // see data for) the calling store — see supabase/functions/_shared/store.ts.
 
+// supabase-js's FunctionsHttpError always has the same generic message
+// ("Edge Function returned a non-2xx status code") — the function's actual
+// { error: "..." } body (every function in supabase/functions/stripe-*
+// returns one on failure) is only reachable via error.context, the raw
+// Response. Without this, every real cause (bad Stripe key, missing
+// permission, stale test-mode account under a live key, etc.) was hidden
+// behind that one useless sentence.
+export async function unwrapFunctionError(error: unknown): Promise<Error> {
+  if (error instanceof FunctionsHttpError) {
+    try {
+      const body = await error.context.json();
+      if (typeof body?.error === 'string') return new Error(body.error);
+    } catch {
+      // Body wasn't JSON, or already consumed — fall back to the generic message below.
+    }
+  }
+  return error instanceof Error ? error : new Error('Unknown error');
+}
+
 export async function startStripeOnboarding(returnUrl: string, refreshUrl: string): Promise<string> {
   const { data, error } = await supabase.functions.invoke<{ url: string }>('stripe-connect-onboarding', {
     body: { returnUrl, refreshUrl },
   });
-  if (error) throw error;
+  if (error) throw await unwrapFunctionError(error);
   return data!.url;
 }
 
@@ -25,7 +45,7 @@ export async function checkStripeAccountStatus(): Promise<StripeAccountStatus> {
   const { data, error } = await supabase.functions.invoke<StripeAccountStatus>('stripe-account-status', {
     body: {},
   });
-  if (error) throw error;
+  if (error) throw await unwrapFunctionError(error);
   return data!;
 }
 
@@ -38,7 +58,7 @@ export async function createStripeCheckout(
     'stripe-create-checkout',
     { body: { amountCents, idempotencyKey, paymentMethodType } }
   );
-  if (error) throw error;
+  if (error) throw await unwrapFunctionError(error);
   return data!;
 }
 
@@ -52,6 +72,6 @@ export async function checkStripeCheckoutStatus(sessionId: string): Promise<Stri
   const { data, error } = await supabase.functions.invoke<StripeCheckoutStatus>('stripe-checkout-status', {
     body: { sessionId },
   });
-  if (error) throw error;
+  if (error) throw await unwrapFunctionError(error);
   return data!;
 }
