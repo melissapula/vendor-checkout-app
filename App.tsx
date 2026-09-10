@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { PiecesProvider } from './src/context/PiecesContext';
 import { CartProvider } from './src/context/CartContext';
 import { SalesProvider } from './src/context/SalesContext';
+import { AdjustmentsProvider } from './src/context/AdjustmentsContext';
 import { DealsProvider } from './src/context/DealsContext';
 import { AppModeProvider } from './src/context/AppModeContext';
 import RootNavigator from './src/navigation/RootNavigator';
@@ -64,11 +65,13 @@ function AppGate() {
     <PiecesProvider>
       <DealsProvider>
         <SalesProvider>
-          <CartProvider>
-            <AppModeProvider>
-              <RootNavigator />
-            </AppModeProvider>
-          </CartProvider>
+          <AdjustmentsProvider>
+            <CartProvider>
+              <AppModeProvider>
+                <RootNavigator />
+              </AppModeProvider>
+            </CartProvider>
+          </AdjustmentsProvider>
         </SalesProvider>
       </DealsProvider>
     </PiecesProvider>

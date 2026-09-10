@@ -4,6 +4,7 @@ import { Piece } from '../types/database';
 import { usePieces, isSellable } from '../context/PiecesContext';
 import { useCart } from '../context/CartContext';
 import PieceFormScreen from './PieceFormScreen';
+import LogAdjustmentScreen from './LogAdjustmentScreen';
 import AppModal from '../components/AppModal';
 import PrintLabelsOverlay, { LabelFields } from '../components/PrintLabelsOverlay';
 import PrintLabelsBuilderScreen from './PrintLabelsBuilderScreen';
@@ -22,6 +23,7 @@ function PieceRow({
   onEdit,
   onAddVariant,
   onPrintLabel,
+  onLogAdjustment,
   justAdded,
   onAdded,
 }: {
@@ -29,6 +31,7 @@ function PieceRow({
   onEdit: () => void;
   onAddVariant: () => void;
   onPrintLabel: () => void;
+  onLogAdjustment: () => void;
   justAdded: boolean;
   onAdded: () => void;
 }) {
@@ -83,6 +86,11 @@ function PieceRow({
         <Pressable onPress={onPrintLabel}>
           <Text style={styles.labelLink}>Print label</Text>
         </Pressable>
+        {piece.quantity_remaining > 0 && (
+          <Pressable onPress={onLogAdjustment}>
+            <Text style={styles.labelLink}>Log loss/donation</Text>
+          </Pressable>
+        )}
       </View>
     </View>
   );
@@ -97,6 +105,7 @@ export default function InventoryScreen() {
   const [builderInitialPiece, setBuilderInitialPiece] = useState<Piece | undefined>(undefined);
   const [printJob, setPrintJob] = useState<{ pieces: Piece[]; fields: LabelFields } | null>(null);
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
+  const [adjustingPiece, setAdjustingPiece] = useState<Piece | null>(null);
   const { isTabletUp } = useBreakpoint();
 
   useEffect(() => {
@@ -157,6 +166,7 @@ export default function InventoryScreen() {
             onEdit={() => openEdit(item)}
             onAddVariant={() => openAddVariant(item.id)}
             onPrintLabel={() => openBuilder(item)}
+            onLogAdjustment={() => setAdjustingPiece(item)}
             justAdded={item.id === justAddedId}
             onAdded={() => setJustAddedId(item.id)}
           />
@@ -196,6 +206,11 @@ export default function InventoryScreen() {
         fields={printJob?.fields ?? null}
         onDone={() => setPrintJob(null)}
       />
+      <AppModal visible={!!adjustingPiece} onRequestClose={() => setAdjustingPiece(null)}>
+        {adjustingPiece && (
+          <LogAdjustmentScreen piece={adjustingPiece} onClose={() => setAdjustingPiece(null)} />
+        )}
+      </AppModal>
     </>
   );
 }

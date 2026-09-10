@@ -10,6 +10,7 @@ export type SaleChannel = 'show' | 'online' | 'studio';
 export type PaymentMethod = 'card' | 'venmo' | 'paypal' | 'cash_app' | 'cash';
 export type FeeRate = { rate: number; fixed: number };
 export type DealType = 'bundle_price' | 'percent_off' | 'amount_off' | 'bogo';
+export type AdjustmentType = 'loss' | 'donation';
 
 // `type` rather than `interface`: interfaces don't satisfy TS's implicit
 // index-signature check against Record<string, unknown>, which breaks
@@ -52,6 +53,16 @@ export type Sale = {
   // null = active sale. See supabase/migrations/0007_refund_void.sql.
   refunded_at: string | null;
   refund_reason: string | null;
+};
+
+export type InventoryAdjustment = {
+  id: string;
+  store_id: string;
+  piece_id: string;
+  type: AdjustmentType;
+  quantity: number;
+  reason: string | null;
+  adjustment_date: string;
 };
 
 export type Deal = {
@@ -110,6 +121,12 @@ export type Database = {
         Update: Partial<Deal>;
         Relationships: [];
       };
+      inventory_adjustments: {
+        Row: InventoryAdjustment;
+        Insert: Partial<InventoryAdjustment>;
+        Update: Partial<InventoryAdjustment>;
+        Relationships: [];
+      };
       stores: {
         Row: Store;
         Insert: Partial<Store>;
@@ -135,6 +152,13 @@ export type Database = {
       refund_sale: {
         Args: { p_sale_id: string };
         Returns: { sale: Sale; piece: Piece | null };
+      };
+      // Decrements a piece's quantity_remaining and inserts the log row in
+      // one DB transaction — see
+      // supabase/migrations/0009_inventory_adjustments.sql.
+      log_inventory_adjustment: {
+        Args: { p_piece_id: string; p_type: AdjustmentType; p_quantity: number; p_reason: string | null };
+        Returns: { piece: Piece; adjustment: InventoryAdjustment };
       };
     };
     Enums: Record<string, never>;

@@ -500,6 +500,15 @@ a raw `<div>` rather than going through `<Modal>` at all.
   totals (items sold, gross, tips, fees, net) and a by-type breakdown, plus
   the individual matching sales. Pulls from the real `sales` table — no more
   in-memory-only sales history (see `SalesContext` note below).
+- **Losses & Donations** — a Sales/Losses & Donations toggle at the top of
+  Reports switches to a second report pulling from `inventory_adjustments`
+  (`supabase/migrations/0009_inventory_adjustments.sql`), an append-only log
+  of stock that left inventory *without* a sale (damaged, lost, given away).
+  Logged from Inventory itself — each piece row gets a "Log loss/donation"
+  link (hidden once it's out of stock) opening a small form: type, quantity,
+  optional reason. `log_inventory_adjustment()` decrements
+  `quantity_remaining` and inserts the log row atomically, same "lock,
+  check, then write" pattern as `finalize_sale`/`refund_sale`.
 - `src/context/PiecesContext.tsx`, `SalesContext.tsx`, `DealsContext.tsx` —
   read/write Supabase directly. `CartContext.tsx` stays in-memory on purpose
   (the cart is a transient, per-session thing, not data to persist) — it also

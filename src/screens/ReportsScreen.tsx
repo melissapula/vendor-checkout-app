@@ -2,7 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSales } from '../context/SalesContext';
 import { usePieces } from '../context/PiecesContext';
-import { Sale, PaymentMethod, PieceType } from '../types/database';
+import { useAdjustments } from '../context/AdjustmentsContext';
+import { Sale, PaymentMethod, PieceType, AdjustmentType, InventoryAdjustment } from '../types/database';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 import { refundSale } from '../lib/refunds';
 import { appAlert } from '../lib/alert';
@@ -49,6 +50,33 @@ function isWithinRange(iso: string, range: DateRange, from: string, to: string):
 }
 
 export default function ReportsScreen() {
+  const [view, setView] = useState<'sales' | 'adjustments'>('sales');
+  const { isTabletUp } = useBreakpoint();
+
+  return (
+    <View style={styles.screen}>
+      <View style={[styles.viewToggleRow, centeredColumn(isTabletUp, CONTENT_WIDTH.wide)]}>
+        <Pressable
+          style={[styles.viewChip, view === 'sales' && styles.viewChipSelected]}
+          onPress={() => setView('sales')}
+        >
+          <Text style={[styles.viewChipText, view === 'sales' && styles.viewChipTextSelected]}>Sales</Text>
+        </Pressable>
+        <Pressable
+          style={[styles.viewChip, view === 'adjustments' && styles.viewChipSelected]}
+          onPress={() => setView('adjustments')}
+        >
+          <Text style={[styles.viewChipText, view === 'adjustments' && styles.viewChipTextSelected]}>
+            Losses &amp; Donations
+          </Text>
+        </Pressable>
+      </View>
+      {view === 'sales' ? <SalesReport /> : <AdjustmentsReport />}
+    </View>
+  );
+}
+
+function SalesReport() {
   const { sales, loading, error, applySaleUpdate } = useSales();
   const { pieces, applyPieceUpdates } = usePieces();
 
@@ -342,7 +370,155 @@ function SaleRow({
   );
 }
 
+const ADJUSTMENT_TYPES: AdjustmentType[] = ['loss', 'donation'];
+
+function AdjustmentsReport() {
+  const { adjustments, loading, error } = useAdjustments();
+  const { pieces } = usePieces();
+
+  const [dateRange, setDateRange] = useState<DateRange>('today');
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
+  const [typeFilter, setTypeFilter] = useState<AdjustmentType | 'all'>('all');
+  const { isTabletUp } = useBreakpoint();
+
+  const pieceById = useMemo(() => new Map(pieces.map((p) => [p.id, p])), [pieces]);
+
+  const filtered = useMemo(() => {
+    return adjustments.filter((a) => {
+      if (!isWithinRange(a.adjustment_date, dateRange, customFrom, customTo)) return false;
+      if (typeFilter !== 'all' && a.type !== typeFilter) return false;
+      return true;
+    });
+  }, [adjustments, dateRange, customFrom, customTo, typeFilter]);
+
+  const summary = useMemo(() => {
+    const lossQty = filtered.filter((a) => a.type === 'loss').reduce((sum, a) => sum + a.quantity, 0);
+    const donationQty = filtered.filter((a) => a.type === 'donation').reduce((sum, a) => sum + a.quantity, 0);
+    return { lossQty, donationQty, count: filtered.length };
+  }, [filtered]);
+
+  if (loading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.errorText}>Couldn't load adjustments: {error}</Text>
+      </View>
+    );
+  }
+
+  return (
+    <FlatList
+      style={styles.list}
+      contentContainerStyle={centeredColumn(isTabletUp, CONTENT_WIDTH.wide)}
+      data={filtered}
+      keyExtractor={(a) => a.id}
+      renderItem={({ item }) => (
+        <AdjustmentRow adjustment={item} title={pieceById.get(item.piece_id)?.title ?? 'Unknown item'} />
+      )}
+      ItemSeparatorComponent={() => <View style={styles.separator} />}
+      ListEmptyComponent={<Text style={styles.emptyText}>No losses or donations logged for these filters.</Text>}
+      ListHeaderComponent={
+        <View style={styles.filters}>
+          <Text style={styles.filterLabel}>Date range</Text>
+          <View style={styles.chipRow}>
+            {(['today', '7days', 'all', 'custom'] as DateRange[]).map((r) => (
+              <Pressable
+                key={r}
+                style={[styles.chip, dateRange === r && styles.chipSelected]}
+                onPress={() => setDateRange(r)}
+              >
+                <Text style={[styles.chipText, dateRange === r && styles.chipTextSelected]}>
+                  {r === 'today' ? 'Today' : r === '7days' ? 'Last 7 days' : r === 'all' ? 'All time' : 'Custom'}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+          {dateRange === 'custom' && (
+            <View style={styles.row}>
+              <TextInput
+                style={[styles.input, styles.half]}
+                value={customFrom}
+                onChangeText={setCustomFrom}
+                placeholder="From YYYY-MM-DD"
+              />
+              <TextInput
+                style={[styles.input, styles.half]}
+                value={customTo}
+                onChangeText={setCustomTo}
+                placeholder="To YYYY-MM-DD"
+              />
+            </View>
+          )}
+
+          <Text style={styles.filterLabel}>Type</Text>
+          <View style={styles.chipRow}>
+            <Pressable
+              style={[styles.chip, typeFilter === 'all' && styles.chipSelected]}
+              onPress={() => setTypeFilter('all')}
+            >
+              <Text style={[styles.chipText, typeFilter === 'all' && styles.chipTextSelected]}>All</Text>
+            </Pressable>
+            {ADJUSTMENT_TYPES.map((t) => (
+              <Pressable
+                key={t}
+                style={[styles.chip, typeFilter === t && styles.chipSelected]}
+                onPress={() => setTypeFilter(t)}
+              >
+                <Text style={[styles.chipText, typeFilter === t && styles.chipTextSelected]}>
+                  {t === 'loss' ? 'Loss' : 'Donation'}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <View style={styles.summaryBox}>
+            <SummaryRow label="Entries" value={summary.count} isCount />
+            <SummaryRow label="Units lost" value={summary.lossQty} isCount />
+            <SummaryRow label="Units donated" value={summary.donationQty} isCount />
+          </View>
+
+          <Text style={styles.filterLabel}>Logged ({filtered.length})</Text>
+        </View>
+      }
+    />
+  );
+}
+
+function AdjustmentRow({ adjustment, title }: { adjustment: InventoryAdjustment; title: string }) {
+  return (
+    <View style={styles.saleRow}>
+      <View style={styles.saleInfo}>
+        <Text style={styles.saleTitle}>{title}</Text>
+        <Text style={styles.saleMeta}>
+          {new Date(adjustment.adjustment_date).toLocaleString()}
+          {adjustment.reason ? ` · ${adjustment.reason}` : ''}
+        </Text>
+      </View>
+      <View style={styles.saleAmounts}>
+        <Text style={[styles.salePrice, adjustment.type === 'loss' ? styles.lossBadge : styles.donationBadge]}>
+          {adjustment.type === 'loss' ? 'Loss' : 'Donation'}
+        </Text>
+        <Text style={styles.saleMeta}>× {adjustment.quantity}</Text>
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: '#fff' },
+  viewToggleRow: { flexDirection: 'row', gap: 8, padding: 16, paddingBottom: 0 },
+  viewChip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8, backgroundColor: '#f0f0f0' },
+  viewChipSelected: { backgroundColor: '#1a1a1a' },
+  viewChipText: { fontWeight: '700', color: '#1a1a1a' },
+  viewChipTextSelected: { color: '#fff' },
   list: { flex: 1, backgroundColor: '#fff' },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   errorText: { color: '#b00020', textAlign: 'center' },
@@ -386,5 +562,7 @@ const styles = StyleSheet.create({
   refundedBadge: { fontSize: 12, color: '#b00020', marginTop: 2, fontWeight: '600' },
   refundButton: { marginTop: 6 },
   refundLink: { fontSize: 12, color: '#b00020', fontWeight: '600', textDecorationLine: 'underline' },
+  lossBadge: { color: '#b00020' },
+  donationBadge: { color: '#2a7a2a' },
   separator: { height: 1, backgroundColor: '#eee', marginLeft: 16 },
 });
