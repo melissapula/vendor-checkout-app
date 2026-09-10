@@ -25,6 +25,13 @@ import { PaymentMethod, Sale } from '../types/database';
 type NewSale = Omit<Sale, 'id' | 'store_id'>;
 type Step = 'staffSetup' | 'buyerReview' | 'buyerTip' | 'buyerMethod' | 'confirm';
 
+// Cancel steps backward one screen at a time (confirm → method → tip →
+// review → setup) rather than always exiting — except at whichever step
+// this particular checkout session actually started on (staffSetup for the
+// staff-initiated flow, buyerTip for the buyer's own "Confirm Cart"), where
+// there's nothing to step back to, so Cancel there really does exit.
+const STEP_ORDER: Step[] = ['staffSetup', 'buyerReview', 'buyerTip', 'buyerMethod', 'confirm'];
+
 const METHOD_LABELS: Record<PaymentMethod, string> = {
   card: 'Card',
   venmo: 'Venmo',
@@ -227,7 +234,27 @@ export default function CheckoutScreen({
 
   function handleCancel() {
     if (pollTimer.current) clearInterval(pollTimer.current);
-    onClose();
+
+    const currentIndex = STEP_ORDER.indexOf(step);
+    const startIndex = STEP_ORDER.indexOf(initialStep);
+    if (currentIndex <= startIndex) {
+      onClose();
+      return;
+    }
+
+    // Stepping back out of 'confirm' — clear its QR/poll state so the
+    // payment-method list (or whatever's next) doesn't briefly show stale
+    // data if the buyer picks the same method again.
+    if (step === 'confirm') {
+      setMethod(null);
+      setQrDataUrl(null);
+      setQrError(null);
+      setCheckoutSessionId(null);
+      setCardPaid(false);
+      setBuyerDone(false);
+    }
+
+    setStep(STEP_ORDER[currentIndex - 1]);
   }
 
   // ---- staff setup ----
@@ -400,7 +427,7 @@ export default function CheckoutScreen({
           </>
         ) : (
           <>
-            <Text style={[styles.heading, isTabletUp && styles.headingTabletUp]}>Have the buyer scan this</Text>
+            <Text style={[styles.heading, isTabletUp && styles.headingTabletUp]}>Please scan this QR code to pay</Text>
             <Text style={styles.qrMethodLabel}>
               {method ? METHOD_LABELS[method] : ''} — ${buyerTotal.toFixed(2)}
             </Text>

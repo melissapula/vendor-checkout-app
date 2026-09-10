@@ -133,7 +133,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!session) throw new Error('Not signed in');
     const { data, error } = await supabase
       .from('stores')
-      .insert({ owner_id: session.user.id, name, admin_pin: adminPin })
+      // Cash is the only method that needs no setup, so it's the only one a
+      // brand-new store starts with — card/Cash App Pay need Stripe Connect,
+      // Venmo/PayPal need a handle, so all three stay unselected in Payment
+      // Settings until the vendor actually configures them.
+      .insert({ owner_id: session.user.id, name, admin_pin: adminPin, enabled_payment_methods: ['cash'] })
       .select()
       .single();
     if (error) throw error;
