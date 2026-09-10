@@ -1,22 +1,79 @@
 import React, { useMemo, useState } from 'react';
-import { FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { CartItem, useCart } from '../context/CartContext';
+import { FlatList, Image, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { CartItem, effectivePrice, useCart } from '../context/CartContext';
 import { useDeals } from '../context/DealsContext';
 import { evaluateDeals } from '../lib/deals';
 import { useScanToCart } from '../lib/scanToCart';
 import CameraScanner from '../components/CameraScanner';
 import CheckoutScreen from './CheckoutScreen';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
+import { thumbUrl } from '../lib/images';
 
 function CartRow({ item }: { item: CartItem }) {
-  const { updateQuantity, removeItem } = useCart();
-  const lineTotal = item.piece.price * item.quantity;
+  const { updateQuantity, removeItem, setItemPrice } = useCart();
+  const [editingPrice, setEditingPrice] = useState(false);
+  const [priceText, setPriceText] = useState('');
+  const price = effectivePrice(item);
+  const lineTotal = price * item.quantity;
+  const isOverridden = item.overridePrice != null;
+
+  function startEditingPrice() {
+    setPriceText(price.toFixed(2));
+    setEditingPrice(true);
+  }
+
+  function savePrice() {
+    const value = parseFloat(priceText);
+    setItemPrice(item.piece.id, isNaN(value) || value < 0 ? null : value);
+    setEditingPrice(false);
+  }
+
+  function resetPrice() {
+    setItemPrice(item.piece.id, null);
+    setEditingPrice(false);
+  }
 
   return (
     <View style={styles.row}>
+      {item.piece.image_url ? (
+        <Image source={{ uri: thumbUrl(item.piece.image_url) }} style={styles.thumb} />
+      ) : (
+        <View style={styles.thumbPlaceholder} />
+      )}
       <View style={styles.rowInfo}>
         <Text style={styles.title}>{item.piece.title}</Text>
-        <Text style={styles.meta}>${item.piece.price.toFixed(2)} each</Text>
+        {editingPrice ? (
+          <View style={styles.priceEditRow}>
+            <Text style={styles.priceEditDollar}>$</Text>
+            <TextInput
+              style={styles.priceEditInput}
+              value={priceText}
+              onChangeText={setPriceText}
+              keyboardType="decimal-pad"
+              autoFocus
+              onSubmitEditing={savePrice}
+            />
+            <Pressable onPress={savePrice}>
+              <Text style={styles.priceEditSave}>Save</Text>
+            </Pressable>
+            <Pressable onPress={() => setEditingPrice(false)}>
+              <Text style={styles.priceEditCancel}>Cancel</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <View style={styles.priceRow}>
+            {isOverridden && <Text style={styles.priceOriginal}>${item.piece.price.toFixed(2)}</Text>}
+            <Text style={styles.meta}>${price.toFixed(2)} each</Text>
+            <Pressable onPress={startEditingPrice}>
+              <Text style={styles.editPriceLink}>Adjust price</Text>
+            </Pressable>
+            {isOverridden && (
+              <Pressable onPress={resetPrice}>
+                <Text style={styles.editPriceLink}>Reset</Text>
+              </Pressable>
+            )}
+          </View>
+        )}
       </View>
       <View style={styles.qtyControls}>
         <Pressable
@@ -192,9 +249,27 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     gap: 10,
   },
+  thumb: { width: 44, height: 44, borderRadius: 6, backgroundColor: '#f0f0f0' },
+  thumbPlaceholder: { width: 44, height: 44, borderRadius: 6, backgroundColor: '#f0f0f0' },
   rowInfo: { flex: 1 },
   title: { fontSize: 15, fontWeight: '600' },
   meta: { fontSize: 12, color: '#666', marginTop: 2 },
+  priceRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2, flexWrap: 'wrap' },
+  priceOriginal: { fontSize: 12, color: '#999', textDecorationLine: 'line-through' },
+  editPriceLink: { fontSize: 11, color: '#1a1a1a', textDecorationLine: 'underline' },
+  priceEditRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
+  priceEditDollar: { fontSize: 14, color: '#666' },
+  priceEditInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    fontSize: 14,
+    width: 70,
+  },
+  priceEditSave: { fontSize: 12, color: '#1a1a1a', fontWeight: '700' },
+  priceEditCancel: { fontSize: 12, color: '#666' },
   qtyControls: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   qtyButton: {
     width: 28,

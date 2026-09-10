@@ -10,7 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useCart } from '../context/CartContext';
+import { useCart, effectivePrice } from '../context/CartContext';
 import { usePieces } from '../context/PiecesContext';
 import { useSales } from '../context/SalesContext';
 import { useDeals } from '../context/DealsContext';
@@ -113,7 +113,7 @@ export default function CheckoutScreen({
     items.forEach((item, itemIndex) => {
       const itemDiscount = dealsResult.discountByPieceId.get(item.piece.id) ?? 0;
       const perUnitDiscount = itemDiscount / item.quantity;
-      const unitPrice = Math.max(0, item.piece.price - perUnitDiscount);
+      const unitPrice = Math.max(0, effectivePrice(item) - perUnitDiscount);
 
       const apportionedFee =
         effectiveSubtotal > 0
@@ -275,7 +275,7 @@ export default function CheckoutScreen({
                 {item.piece.title}
                 {item.quantity > 1 ? ` × ${item.quantity}` : ''}
               </Text>
-              <Text style={styles.reviewItemPrice}>${(item.piece.price * item.quantity).toFixed(2)}</Text>
+              <Text style={styles.reviewItemPrice}>${(effectivePrice(item) * item.quantity).toFixed(2)}</Text>
             </View>
           ))}
           {dealsResult.applied.length > 0 && (
@@ -487,6 +487,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 16,
+    marginBottom: 20,
   },
   dealApplied: { color: '#2a7a2a', fontSize: 13, fontWeight: '600', marginBottom: 2 },
   summary: { marginTop: 24, gap: 8 },

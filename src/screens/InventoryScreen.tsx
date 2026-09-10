@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Piece } from '../types/database';
 import { usePieces, isSellable } from '../context/PiecesContext';
@@ -20,11 +20,13 @@ function PieceRow({
   onEdit,
   onAddVariant,
   onPrintLabel,
+  onAdded,
 }: {
   piece: Piece;
   onEdit: () => void;
   onAddVariant: () => void;
   onPrintLabel: () => void;
+  onAdded: (piece: Piece) => void;
 }) {
   const { addItem } = useCart();
   const sellable = isSellable(piece);
@@ -59,7 +61,10 @@ function PieceRow({
           <Pressable
             style={[styles.addButton, !sellable && styles.addButtonDisabled]}
             disabled={!sellable}
-            onPress={() => addItem(piece)}
+            onPress={() => {
+              addItem(piece);
+              onAdded(piece);
+            }}
           >
             <Text style={styles.addButtonText}>Add</Text>
           </Pressable>
@@ -78,7 +83,14 @@ export default function InventoryScreen() {
   const [presetOriginalId, setPresetOriginalId] = useState<string | undefined>(undefined);
   const [formOpen, setFormOpen] = useState(false);
   const [printQueue, setPrintQueue] = useState<Piece[] | null>(null);
+  const [addedMessage, setAddedMessage] = useState<string | null>(null);
   const { isTabletUp } = useBreakpoint();
+
+  useEffect(() => {
+    if (!addedMessage) return;
+    const timer = setTimeout(() => setAddedMessage(null), 2500);
+    return () => clearTimeout(timer);
+  }, [addedMessage]);
 
   if (loading) {
     return (
@@ -121,6 +133,11 @@ export default function InventoryScreen() {
 
   return (
     <>
+      {addedMessage && (
+        <View style={styles.addedBanner}>
+          <Text style={styles.addedBannerText}>✓ {addedMessage}</Text>
+        </View>
+      )}
       <FlatList
         style={styles.list}
         contentContainerStyle={centeredColumn(isTabletUp, CONTENT_WIDTH.wide)}
@@ -132,6 +149,7 @@ export default function InventoryScreen() {
             onEdit={() => openEdit(item)}
             onAddVariant={() => openAddVariant(item.id)}
             onPrintLabel={() => setPrintQueue([item])}
+            onAdded={(piece) => setAddedMessage(`Added "${piece.title}" to the customer's cart`)}
           />
         )}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -159,6 +177,8 @@ export default function InventoryScreen() {
 const styles = StyleSheet.create({
   list: { flex: 1, backgroundColor: '#fff' },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  addedBanner: { backgroundColor: '#e8f5e8', paddingHorizontal: 16, paddingVertical: 10 },
+  addedBannerText: { color: '#2a7a2a', fontWeight: '600', fontSize: 13 },
   errorText: { color: '#b00020', textAlign: 'center' },
   row: {
     flexDirection: 'row',

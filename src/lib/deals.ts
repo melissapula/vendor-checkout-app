@@ -1,4 +1,4 @@
-import type { CartItem } from '../context/CartContext';
+import { effectivePrice, type CartItem } from '../context/CartContext';
 import type { Deal, PieceType } from '../types/database';
 
 // Structured shape for Deal.applies_to / trigger_condition (stored as jsonb
@@ -58,7 +58,7 @@ function eligibleUnitPrices(items: CartItem[], appliesTo: AppliesTo): number[] {
   const prices: number[] = [];
   for (const item of items) {
     if (matchesScope(item.piece, appliesTo)) {
-      for (let i = 0; i < item.quantity; i++) prices.push(item.piece.price);
+      for (let i = 0; i < item.quantity; i++) prices.push(effectivePrice(item));
     }
   }
   return prices.sort((a, b) => a - b);

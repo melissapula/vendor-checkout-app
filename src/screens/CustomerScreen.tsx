@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useCart, CartItem } from '../context/CartContext';
+import { useCart, CartItem, effectivePrice } from '../context/CartContext';
 import { useDeals } from '../context/DealsContext';
 import { evaluateDeals } from '../lib/deals';
 import { useAppMode } from '../context/AppModeContext';
@@ -11,7 +11,8 @@ import { thumbUrl } from '../lib/images';
 import CheckoutScreen from './CheckoutScreen';
 
 function CustomerRow({ item }: { item: CartItem }) {
-  const lineTotal = item.piece.price * item.quantity;
+  const price = effectivePrice(item);
+  const lineTotal = price * item.quantity;
   return (
     <View style={styles.row}>
       {item.piece.image_url ? (
@@ -22,7 +23,7 @@ function CustomerRow({ item }: { item: CartItem }) {
       <View style={styles.rowInfo}>
         <Text style={styles.title}>{item.piece.title}</Text>
         <Text style={styles.meta}>
-          {item.quantity} × ${item.piece.price.toFixed(2)}
+          {item.quantity} × ${price.toFixed(2)}
         </Text>
       </View>
       <Text style={styles.lineTotal}>${lineTotal.toFixed(2)}</Text>
