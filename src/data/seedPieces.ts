@@ -62,7 +62,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 16x20x.5",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/a6de54d7e225e613f331623afe582baa587f004f-1596x1282.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/a6de54d7e225e613f331623afe582baa587f004f-1596x1282.jpg",
+    info_url: null
   },
   {
     id: "var-1-1",
@@ -83,7 +84,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/a6de54d7e225e613f331623afe582baa587f004f-1596x1282.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/a6de54d7e225e613f331623afe582baa587f004f-1596x1282.jpg",
+    info_url: null
   },
   {
     id: "var-1-2",
@@ -104,7 +106,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/a6de54d7e225e613f331623afe582baa587f004f-1596x1282.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/a6de54d7e225e613f331623afe582baa587f004f-1596x1282.jpg",
+    info_url: null
   },
   {
     id: "var-1-3",
@@ -125,7 +128,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/a6de54d7e225e613f331623afe582baa587f004f-1596x1282.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/a6de54d7e225e613f331623afe582baa587f004f-1596x1282.jpg",
+    info_url: null
   },
   {
     id: "orig-2",
@@ -146,7 +150,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 12x9x.5\"",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/19b81bd493e565e904e23e2f466a8391518e188f-2002x1478.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/19b81bd493e565e904e23e2f466a8391518e188f-2002x1478.jpg",
+    info_url: null
   },
   {
     id: "var-2-1",
@@ -167,7 +172,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/19b81bd493e565e904e23e2f466a8391518e188f-2002x1478.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/19b81bd493e565e904e23e2f466a8391518e188f-2002x1478.jpg",
+    info_url: null
   },
   {
     id: "var-2-2",
@@ -188,7 +194,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/19b81bd493e565e904e23e2f466a8391518e188f-2002x1478.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/19b81bd493e565e904e23e2f466a8391518e188f-2002x1478.jpg",
+    info_url: null
   },
   {
     id: "var-2-3",
@@ -209,7 +216,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/19b81bd493e565e904e23e2f466a8391518e188f-2002x1478.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/19b81bd493e565e904e23e2f466a8391518e188f-2002x1478.jpg",
+    info_url: null
   },
   {
     id: "orig-3",
@@ -230,7 +238,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 24x36 x .5",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/d84319c7f6ec354ce5f3df77b931231fbfd503ae-729x911.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/d84319c7f6ec354ce5f3df77b931231fbfd503ae-729x911.jpg",
+    info_url: null
   },
   {
     id: "var-3-1",
@@ -251,7 +260,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/d84319c7f6ec354ce5f3df77b931231fbfd503ae-729x911.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/d84319c7f6ec354ce5f3df77b931231fbfd503ae-729x911.jpg",
+    info_url: null
   },
   {
     id: "var-3-2",
@@ -272,7 +282,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/d84319c7f6ec354ce5f3df77b931231fbfd503ae-729x911.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/d84319c7f6ec354ce5f3df77b931231fbfd503ae-729x911.jpg",
+    info_url: null
   },
   {
     id: "var-3-3",
@@ -293,7 +304,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/d84319c7f6ec354ce5f3df77b931231fbfd503ae-729x911.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/d84319c7f6ec354ce5f3df77b931231fbfd503ae-729x911.jpg",
+    info_url: null
   },
   {
     id: "orig-4",
@@ -314,7 +326,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 24x36",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/26ac8f8e656534c1c72f6f2d6504575b2b2e508b-704x911.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/26ac8f8e656534c1c72f6f2d6504575b2b2e508b-704x911.jpg",
+    info_url: null
   },
   {
     id: "orig-5",
@@ -335,7 +348,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 11x32",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/df3c9925c165caf20e330c83b0741d4ecd36c7c5-210x603.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/df3c9925c165caf20e330c83b0741d4ecd36c7c5-210x603.jpg",
+    info_url: null
   },
   {
     id: "orig-6",
@@ -356,7 +370,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 16x12x.5",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/a4333e3d8c028f02ad8bb08a4fda83f56208f654-2002x1460.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/a4333e3d8c028f02ad8bb08a4fda83f56208f654-2002x1460.jpg",
+    info_url: null
   },
   {
     id: "var-6-1",
@@ -377,7 +392,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/a4333e3d8c028f02ad8bb08a4fda83f56208f654-2002x1460.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/a4333e3d8c028f02ad8bb08a4fda83f56208f654-2002x1460.jpg",
+    info_url: null
   },
   {
     id: "var-6-2",
@@ -398,7 +414,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/a4333e3d8c028f02ad8bb08a4fda83f56208f654-2002x1460.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/a4333e3d8c028f02ad8bb08a4fda83f56208f654-2002x1460.jpg",
+    info_url: null
   },
   {
     id: "var-6-3",
@@ -419,7 +436,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/a4333e3d8c028f02ad8bb08a4fda83f56208f654-2002x1460.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/a4333e3d8c028f02ad8bb08a4fda83f56208f654-2002x1460.jpg",
+    info_url: null
   },
   {
     id: "orig-7",
@@ -440,7 +458,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 9x12x.5",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/ce4af8226b89dcfee5810601f9757a9b2e467833-1238x1626.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/ce4af8226b89dcfee5810601f9757a9b2e467833-1238x1626.jpg",
+    info_url: null
   },
   {
     id: "var-7-1",
@@ -461,7 +480,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/ce4af8226b89dcfee5810601f9757a9b2e467833-1238x1626.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/ce4af8226b89dcfee5810601f9757a9b2e467833-1238x1626.jpg",
+    info_url: null
   },
   {
     id: "var-7-2",
@@ -482,7 +502,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/ce4af8226b89dcfee5810601f9757a9b2e467833-1238x1626.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/ce4af8226b89dcfee5810601f9757a9b2e467833-1238x1626.jpg",
+    info_url: null
   },
   {
     id: "var-7-3",
@@ -503,7 +524,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/ce4af8226b89dcfee5810601f9757a9b2e467833-1238x1626.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/ce4af8226b89dcfee5810601f9757a9b2e467833-1238x1626.jpg",
+    info_url: null
   },
   {
     id: "orig-8",
@@ -524,7 +546,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 36x12x.5",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/ffaf1aed9206b7df48b10aa83edb9f98f481ed25-1596x514.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/ffaf1aed9206b7df48b10aa83edb9f98f481ed25-1596x514.jpg",
+    info_url: null
   },
   {
     id: "var-8-1",
@@ -545,7 +568,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/ffaf1aed9206b7df48b10aa83edb9f98f481ed25-1596x514.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/ffaf1aed9206b7df48b10aa83edb9f98f481ed25-1596x514.jpg",
+    info_url: null
   },
   {
     id: "orig-9",
@@ -566,7 +590,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 12 x 12",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/47f006502100ec269c71495f57dc73e340737121-1604x1524.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/47f006502100ec269c71495f57dc73e340737121-1604x1524.jpg",
+    info_url: null
   },
   {
     id: "var-9-1",
@@ -587,7 +612,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/47f006502100ec269c71495f57dc73e340737121-1604x1524.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/47f006502100ec269c71495f57dc73e340737121-1604x1524.jpg",
+    info_url: null
   },
   {
     id: "var-9-2",
@@ -608,7 +634,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/47f006502100ec269c71495f57dc73e340737121-1604x1524.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/47f006502100ec269c71495f57dc73e340737121-1604x1524.jpg",
+    info_url: null
   },
   {
     id: "orig-10",
@@ -629,7 +656,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 8.5 x 12 x .5",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/44e28b0e4289fd70710d63d5e0a96e2897189c5b-1172x911.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/44e28b0e4289fd70710d63d5e0a96e2897189c5b-1172x911.jpg",
+    info_url: null
   },
   {
     id: "var-10-1",
@@ -650,7 +678,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/44e28b0e4289fd70710d63d5e0a96e2897189c5b-1172x911.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/44e28b0e4289fd70710d63d5e0a96e2897189c5b-1172x911.jpg",
+    info_url: null
   },
   {
     id: "var-10-2",
@@ -671,7 +700,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/44e28b0e4289fd70710d63d5e0a96e2897189c5b-1172x911.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/44e28b0e4289fd70710d63d5e0a96e2897189c5b-1172x911.jpg",
+    info_url: null
   },
   {
     id: "var-10-3",
@@ -692,7 +722,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/44e28b0e4289fd70710d63d5e0a96e2897189c5b-1172x911.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/44e28b0e4289fd70710d63d5e0a96e2897189c5b-1172x911.jpg",
+    info_url: null
   },
   {
     id: "orig-11",
@@ -713,7 +744,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 12x12x.5",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/8091463c5b9207226abd075bbd93a294cea0c588-1596x1606.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/8091463c5b9207226abd075bbd93a294cea0c588-1596x1606.jpg",
+    info_url: null
   },
   {
     id: "var-11-1",
@@ -734,7 +766,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/8091463c5b9207226abd075bbd93a294cea0c588-1596x1606.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/8091463c5b9207226abd075bbd93a294cea0c588-1596x1606.jpg",
+    info_url: null
   },
   {
     id: "var-11-2",
@@ -755,7 +788,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/8091463c5b9207226abd075bbd93a294cea0c588-1596x1606.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/8091463c5b9207226abd075bbd93a294cea0c588-1596x1606.jpg",
+    info_url: null
   },
   {
     id: "orig-12",
@@ -776,7 +810,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): N/A",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/cbad135dae60449a36a98ead49251a4b42a0055a-512x911.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/cbad135dae60449a36a98ead49251a4b42a0055a-512x911.jpg",
+    info_url: null
   },
   {
     id: "orig-13",
@@ -797,7 +832,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 14x18x.5",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/887591a34ae9d03a8b2ddd30e0579430a8c7ff01-1384x1786.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/887591a34ae9d03a8b2ddd30e0579430a8c7ff01-1384x1786.jpg",
+    info_url: null
   },
   {
     id: "var-13-1",
@@ -818,7 +854,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/887591a34ae9d03a8b2ddd30e0579430a8c7ff01-1384x1786.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/887591a34ae9d03a8b2ddd30e0579430a8c7ff01-1384x1786.jpg",
+    info_url: null
   },
   {
     id: "var-13-2",
@@ -839,7 +876,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/887591a34ae9d03a8b2ddd30e0579430a8c7ff01-1384x1786.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/887591a34ae9d03a8b2ddd30e0579430a8c7ff01-1384x1786.jpg",
+    info_url: null
   },
   {
     id: "var-13-3",
@@ -860,7 +898,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/887591a34ae9d03a8b2ddd30e0579430a8c7ff01-1384x1786.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/887591a34ae9d03a8b2ddd30e0579430a8c7ff01-1384x1786.jpg",
+    info_url: null
   },
   {
     id: "orig-14",
@@ -881,7 +920,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 24 x 36 x .5",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/b1003256ec7459337c40827b9cba7ca5d5f77c78-598x771.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/b1003256ec7459337c40827b9cba7ca5d5f77c78-598x771.jpg",
+    info_url: null
   },
   {
     id: "var-14-1",
@@ -902,7 +942,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/b1003256ec7459337c40827b9cba7ca5d5f77c78-598x771.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/b1003256ec7459337c40827b9cba7ca5d5f77c78-598x771.jpg",
+    info_url: null
   },
   {
     id: "var-14-2",
@@ -923,7 +964,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/b1003256ec7459337c40827b9cba7ca5d5f77c78-598x771.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/b1003256ec7459337c40827b9cba7ca5d5f77c78-598x771.jpg",
+    info_url: null
   },
   {
     id: "var-14-3",
@@ -944,7 +986,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/b1003256ec7459337c40827b9cba7ca5d5f77c78-598x771.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/b1003256ec7459337c40827b9cba7ca5d5f77c78-598x771.jpg",
+    info_url: null
   },
   {
     id: "orig-15",
@@ -965,7 +1008,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 36x36x5",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/acad109f5ef93350a126a126d889b72d47afa114-528x527.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/acad109f5ef93350a126a126d889b72d47afa114-528x527.jpg",
+    info_url: null
   },
   {
     id: "var-15-1",
@@ -986,7 +1030,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/acad109f5ef93350a126a126d889b72d47afa114-528x527.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/acad109f5ef93350a126a126d889b72d47afa114-528x527.jpg",
+    info_url: null
   },
   {
     id: "var-15-2",
@@ -1007,7 +1052,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/acad109f5ef93350a126a126d889b72d47afa114-528x527.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/acad109f5ef93350a126a126d889b72d47afa114-528x527.jpg",
+    info_url: null
   },
   {
     id: "orig-16",
@@ -1028,7 +1074,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 16x20x.5",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/d2f46fecf5b7767de60d4f6c5328496e1cc353a4-1134x910.png"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/d2f46fecf5b7767de60d4f6c5328496e1cc353a4-1134x910.png",
+    info_url: null
   },
   {
     id: "var-16-1",
@@ -1049,7 +1096,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/d2f46fecf5b7767de60d4f6c5328496e1cc353a4-1134x910.png"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/d2f46fecf5b7767de60d4f6c5328496e1cc353a4-1134x910.png",
+    info_url: null
   },
   {
     id: "var-16-2",
@@ -1070,7 +1118,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/d2f46fecf5b7767de60d4f6c5328496e1cc353a4-1134x910.png"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/d2f46fecf5b7767de60d4f6c5328496e1cc353a4-1134x910.png",
+    info_url: null
   },
   {
     id: "var-16-3",
@@ -1091,7 +1140,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/d2f46fecf5b7767de60d4f6c5328496e1cc353a4-1134x910.png"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/d2f46fecf5b7767de60d4f6c5328496e1cc353a4-1134x910.png",
+    info_url: null
   },
   {
     id: "orig-17",
@@ -1112,7 +1162,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 36x52",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/fc97987fe82c7ae8e513ca1703a618de0f41cd12-1931x867.png"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/fc97987fe82c7ae8e513ca1703a618de0f41cd12-1931x867.png",
+    info_url: null
   },
   {
     id: "orig-18",
@@ -1133,7 +1184,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 9x12",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/224b6c615fb6b3af26e9a4293b21c209a3491699-771x911.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/224b6c615fb6b3af26e9a4293b21c209a3491699-771x911.jpg",
+    info_url: null
   },
   {
     id: "orig-19",
@@ -1154,7 +1206,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 16 x 12 x .5",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/7469bf3be2744d3d3034db3c6c10868002fd8838-1314x1786.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/7469bf3be2744d3d3034db3c6c10868002fd8838-1314x1786.jpg",
+    info_url: null
   },
   {
     id: "var-19-1",
@@ -1175,7 +1228,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/7469bf3be2744d3d3034db3c6c10868002fd8838-1314x1786.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/7469bf3be2744d3d3034db3c6c10868002fd8838-1314x1786.jpg",
+    info_url: null
   },
   {
     id: "var-19-2",
@@ -1196,7 +1250,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/7469bf3be2744d3d3034db3c6c10868002fd8838-1314x1786.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/7469bf3be2744d3d3034db3c6c10868002fd8838-1314x1786.jpg",
+    info_url: null
   },
   {
     id: "var-19-3",
@@ -1217,7 +1272,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/7469bf3be2744d3d3034db3c6c10868002fd8838-1314x1786.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/7469bf3be2744d3d3034db3c6c10868002fd8838-1314x1786.jpg",
+    info_url: null
   },
   {
     id: "orig-20",
@@ -1238,7 +1294,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 10x8x.5",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/44d18dc9238b6159d9031e6f6b9b26880fa03dbf-2002x1520.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/44d18dc9238b6159d9031e6f6b9b26880fa03dbf-2002x1520.jpg",
+    info_url: null
   },
   {
     id: "var-20-1",
@@ -1259,7 +1316,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/44d18dc9238b6159d9031e6f6b9b26880fa03dbf-2002x1520.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/44d18dc9238b6159d9031e6f6b9b26880fa03dbf-2002x1520.jpg",
+    info_url: null
   },
   {
     id: "var-20-2",
@@ -1280,7 +1338,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/44d18dc9238b6159d9031e6f6b9b26880fa03dbf-2002x1520.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/44d18dc9238b6159d9031e6f6b9b26880fa03dbf-2002x1520.jpg",
+    info_url: null
   },
   {
     id: "var-20-3",
@@ -1301,7 +1360,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/44d18dc9238b6159d9031e6f6b9b26880fa03dbf-2002x1520.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/44d18dc9238b6159d9031e6f6b9b26880fa03dbf-2002x1520.jpg",
+    info_url: null
   },
   {
     id: "orig-21",
@@ -1322,7 +1382,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 10x12x.5",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/3fa7ee516310d6790a8dd06b57d402279e58b85a-1364x1626.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/3fa7ee516310d6790a8dd06b57d402279e58b85a-1364x1626.jpg",
+    info_url: null
   },
   {
     id: "var-21-1",
@@ -1343,7 +1404,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/3fa7ee516310d6790a8dd06b57d402279e58b85a-1364x1626.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/3fa7ee516310d6790a8dd06b57d402279e58b85a-1364x1626.jpg",
+    info_url: null
   },
   {
     id: "var-21-2",
@@ -1364,7 +1426,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/3fa7ee516310d6790a8dd06b57d402279e58b85a-1364x1626.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/3fa7ee516310d6790a8dd06b57d402279e58b85a-1364x1626.jpg",
+    info_url: null
   },
   {
     id: "var-21-3",
@@ -1385,7 +1448,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/3fa7ee516310d6790a8dd06b57d402279e58b85a-1364x1626.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/3fa7ee516310d6790a8dd06b57d402279e58b85a-1364x1626.jpg",
+    info_url: null
   },
   {
     id: "orig-22",
@@ -1406,7 +1470,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 24x36x.5",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/ab0c00d6fa57087615989e195d50f59b211ef48c-1596x1194.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/ab0c00d6fa57087615989e195d50f59b211ef48c-1596x1194.jpg",
+    info_url: null
   },
   {
     id: "var-22-1",
@@ -1427,7 +1492,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/ab0c00d6fa57087615989e195d50f59b211ef48c-1596x1194.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/ab0c00d6fa57087615989e195d50f59b211ef48c-1596x1194.jpg",
+    info_url: null
   },
   {
     id: "var-22-2",
@@ -1448,7 +1514,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/ab0c00d6fa57087615989e195d50f59b211ef48c-1596x1194.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/ab0c00d6fa57087615989e195d50f59b211ef48c-1596x1194.jpg",
+    info_url: null
   },
   {
     id: "var-22-3",
@@ -1469,7 +1536,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/ab0c00d6fa57087615989e195d50f59b211ef48c-1596x1194.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/ab0c00d6fa57087615989e195d50f59b211ef48c-1596x1194.jpg",
+    info_url: null
   },
   {
     id: "orig-23",
@@ -1490,7 +1558,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 24x30",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/4c79c82772fb65b98b6ed693f62eccb9509724ed-1432x1786.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/4c79c82772fb65b98b6ed693f62eccb9509724ed-1432x1786.jpg",
+    info_url: null
   },
   {
     id: "var-23-1",
@@ -1511,7 +1580,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/4c79c82772fb65b98b6ed693f62eccb9509724ed-1432x1786.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/4c79c82772fb65b98b6ed693f62eccb9509724ed-1432x1786.jpg",
+    info_url: null
   },
   {
     id: "var-23-2",
@@ -1532,7 +1602,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/4c79c82772fb65b98b6ed693f62eccb9509724ed-1432x1786.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/4c79c82772fb65b98b6ed693f62eccb9509724ed-1432x1786.jpg",
+    info_url: null
   },
   {
     id: "var-23-3",
@@ -1553,7 +1624,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/4c79c82772fb65b98b6ed693f62eccb9509724ed-1432x1786.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/4c79c82772fb65b98b6ed693f62eccb9509724ed-1432x1786.jpg",
+    info_url: null
   },
   {
     id: "orig-24",
@@ -1574,7 +1646,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 36 x 24 x .5",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/77a605c980c2401ad122a6913c8588fef62149f2-2703x1831.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/77a605c980c2401ad122a6913c8588fef62149f2-2703x1831.jpg",
+    info_url: null
   },
   {
     id: "var-24-1",
@@ -1595,7 +1668,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/77a605c980c2401ad122a6913c8588fef62149f2-2703x1831.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/77a605c980c2401ad122a6913c8588fef62149f2-2703x1831.jpg",
+    info_url: null
   },
   {
     id: "var-24-2",
@@ -1616,7 +1690,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/77a605c980c2401ad122a6913c8588fef62149f2-2703x1831.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/77a605c980c2401ad122a6913c8588fef62149f2-2703x1831.jpg",
+    info_url: null
   },
   {
     id: "var-24-3",
@@ -1637,7 +1712,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/77a605c980c2401ad122a6913c8588fef62149f2-2703x1831.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/77a605c980c2401ad122a6913c8588fef62149f2-2703x1831.jpg",
+    info_url: null
   },
   {
     id: "orig-25",
@@ -1658,7 +1734,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 14x14x14",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/653975d448f86aa8b5648db4d9420dfbfd34439a-683x911.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/653975d448f86aa8b5648db4d9420dfbfd34439a-683x911.jpg",
+    info_url: null
   },
   {
     id: "orig-26",
@@ -1679,7 +1756,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 16x20x.5",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/e9126ee1b314b1e39138c7a6166931d12929513b-1404x1786.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/e9126ee1b314b1e39138c7a6166931d12929513b-1404x1786.jpg",
+    info_url: null
   },
   {
     id: "var-26-1",
@@ -1700,7 +1778,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/e9126ee1b314b1e39138c7a6166931d12929513b-1404x1786.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/e9126ee1b314b1e39138c7a6166931d12929513b-1404x1786.jpg",
+    info_url: null
   },
   {
     id: "var-26-2",
@@ -1721,7 +1800,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/e9126ee1b314b1e39138c7a6166931d12929513b-1404x1786.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/e9126ee1b314b1e39138c7a6166931d12929513b-1404x1786.jpg",
+    info_url: null
   },
   {
     id: "var-26-3",
@@ -1742,7 +1822,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/e9126ee1b314b1e39138c7a6166931d12929513b-1404x1786.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/e9126ee1b314b1e39138c7a6166931d12929513b-1404x1786.jpg",
+    info_url: null
   },
   {
     id: "orig-27",
@@ -1763,7 +1844,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 12x9x.5",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/810e01bef8b6645d869ec282d63f5d6c3c267892-2002x1580.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/810e01bef8b6645d869ec282d63f5d6c3c267892-2002x1580.jpg",
+    info_url: null
   },
   {
     id: "var-27-1",
@@ -1784,7 +1866,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/810e01bef8b6645d869ec282d63f5d6c3c267892-2002x1580.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/810e01bef8b6645d869ec282d63f5d6c3c267892-2002x1580.jpg",
+    info_url: null
   },
   {
     id: "orig-28",
@@ -1805,7 +1888,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 24x30x.5",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/cbcbdb3e19457b70721a09b3a2f3fd27812fcfb4-732x911.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/cbcbdb3e19457b70721a09b3a2f3fd27812fcfb4-732x911.jpg",
+    info_url: null
   },
   {
     id: "orig-29",
@@ -1826,7 +1910,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 16 x 12 x .5",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/f38526a755708c7be830e6e1c51f486c364e53a4-2002x1508.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/f38526a755708c7be830e6e1c51f486c364e53a4-2002x1508.jpg",
+    info_url: null
   },
   {
     id: "var-29-1",
@@ -1847,7 +1932,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/f38526a755708c7be830e6e1c51f486c364e53a4-2002x1508.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/f38526a755708c7be830e6e1c51f486c364e53a4-2002x1508.jpg",
+    info_url: null
   },
   {
     id: "var-29-2",
@@ -1868,7 +1954,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/f38526a755708c7be830e6e1c51f486c364e53a4-2002x1508.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/f38526a755708c7be830e6e1c51f486c364e53a4-2002x1508.jpg",
+    info_url: null
   },
   {
     id: "var-29-3",
@@ -1889,7 +1976,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/f38526a755708c7be830e6e1c51f486c364e53a4-2002x1508.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/f38526a755708c7be830e6e1c51f486c364e53a4-2002x1508.jpg",
+    info_url: null
   },
   {
     id: "orig-30",
@@ -1910,7 +1998,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 16x20x.5",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/1a9a254740e0674c2917283c1177a2531365b31d-1596x1284.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/1a9a254740e0674c2917283c1177a2531365b31d-1596x1284.jpg",
+    info_url: null
   },
   {
     id: "var-30-1",
@@ -1931,7 +2020,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/1a9a254740e0674c2917283c1177a2531365b31d-1596x1284.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/1a9a254740e0674c2917283c1177a2531365b31d-1596x1284.jpg",
+    info_url: null
   },
   {
     id: "var-30-2",
@@ -1952,7 +2042,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/1a9a254740e0674c2917283c1177a2531365b31d-1596x1284.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/1a9a254740e0674c2917283c1177a2531365b31d-1596x1284.jpg",
+    info_url: null
   },
   {
     id: "var-30-3",
@@ -1973,7 +2064,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/1a9a254740e0674c2917283c1177a2531365b31d-1596x1284.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/1a9a254740e0674c2917283c1177a2531365b31d-1596x1284.jpg",
+    info_url: null
   },
   {
     id: "orig-31",
@@ -1994,7 +2086,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 12 x 12 x 1",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/31c42a6f2f1ed6107b4be290b2bec5e0f32c479b-1596x1590.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/31c42a6f2f1ed6107b4be290b2bec5e0f32c479b-1596x1590.jpg",
+    info_url: null
   },
   {
     id: "var-31-1",
@@ -2015,7 +2108,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/31c42a6f2f1ed6107b4be290b2bec5e0f32c479b-1596x1590.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/31c42a6f2f1ed6107b4be290b2bec5e0f32c479b-1596x1590.jpg",
+    info_url: null
   },
   {
     id: "var-31-2",
@@ -2036,7 +2130,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/31c42a6f2f1ed6107b4be290b2bec5e0f32c479b-1596x1590.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/31c42a6f2f1ed6107b4be290b2bec5e0f32c479b-1596x1590.jpg",
+    info_url: null
   },
   {
     id: "orig-32",
@@ -2057,7 +2152,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 36x42",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/1ce5bf26c85324807c2ed718ce659b56e6a22724-473x604.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/1ce5bf26c85324807c2ed718ce659b56e6a22724-473x604.jpg",
+    info_url: null
   },
   {
     id: "orig-33",
@@ -2078,7 +2174,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 8.5 x 12 x .5",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/b9255bf0647acee8802065673c9383797e1a4dc7-1596x1214.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/b9255bf0647acee8802065673c9383797e1a4dc7-1596x1214.jpg",
+    info_url: null
   },
   {
     id: "var-33-1",
@@ -2099,7 +2196,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/b9255bf0647acee8802065673c9383797e1a4dc7-1596x1214.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/b9255bf0647acee8802065673c9383797e1a4dc7-1596x1214.jpg",
+    info_url: null
   },
   {
     id: "var-33-2",
@@ -2120,7 +2218,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/b9255bf0647acee8802065673c9383797e1a4dc7-1596x1214.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/b9255bf0647acee8802065673c9383797e1a4dc7-1596x1214.jpg",
+    info_url: null
   },
   {
     id: "var-33-3",
@@ -2141,7 +2240,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/b9255bf0647acee8802065673c9383797e1a4dc7-1596x1214.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/b9255bf0647acee8802065673c9383797e1a4dc7-1596x1214.jpg",
+    info_url: null
   },
   {
     id: "var-33-4",
@@ -2162,7 +2262,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/b9255bf0647acee8802065673c9383797e1a4dc7-1596x1214.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/b9255bf0647acee8802065673c9383797e1a4dc7-1596x1214.jpg",
+    info_url: null
   },
   {
     id: "var-33-5",
@@ -2183,7 +2284,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Real stock count from Inventory.xlsx (mfpStudios sheet).",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/b9255bf0647acee8802065673c9383797e1a4dc7-1596x1214.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/b9255bf0647acee8802065673c9383797e1a4dc7-1596x1214.jpg",
+    info_url: null
   },
   {
     id: "orig-34",
@@ -2204,7 +2306,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 18x24x.5",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/4b1af7696ec70fdfd3ee868bb730c154fbf7b161-1326x1786.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/4b1af7696ec70fdfd3ee868bb730c154fbf7b161-1326x1786.jpg",
+    info_url: null
   },
   {
     id: "var-34-1",
@@ -2225,7 +2328,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/4b1af7696ec70fdfd3ee868bb730c154fbf7b161-1326x1786.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/4b1af7696ec70fdfd3ee868bb730c154fbf7b161-1326x1786.jpg",
+    info_url: null
   },
   {
     id: "var-34-2",
@@ -2246,7 +2350,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/4b1af7696ec70fdfd3ee868bb730c154fbf7b161-1326x1786.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/4b1af7696ec70fdfd3ee868bb730c154fbf7b161-1326x1786.jpg",
+    info_url: null
   },
   {
     id: "var-34-3",
@@ -2267,7 +2372,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — replace with real count before a show.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/4b1af7696ec70fdfd3ee868bb730c154fbf7b161-1326x1786.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/4b1af7696ec70fdfd3ee868bb730c154fbf7b161-1326x1786.jpg",
+    info_url: null
   },
   {
     id: "orig-35",
@@ -2288,7 +2394,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Dimensions (from site): 9x13",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/6e950b8fb36d09f86951c5c91ab43cf79b251249-608x911.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/6e950b8fb36d09f86951c5c91ab43cf79b251249-608x911.jpg",
+    info_url: null
   },
   {
     id: "pin-orig-9",
@@ -2309,7 +2416,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Real stock count from Inventory.xlsx (mfpStudios sheet).",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/47f006502100ec269c71495f57dc73e340737121-1604x1524.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/47f006502100ec269c71495f57dc73e340737121-1604x1524.jpg",
+    info_url: null
   },
   {
     id: "pin-orig-15",
@@ -2330,7 +2438,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Real stock count from Inventory.xlsx (mfpStudios sheet).",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/acad109f5ef93350a126a126d889b72d47afa114-528x527.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/acad109f5ef93350a126a126d889b72d47afa114-528x527.jpg",
+    info_url: null
   },
   {
     id: "pin-orig-30",
@@ -2351,7 +2460,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Real stock count from Inventory.xlsx (mfpStudios sheet).",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/1a9a254740e0674c2917283c1177a2531365b31d-1596x1284.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/1a9a254740e0674c2917283c1177a2531365b31d-1596x1284.jpg",
+    info_url: null
   },
   {
     id: "pin-orig-34",
@@ -2372,7 +2482,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Real stock count from Inventory.xlsx (mfpStudios sheet).",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/4b1af7696ec70fdfd3ee868bb730c154fbf7b161-1326x1786.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/4b1af7696ec70fdfd3ee868bb730c154fbf7b161-1326x1786.jpg",
+    info_url: null
   },
   {
     id: "pin-orig-15-mod",
@@ -2393,7 +2504,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Real stock count from Inventory.xlsx (mfpStudios sheet).",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/acad109f5ef93350a126a126d889b72d47afa114-528x527.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/acad109f5ef93350a126a126d889b72d47afa114-528x527.jpg",
+    info_url: null
   },
   {
     id: "pin-orig-30-mod",
@@ -2414,7 +2526,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Real stock count from Inventory.xlsx (mfpStudios sheet).",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/1a9a254740e0674c2917283c1177a2531365b31d-1596x1284.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/1a9a254740e0674c2917283c1177a2531365b31d-1596x1284.jpg",
+    info_url: null
   },
   {
     id: "pin-orig-13",
@@ -2435,7 +2548,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Real stock count from Inventory.xlsx (mfpStudios sheet).",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/887591a34ae9d03a8b2ddd30e0579430a8c7ff01-1384x1786.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/887591a34ae9d03a8b2ddd30e0579430a8c7ff01-1384x1786.jpg",
+    info_url: null
   },
   {
     id: "postcard-orig-29",
@@ -2456,7 +2570,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Real stock count from Inventory.xlsx (mfpStudios sheet).",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/f38526a755708c7be830e6e1c51f486c364e53a4-2002x1508.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/f38526a755708c7be830e6e1c51f486c364e53a4-2002x1508.jpg",
+    info_url: null
   },
   {
     id: "postcard-orig-30",
@@ -2477,7 +2592,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — spreadsheet has two ambiguous numbers for this size; replace once Chrissy confirms which is current stock.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/1a9a254740e0674c2917283c1177a2531365b31d-1596x1284.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/1a9a254740e0674c2917283c1177a2531365b31d-1596x1284.jpg",
+    info_url: null
   },
   {
     id: "postcard-orig-23",
@@ -2498,7 +2614,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — spreadsheet has two ambiguous numbers for this size; replace once Chrissy confirms which is current stock.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/4c79c82772fb65b98b6ed693f62eccb9509724ed-1432x1786.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/4c79c82772fb65b98b6ed693f62eccb9509724ed-1432x1786.jpg",
+    info_url: null
   },
   {
     id: "postcard-orig-13",
@@ -2519,7 +2636,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Real stock count from Inventory.xlsx (mfpStudios sheet).",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/887591a34ae9d03a8b2ddd30e0579430a8c7ff01-1384x1786.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/887591a34ae9d03a8b2ddd30e0579430a8c7ff01-1384x1786.jpg",
+    info_url: null
   },
   {
     id: "postcard-orig-24",
@@ -2540,7 +2658,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Real stock count from Inventory.xlsx (mfpStudios sheet).",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/77a605c980c2401ad122a6913c8588fef62149f2-2703x1831.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/77a605c980c2401ad122a6913c8588fef62149f2-2703x1831.jpg",
+    info_url: null
   },
   {
     id: "postcard-orig-27",
@@ -2561,7 +2680,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — spreadsheet has two ambiguous numbers for this size; replace once Chrissy confirms which is current stock.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/810e01bef8b6645d869ec282d63f5d6c3c267892-2002x1580.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/810e01bef8b6645d869ec282d63f5d6c3c267892-2002x1580.jpg",
+    info_url: null
   },
   {
     id: "postcard-orig-19",
@@ -2582,7 +2702,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Real stock count from Inventory.xlsx (mfpStudios sheet).",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/7469bf3be2744d3d3034db3c6c10868002fd8838-1314x1786.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/7469bf3be2744d3d3034db3c6c10868002fd8838-1314x1786.jpg",
+    info_url: null
   },
   {
     id: "postcard-orig-33",
@@ -2603,7 +2724,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Real stock count from Inventory.xlsx (mfpStudios sheet).",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/b9255bf0647acee8802065673c9383797e1a4dc7-1596x1214.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/b9255bf0647acee8802065673c9383797e1a4dc7-1596x1214.jpg",
+    info_url: null
   },
   {
     id: "postcard-orig-2",
@@ -2624,7 +2746,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Real stock count from Inventory.xlsx (mfpStudios sheet).",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/19b81bd493e565e904e23e2f466a8391518e188f-2002x1478.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/19b81bd493e565e904e23e2f466a8391518e188f-2002x1478.jpg",
+    info_url: null
   },
   {
     id: "postcard-orig-34",
@@ -2645,7 +2768,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — spreadsheet has two ambiguous numbers for this size; replace once Chrissy confirms which is current stock.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/4b1af7696ec70fdfd3ee868bb730c154fbf7b161-1326x1786.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/4b1af7696ec70fdfd3ee868bb730c154fbf7b161-1326x1786.jpg",
+    info_url: null
   },
   {
     id: "postcard-orig-7",
@@ -2666,7 +2790,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — spreadsheet has two ambiguous numbers for this size; replace once Chrissy confirms which is current stock.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/ce4af8226b89dcfee5810601f9757a9b2e467833-1238x1626.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/ce4af8226b89dcfee5810601f9757a9b2e467833-1238x1626.jpg",
+    info_url: null
   },
   {
     id: "postcard-orig-20",
@@ -2687,7 +2812,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Placeholder stock count — spreadsheet has two ambiguous numbers for this size; replace once Chrissy confirms which is current stock.",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/44d18dc9238b6159d9031e6f6b9b26880fa03dbf-2002x1520.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/44d18dc9238b6159d9031e6f6b9b26880fa03dbf-2002x1520.jpg",
+    info_url: null
   },
   {
     id: "postcard-orig-8-pride1",
@@ -2708,7 +2834,8 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Real stock count from Inventory.xlsx (mfpStudios sheet).",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/ffaf1aed9206b7df48b10aa83edb9f98f481ed25-1596x514.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/ffaf1aed9206b7df48b10aa83edb9f98f481ed25-1596x514.jpg",
+    info_url: null
   },
   {
     id: "postcard-orig-8-pride2",
@@ -2729,6 +2856,7 @@ export const SEED_PIECES: Omit<Piece, 'store_id'>[] = [
     date_sold: null,
     sale_channel: null,
     notes: "Real stock count from Inventory.xlsx (mfpStudios sheet).",
-    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/ffaf1aed9206b7df48b10aa83edb9f98f481ed25-1596x514.jpg"
+    image_url: "https://cdn.sanity.io/images/3i77cmnf/production/ffaf1aed9206b7df48b10aa83edb9f98f481ed25-1596x514.jpg",
+    info_url: null
   }
 ];

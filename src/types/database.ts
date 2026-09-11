@@ -37,6 +37,7 @@ export type Piece = {
   sale_channel: SaleChannel | null;
   notes: string | null;
   image_url: string | null;
+  info_url: string | null;
 };
 
 export type Sale = {

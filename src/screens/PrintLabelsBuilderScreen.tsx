@@ -1,21 +1,42 @@
 import React, { useMemo, useState } from 'react';
-import { FlatList, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Piece } from '../types/database';
 import { usePieces } from '../context/PiecesContext';
 import { thumbUrl } from '../lib/images';
 import { LabelFields } from '../components/PrintLabelsOverlay';
+import { LABEL_SIZES, LabelSizeKey, labelSizeFor } from '../lib/labelSizes';
 
 type QueueEntry = { piece: Piece; quantity: number };
 
 const FIELD_OPTIONS: { key: keyof LabelFields; label: string }[] = [
   { key: 'title', label: 'Title' },
   { key: 'barcode', label: 'Barcode' },
-  { key: 'qr', label: 'QR Code' },
+  { key: 'qr', label: 'Scan-to-cart QR' },
+  { key: 'link', label: 'Read-more QR' },
   { key: 'price', label: 'Price' },
   { key: 'size', label: 'Size' },
 ];
 
-const DEFAULT_FIELDS: LabelFields = { title: true, barcode: true, price: true, qr: false, size: false };
+type LabelType = 'barcode' | 'nametag';
+
+const LABEL_TYPE_OPTIONS: { key: LabelType; label: string; fields: LabelFields; size: LabelSizeKey }[] = [
+  {
+    key: 'barcode',
+    label: 'Barcode label',
+    fields: { title: true, barcode: true, qr: false, link: false, price: true, size: false },
+    size: 'avery5160',
+  },
+  {
+    key: 'nametag',
+    label: 'Name tag (for hanging)',
+    fields: { title: true, barcode: false, qr: false, link: true, price: true, size: true },
+    size: 'avery5390',
+  },
+];
+
+const DEFAULT_TYPE: LabelType = 'barcode';
+const DEFAULT_FIELDS: LabelFields = LABEL_TYPE_OPTIONS[0].fields;
+const DEFAULT_SIZE: LabelSizeKey = LABEL_TYPE_OPTIONS[0].size;
 
 function SearchResultRow({ piece, onAdd }: { piece: Piece; onAdd: () => void }) {
   return (
@@ -79,24 +100,40 @@ export default function PrintLabelsBuilderScreen({
 }: {
   initialPiece?: Piece;
   onClose: () => void;
-  onPrint: (pieces: Piece[], fields: LabelFields) => void;
+  onPrint: (pieces: Piece[], fields: LabelFields, sizeKey: LabelSizeKey) => void;
 }) {
   const { pieces } = usePieces();
+  const [labelType, setLabelType] = useState<LabelType>(DEFAULT_TYPE);
   const [fields, setFields] = useState<LabelFields>(DEFAULT_FIELDS);
+  const [sizeKey, setSizeKey] = useState<LabelSizeKey>(DEFAULT_SIZE);
   const [entries, setEntries] = useState<QueueEntry[]>(
     initialPiece ? [{ piece: initialPiece, quantity: 1 }] : []
   );
   const [search, setSearch] = useState('');
 
+  // Always browsable, not just search-as-you-type: an empty query shows
+  // every piece (sorted, capped so the list stays scrollable rather than
+  // huge) instead of nothing, so a vendor isn't stuck needing to already
+  // know the exact title/SKU they want before anything shows up.
   const searchResults = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return [];
-    return pieces
-      .filter((p) => p.title.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q))
-      .slice(0, 20);
+    const matches = q
+      ? pieces.filter((p) => p.title.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q))
+      : pieces;
+    const sorted = [...matches].sort((a, b) => a.title.localeCompare(b.title));
+    const cap = q ? 20 : 50;
+    return { results: sorted.slice(0, cap), total: sorted.length, cap };
   }, [pieces, search]);
 
   const totalLabels = entries.reduce((sum, e) => sum + e.quantity, 0);
+  const selectedSize = labelSizeFor(sizeKey);
+
+  function selectLabelType(type: LabelType) {
+    const preset = LABEL_TYPE_OPTIONS.find((t) => t.key === type)!;
+    setLabelType(type);
+    setFields(preset.fields);
+    setSizeKey(preset.size);
+  }
 
   function toggleField(key: keyof LabelFields) {
     setFields((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -125,7 +162,7 @@ export default function PrintLabelsBuilderScreen({
 
   function handlePrint() {
     const flat = entries.flatMap((e) => Array(e.quantity).fill(e.piece));
-    onPrint(flat, fields);
+    onPrint(flat, fields, sizeKey);
   }
 
   return (
@@ -138,7 +175,43 @@ export default function PrintLabelsBuilderScreen({
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Label info</Text>
+        <Text style={styles.sectionLabel}>Label type</Text>
+        <View style={styles.chipRow}>
+          {LABEL_TYPE_OPTIONS.map((t) => (
+            <Pressable
+              key={t.key}
+              style={[styles.chip, labelType === t.key && styles.chipSelected]}
+              onPress={() => selectLabelType(t.key)}
+            >
+              <Text style={[styles.chipText, labelType === t.key && styles.chipTextSelected]}>
+                {t.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
+        <Text style={[styles.sectionLabel, { marginTop: 14 }]}>Label size</Text>
+        <View style={styles.chipRow}>
+          {LABEL_SIZES.map((s) => (
+            <Pressable
+              key={s.key}
+              style={[styles.chip, sizeKey === s.key && styles.chipSelected]}
+              onPress={() => setSizeKey(s.key)}
+            >
+              <Text style={[styles.chipText, sizeKey === s.key && styles.chipTextSelected]}>
+                {s.shortName}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+        {!selectedSize.verified && (
+          <Text style={styles.helperText}>
+            This size's margins were computed, not confirmed against Avery's own spec — print one test sheet
+            on plain paper and check it against a real label sheet before printing a full batch.
+          </Text>
+        )}
+
+        <Text style={[styles.sectionLabel, { marginTop: 14 }]}>Fields on each label</Text>
         <View style={styles.chipRow}>
           {FIELD_OPTIONS.map((opt) => (
             <Pressable
@@ -160,14 +233,20 @@ export default function PrintLabelsBuilderScreen({
           style={styles.searchInput}
           value={search}
           onChangeText={setSearch}
-          placeholder="Search by title or SKU"
+          placeholder="Search by title or SKU, or browse below"
         />
-        {searchResults.length > 0 && (
-          <View style={styles.searchResults}>
-            {searchResults.map((p) => (
-              <SearchResultRow key={p.id} piece={p} onAdd={() => addPiece(p)} />
-            ))}
-          </View>
+        <ScrollView style={styles.searchResults} nestedScrollEnabled>
+          {searchResults.results.map((p) => (
+            <SearchResultRow key={p.id} piece={p} onAdd={() => addPiece(p)} />
+          ))}
+          {searchResults.results.length === 0 && (
+            <Text style={styles.noResults}>No pieces match "{search}".</Text>
+          )}
+        </ScrollView>
+        {searchResults.total > searchResults.cap && (
+          <Text style={styles.helperText}>
+            Showing {searchResults.cap} of {searchResults.total} — type to narrow the list.
+          </Text>
         )}
       </View>
 
@@ -238,7 +317,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 15,
   },
-  searchResults: { borderWidth: 1, borderColor: '#eee', borderRadius: 8, overflow: 'hidden' },
+  searchResults: { borderWidth: 1, borderColor: '#eee', borderRadius: 8, maxHeight: 240 },
+  noResults: { color: '#999', fontSize: 13, padding: 14, textAlign: 'center' },
+  helperText: { fontSize: 12, color: '#888' },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',

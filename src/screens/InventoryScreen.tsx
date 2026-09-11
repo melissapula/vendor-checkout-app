@@ -8,6 +8,7 @@ import LogAdjustmentScreen from './LogAdjustmentScreen';
 import AppModal from '../components/AppModal';
 import PrintLabelsOverlay, { LabelFields } from '../components/PrintLabelsOverlay';
 import PrintLabelsBuilderScreen from './PrintLabelsBuilderScreen';
+import { LabelSizeKey, labelSizeFor } from '../lib/labelSizes';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 import { thumbUrl } from '../lib/images';
 
@@ -103,7 +104,9 @@ export default function InventoryScreen() {
   const [formOpen, setFormOpen] = useState(false);
   const [builderOpen, setBuilderOpen] = useState(false);
   const [builderInitialPiece, setBuilderInitialPiece] = useState<Piece | undefined>(undefined);
-  const [printJob, setPrintJob] = useState<{ pieces: Piece[]; fields: LabelFields } | null>(null);
+  const [printJob, setPrintJob] = useState<{ pieces: Piece[]; fields: LabelFields; sizeKey: LabelSizeKey } | null>(
+    null
+  );
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
   const [adjustingPiece, setAdjustingPiece] = useState<Piece | null>(null);
   const { isTabletUp } = useBreakpoint();
@@ -195,8 +198,8 @@ export default function InventoryScreen() {
         <PrintLabelsBuilderScreen
           initialPiece={builderInitialPiece}
           onClose={() => setBuilderOpen(false)}
-          onPrint={(pieces, fields) => {
-            setPrintJob({ pieces, fields });
+          onPrint={(pieces, fields, sizeKey) => {
+            setPrintJob({ pieces, fields, sizeKey });
             setBuilderOpen(false);
           }}
         />
@@ -204,6 +207,7 @@ export default function InventoryScreen() {
       <PrintLabelsOverlay
         pieces={printJob?.pieces ?? null}
         fields={printJob?.fields ?? null}
+        size={printJob ? labelSizeFor(printJob.sizeKey) : null}
         onDone={() => setPrintJob(null)}
       />
       <AppModal visible={!!adjustingPiece} onRequestClose={() => setAdjustingPiece(null)}>

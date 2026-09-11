@@ -65,6 +65,7 @@ export default function PieceFormScreen({
   const [costBasis, setCostBasis] = useState(piece?.cost_basis != null ? String(piece.cost_basis) : '');
   const [notes, setNotes] = useState(piece?.notes ?? '');
   const [imageUrl, setImageUrl] = useState(piece?.image_url ?? '');
+  const [infoUrl, setInfoUrl] = useState(piece?.info_url ?? '');
   const [originalId, setOriginalId] = useState<string | null>(
     piece?.original_id ?? presetOriginalId ?? null
   );
@@ -113,6 +114,7 @@ export default function PieceFormScreen({
       cost_basis: parseOptionalNumber(costBasis),
       notes: notes.trim() || null,
       image_url: imageUrl.trim() || null,
+      info_url: infoUrl.trim() || null,
       original_id: originalId,
     };
 
@@ -340,6 +342,16 @@ export default function PieceFormScreen({
           value={imageUrl}
           onChangeText={setImageUrl}
           placeholder="https://…"
+          autoCapitalize="none"
+          onSubmitEditing={handleSave}
+        />
+
+        <Text style={styles.label}>Link (optional, for label QR codes)</Text>
+        <TextInput
+          style={styles.input}
+          value={infoUrl}
+          onChangeText={setInfoUrl}
+          placeholder="https://yoursite.com/gallery/this-piece"
           autoCapitalize="none"
           onSubmitEditing={handleSave}
         />

@@ -4,11 +4,19 @@ import { Text } from 'react-native';
 import { Piece } from '../types/database';
 import { renderBarcodeDataUrl } from '../lib/barcode';
 import { renderQrDataUrl } from '../lib/payLinks';
+import { LabelSizeSpec, SHEET_WIDTH_IN, SHEET_HEIGHT_IN } from '../lib/labelSizes';
 
 export type LabelFields = {
   title: boolean;
   barcode: boolean;
+  // Scan-to-cart QR — encodes the piece's SKU, same value the barcode
+  // carries, for staff/buyer scanning during checkout.
   qr: boolean;
+  // "Read more" QR — encodes the piece's own info_url (set on the piece
+  // form), for a customer's own phone to open somewhere with more detail.
+  // Silently omitted for any piece that has no info_url set, same as
+  // `size` silently omits for a piece with no width/height.
+  link: boolean;
   price: boolean;
   size: boolean;
 };
@@ -16,23 +24,7 @@ export type LabelFields = {
 // Renders outside the normal app tree (a sibling of #root under <body>) so
 // print CSS can hide the whole app and show only this while printing, then
 // restore normal display once the print dialog closes.
-//
-// Matches Avery 5160 (US Letter, 30 labels/sheet, 3 cols x 10 rows, 1in x
-// 2.625in labels, 0.5in top/bottom margin, 0.1875in side margin, 0.125in
-// gap between columns, no vertical gap) exactly — verified against Avery's
-// own published spec, not guessed. Uses raw DOM elements (div/img) with
-// physical `in` CSS units for the grid/sheet layout rather than React
-// Native's style system, since RN's StyleSheet has no grid/`@page`/absolute
-// physical unit support and this subtree only ever renders on web anyway.
 const PRINT_STYLE_ID = 'print-labels-style';
-const LABELS_PER_SHEET = 30;
-const SHEET_WIDTH_IN = 8.5;
-const SHEET_HEIGHT_IN = 11;
-const LABEL_WIDTH_IN = 2.625;
-const LABEL_HEIGHT_IN = 1;
-const MARGIN_TOP_IN = 0.5;
-const MARGIN_SIDE_IN = 0.1875;
-const COLUMN_GAP_IN = 0.125;
 
 function ensurePrintStyleInjected() {
   if (document.getElementById(PRINT_STYLE_ID)) return;
@@ -65,53 +57,66 @@ function chunk<T>(items: T[], size: number): T[][] {
   return out;
 }
 
+// Font/image sizes below were tuned against the original 1in-tall Avery
+// 5160 label — scale them up for taller label sizes so a 2in or 2.25in
+// label doesn't end up with tiny text lost in empty space.
 function Label({
   piece,
   fields,
-  qrDataUrl,
+  size,
+  skuQrDataUrl,
+  linkQrDataUrl,
 }: {
   piece: Piece;
   fields: LabelFields;
-  qrDataUrl?: string | null;
+  size: LabelSizeSpec;
+  skuQrDataUrl?: string | null;
+  linkQrDataUrl?: string | null;
 }) {
+  const scale = size.labelHeightIn / 1;
   const barcodeUri = fields.barcode
     ? renderBarcodeDataUrl(piece.sku, { width: 1.6, height: 26, fontSize: 9 })
     : null;
   const hasSize = piece.width_in != null && piece.height_in != null;
+  const hasLink = !!piece.info_url;
 
   return (
     <div
       style={{
-        width: `${LABEL_WIDTH_IN}in`,
-        height: `${LABEL_HEIGHT_IN}in`,
+        width: `${size.labelWidthIn}in`,
+        height: `${size.labelHeightIn}in`,
         boxSizing: 'border-box',
         overflow: 'hidden',
-        padding: '0.06in 0.1in',
+        padding: `${0.06 * scale}in ${0.1 * scale}in`,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
+        gap: `${0.03 * scale}in`,
       }}
     >
       {fields.title && (
-        <Text style={{ fontSize: 9, fontWeight: '600', textAlign: 'center' }} numberOfLines={1}>
+        <Text style={{ fontSize: 9 * scale, fontWeight: '600', textAlign: 'center' }} numberOfLines={2}>
           {piece.title}
         </Text>
       )}
       {fields.barcode && barcodeUri && (
         // Explicit physical width with height:auto so the browser scales
         // the barcode uniformly (no distortion) to fit the label.
-        <img src={barcodeUri} style={{ width: '1.8in', height: 'auto', display: 'block' }} />
+        <img src={barcodeUri} style={{ width: `${1.8 * scale}in`, height: 'auto', display: 'block' }} />
       )}
-      {fields.qr && qrDataUrl && (
-        <img src={qrDataUrl} style={{ width: '0.55in', height: '0.55in', display: 'block' }} />
+      {fields.qr && skuQrDataUrl && (
+        <img src={skuQrDataUrl} style={{ width: `${0.55 * scale}in`, height: `${0.55 * scale}in`, display: 'block' }} />
+      )}
+      {fields.link && hasLink && linkQrDataUrl && (
+        <img src={linkQrDataUrl} style={{ width: `${0.55 * scale}in`, height: `${0.55 * scale}in`, display: 'block' }} />
       )}
       {fields.size && hasSize && (
-        <Text style={{ fontSize: 8, color: '#333' }}>
+        <Text style={{ fontSize: 8 * scale, color: '#333' }}>
           {piece.width_in}×{piece.height_in}"
         </Text>
       )}
-      {fields.price && <Text style={{ fontSize: 9, fontWeight: '600' }}>${piece.price.toFixed(2)}</Text>}
+      {fields.price && <Text style={{ fontSize: 9 * scale, fontWeight: '600' }}>${piece.price.toFixed(2)}</Text>}
     </div>
   );
 }
@@ -119,12 +124,16 @@ function Label({
 function Sheet({
   pieces,
   fields,
-  qrDataUrls,
+  size,
+  skuQrDataUrls,
+  linkQrDataUrls,
   isLast,
 }: {
   pieces: Piece[];
   fields: LabelFields;
-  qrDataUrls: Map<string, string>;
+  size: LabelSizeSpec;
+  skuQrDataUrls: Map<string, string>;
+  linkQrDataUrls: Map<string, string>;
   isLast: boolean;
 }) {
   return (
@@ -133,17 +142,24 @@ function Sheet({
         width: `${SHEET_WIDTH_IN}in`,
         height: `${SHEET_HEIGHT_IN}in`,
         boxSizing: 'border-box',
-        padding: `${MARGIN_TOP_IN}in ${MARGIN_SIDE_IN}in`,
+        padding: `${size.marginTopIn}in ${size.marginSideIn}in`,
         display: 'grid',
-        gridTemplateColumns: `repeat(3, ${LABEL_WIDTH_IN}in)`,
-        gridTemplateRows: `repeat(10, ${LABEL_HEIGHT_IN}in)`,
-        columnGap: `${COLUMN_GAP_IN}in`,
-        rowGap: '0in',
+        gridTemplateColumns: `repeat(${size.columns}, ${size.labelWidthIn}in)`,
+        gridTemplateRows: `repeat(${size.rows}, ${size.labelHeightIn}in)`,
+        columnGap: `${size.columnGapIn}in`,
+        rowGap: `${size.rowGapIn}in`,
         pageBreakAfter: isLast ? 'auto' : 'always',
       }}
     >
       {pieces.map((p, i) => (
-        <Label key={`${p.id}-${i}`} piece={p} fields={fields} qrDataUrl={qrDataUrls.get(p.sku)} />
+        <Label
+          key={`${p.id}-${i}`}
+          piece={p}
+          fields={fields}
+          size={size}
+          skuQrDataUrl={skuQrDataUrls.get(p.sku)}
+          linkQrDataUrl={p.info_url ? linkQrDataUrls.get(p.info_url) : null}
+        />
       ))}
     </div>
   );
@@ -152,14 +168,17 @@ function Sheet({
 export default function PrintLabelsOverlay({
   pieces,
   fields,
+  size,
   onDone,
 }: {
   pieces: Piece[] | null;
   fields: LabelFields | null;
+  size: LabelSizeSpec | null;
   onDone: () => void;
 }) {
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
-  const [qrDataUrls, setQrDataUrls] = useState<Map<string, string>>(new Map());
+  const [skuQrDataUrls, setSkuQrDataUrls] = useState<Map<string, string>>(new Map());
+  const [linkQrDataUrls, setLinkQrDataUrls] = useState<Map<string, string>>(new Map());
   const [qrReady, setQrReady] = useState(false);
 
   useEffect(() => {
@@ -167,26 +186,40 @@ export default function PrintLabelsOverlay({
     setPortalRoot(getPrintRoot());
   }, []);
 
-  // Pre-generate QR codes (one per distinct SKU, deduped) before printing —
-  // unlike the barcode renderer, QRCode.toDataURL is async, so printing
+  // Pre-generate QR codes (one per distinct value, deduped) before printing
+  // — unlike the barcode renderer, QRCode.toDataURL is async, so printing
   // before these resolve would leave blank QR cells on the sheet.
   useEffect(() => {
     if (!pieces || pieces.length === 0 || !fields) return;
-    if (!fields.qr) {
-      setQrDataUrls(new Map());
+    if (!fields.qr && !fields.link) {
+      setSkuQrDataUrls(new Map());
+      setLinkQrDataUrls(new Map());
       setQrReady(true);
       return;
     }
     let cancelled = false;
     setQrReady(false);
-    const skus = Array.from(new Set(pieces.map((p) => p.sku)));
-    Promise.all(skus.map(async (sku) => [sku, await renderQrDataUrl(sku)] as const)).then((entries) => {
+
+    const skus = fields.qr ? Array.from(new Set(pieces.map((p) => p.sku))) : [];
+    const links = fields.link
+      ? Array.from(new Set(pieces.map((p) => p.info_url).filter((u): u is string => !!u)))
+      : [];
+
+    Promise.all([
+      Promise.all(skus.map(async (sku) => [sku, await renderQrDataUrl(sku)] as const)),
+      Promise.all(links.map(async (url) => [url, await renderQrDataUrl(url)] as const)),
+    ]).then(([skuEntries, linkEntries]) => {
       if (cancelled) return;
-      const map = new Map<string, string>();
-      for (const [sku, dataUrl] of entries) {
-        if (dataUrl) map.set(sku, dataUrl);
+      const skuMap = new Map<string, string>();
+      for (const [sku, dataUrl] of skuEntries) {
+        if (dataUrl) skuMap.set(sku, dataUrl);
       }
-      setQrDataUrls(map);
+      const linkMap = new Map<string, string>();
+      for (const [url, dataUrl] of linkEntries) {
+        if (dataUrl) linkMap.set(url, dataUrl);
+      }
+      setSkuQrDataUrls(skuMap);
+      setLinkQrDataUrls(linkMap);
       setQrReady(true);
     });
     return () => {
@@ -195,7 +228,7 @@ export default function PrintLabelsOverlay({
   }, [pieces, fields]);
 
   useEffect(() => {
-    if (!pieces || pieces.length === 0 || !fields || !qrReady) return;
+    if (!pieces || pieces.length === 0 || !fields || !size || !qrReady) return;
 
     function handleAfterPrint() {
       onDone();
@@ -209,11 +242,12 @@ export default function PrintLabelsOverlay({
       clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pieces, fields, qrReady]);
+  }, [pieces, fields, size, qrReady]);
 
-  if (!portalRoot || !pieces || pieces.length === 0 || !fields || !qrReady) return null;
+  if (!portalRoot || !pieces || pieces.length === 0 || !fields || !size || !qrReady) return null;
 
-  const sheets = chunk(pieces, LABELS_PER_SHEET);
+  const labelsPerSheet = size.columns * size.rows;
+  const sheets = chunk(pieces, labelsPerSheet);
 
   return createPortal(
     <>
@@ -222,7 +256,9 @@ export default function PrintLabelsOverlay({
           key={i}
           pieces={sheetPieces}
           fields={fields}
-          qrDataUrls={qrDataUrls}
+          size={size}
+          skuQrDataUrls={skuQrDataUrls}
+          linkQrDataUrls={linkQrDataUrls}
           isLast={i === sheets.length - 1}
         />
       ))}
