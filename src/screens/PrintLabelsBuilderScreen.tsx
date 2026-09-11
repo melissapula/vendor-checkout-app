@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { FlatList, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Piece } from '../types/database';
 import { usePieces } from '../context/PiecesContext';
 import { thumbUrl } from '../lib/images';
@@ -191,6 +191,7 @@ export default function PrintLabelsBuilderScreen({
         </Pressable>
       </View>
 
+      <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Label type</Text>
         <View style={styles.chipRow}>
@@ -272,20 +273,20 @@ export default function PrintLabelsBuilderScreen({
           <Text style={styles.emptyText}>Search above and add the pieces you want to print labels for.</Text>
         </View>
       ) : (
-        <FlatList
-          style={styles.queueList}
-          data={entries}
-          keyExtractor={(e) => e.piece.id}
-          renderItem={({ item }) => (
-            <QueueRow
-              entry={item}
-              onUpdateQuantity={(q) => updateQuantity(item.piece.id, q)}
-              onRemove={() => removeEntry(item.piece.id)}
-            />
-          )}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-        />
+        <View>
+          {entries.map((entry, i) => (
+            <React.Fragment key={entry.piece.id}>
+              {i > 0 && <View style={styles.separator} />}
+              <QueueRow
+                entry={entry}
+                onUpdateQuantity={(q) => updateQuantity(entry.piece.id, q)}
+                onRemove={() => removeEntry(entry.piece.id)}
+              />
+            </React.Fragment>
+          ))}
+        </View>
       )}
+      </ScrollView>
 
       <View style={styles.footer}>
         <Text style={styles.totalText}>{totalLabels} label{totalLabels === 1 ? '' : 's'} total</Text>
@@ -313,6 +314,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 18, fontWeight: '700' },
   cancel: { color: '#666', fontSize: 15 },
+  body: { flex: 1 },
+  bodyContent: { flexGrow: 1 },
   section: { padding: 16, borderBottomWidth: 1, borderBottomColor: '#eee', gap: 10 },
   sectionLabel: { fontSize: 13, fontWeight: '600', color: '#666', textTransform: 'uppercase' },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
@@ -355,7 +358,6 @@ const styles = StyleSheet.create({
   addButtonText: { color: '#fff', fontWeight: '700', fontSize: 13 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   emptyText: { color: '#999', fontSize: 14, textAlign: 'center' },
-  queueList: { flex: 1 },
   queueRow: {
     flexDirection: 'row',
     alignItems: 'center',
