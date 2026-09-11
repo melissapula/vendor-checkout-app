@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { FlatList, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Piece } from '../types/database';
 import { usePieces } from '../context/PiecesContext';
@@ -110,6 +110,23 @@ export default function PrintLabelsBuilderScreen({
     initialPiece ? [{ piece: initialPiece, quantity: 1 }] : []
   );
   const [search, setSearch] = useState('');
+
+  // A queued entry's `piece` is a snapshot from whenever it was added — but
+  // the Edit form and this builder can be open at the same time (see
+  // AppModal.tsx's note on that), so a price/title edit made while a piece
+  // is already sitting in the queue would otherwise print with stale data.
+  // Re-sync against PiecesContext's live data any time it changes; a piece
+  // deleted outright while queued is dropped the same way CartContext drops
+  // a cart line for a piece that no longer exists.
+  useEffect(() => {
+    setEntries((prev) =>
+      prev.flatMap((entry) => {
+        const live = pieces.find((p) => p.id === entry.piece.id);
+        return live ? [{ ...entry, piece: live }] : [];
+      })
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pieces]);
 
   // Always browsable, not just search-as-you-type: an empty query shows
   // every piece (sorted, capped so the list stays scrollable rather than
