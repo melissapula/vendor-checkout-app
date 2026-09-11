@@ -54,10 +54,26 @@ export default function CameraScanner({
     // couldn't be scanned. Recognizing both isn't a tradeoff — zxing decodes
     // whichever format is actually in frame, it doesn't need to guess first.
     hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.CODE_128, BarcodeFormat.QR_CODE]);
+    // TRY_HARDER trades a bit of per-frame CPU for materially better
+    // real-world decode success (skewed angle, imperfect lighting, a small
+    // printed label) — worth it here since this only ever runs while a
+    // human is actively holding the scanner open, not in the background.
+    hints.set(DecodeHintType.TRY_HARDER, true);
     const reader = new BrowserMultiFormatReader(hints);
 
+    // decodeFromVideoDevice's default constraints don't request a specific
+    // resolution, so browsers often settle on a low one (e.g. 640x480) —
+    // plenty for a video call, not enough detail to reliably resolve a
+    // small barcode at normal scanning distance. Asking for a higher
+    // resolution (as an `ideal`, not `exact`, so it still degrades
+    // gracefully on cameras that can't do 1280x720) gives the decoder a
+    // sharper frame to work with.
+    const constraints: MediaStreamConstraints = {
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+    };
+
     reader
-      .decodeFromVideoDevice(undefined, videoEl, (result, _err, controls) => {
+      .decodeFromConstraints(constraints, videoEl, (result, _err, controls) => {
         controlsRef.current = controls;
         if (cancelled || !result) return;
 

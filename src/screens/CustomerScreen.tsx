@@ -6,6 +6,8 @@ import { useDeals } from '../context/DealsContext';
 import { evaluateDeals } from '../lib/deals';
 import { useAppMode } from '../context/AppModeContext';
 import { useAuth } from '../context/AuthContext';
+import { useScanToCart } from '../lib/scanToCart';
+import CameraScanner from '../components/CameraScanner';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 import { thumbUrl } from '../lib/images';
 import CheckoutScreen from './CheckoutScreen';
@@ -36,12 +38,20 @@ export default function CustomerScreen() {
   const { deals } = useDeals();
   const { requestAdmin } = useAppMode();
   const { store } = useAuth();
+  const { addBySku } = useScanToCart();
   const { isTabletUp } = useBreakpoint();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [scanMessage, setScanMessage] = useState<{ text: string; ok: boolean } | null>(null);
 
   const dealsResult = useMemo(() => evaluateDeals(items, deals), [items, deals]);
   const total = subtotal - dealsResult.totalDiscount;
   const hasPaymentMethods = (store?.enabled_payment_methods ?? []).length > 0;
+
+  function handleCameraScan(code: string) {
+    const result = addBySku(code);
+    setScanMessage({ text: result.message, ok: result.success });
+  }
 
   if (checkoutOpen) {
     return <CheckoutScreen onClose={() => setCheckoutOpen(false)} initialStep="buyerTip" />;
@@ -52,6 +62,14 @@ export default function CustomerScreen() {
       <View style={[styles.content, centeredColumn(isTabletUp, CONTENT_WIDTH.wide)]}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>{store?.name}</Text>
+          <Pressable style={styles.cameraButton} onPress={() => setCameraOpen(true)}>
+            <Text style={styles.cameraButtonText}>Scan with camera</Text>
+          </Pressable>
+          {scanMessage && (
+            <Text style={[styles.scanMessage, scanMessage.ok ? styles.scanMessageOk : styles.scanMessageError]}>
+              {scanMessage.text}
+            </Text>
+          )}
         </View>
 
         {items.length === 0 ? (
@@ -100,6 +118,8 @@ export default function CustomerScreen() {
       <Pressable style={styles.staffButton} onPress={requestAdmin} hitSlop={12}>
         <Text style={styles.staffButtonText}>Staff Access</Text>
       </Pressable>
+
+      <CameraScanner visible={cameraOpen} onScan={handleCameraScan} onClose={() => setCameraOpen(false)} />
     </SafeAreaView>
   );
 }
@@ -107,8 +127,19 @@ export default function CustomerScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   content: { flex: 1 },
-  header: { paddingTop: 20, paddingBottom: 20, alignItems: 'center' },
+  header: { paddingTop: 20, paddingBottom: 20, alignItems: 'center', gap: 10 },
   headerTitle: { fontSize: 22, fontWeight: '700' },
+  cameraButton: {
+    borderWidth: 1,
+    borderColor: '#1a1a1a',
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  cameraButtonText: { color: '#1a1a1a', fontWeight: '600', fontSize: 13 },
+  scanMessage: { fontSize: 13, fontWeight: '600' },
+  scanMessageOk: { color: '#2a7a2a' },
+  scanMessageError: { color: '#b00020' },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   emptyText: { color: '#999', fontSize: 18 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingVertical: 16 },
