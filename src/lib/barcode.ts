@@ -1,17 +1,5 @@
 import JsBarcode from 'jsbarcode';
 
-// A barcode printed at a fixed physical width regardless of content length
-// packs a long SKU's bars in well below what a phone camera (or the naked
-// eye) can reliably resolve — see PrintLabelsOverlay.tsx's fuller note.
-// Anything that prints a barcode (the label sheets, and the inventory PDF)
-// should size it from its actual pixel width at this fixed physical bar
-// width, so bar width — the thing that actually determines scanability —
-// stays constant and the barcode just gets physically wider for longer
-// SKUs instead.
-export const BARCODE_MODULE_WIDTH_PX = 1.6; // passed to JsBarcode as `width` below
-export const BARCODE_TARGET_MODULE_WIDTH_IN = 0.013; // ~0.33mm — safe for handheld/phone scanning
-export const BARCODE_IN_PER_PX = BARCODE_TARGET_MODULE_WIDTH_IN / BARCODE_MODULE_WIDTH_PX;
-
 export interface BarcodeRender {
   dataUrl: string;
   // The canvas's actual pixel dimensions — the caller needs these to print

@@ -60,17 +60,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.subscription.unsubscribe();
   }, []);
 
-  // Keyed on the user id, not the whole `session` object: Supabase silently
-  // issues a new session object (same user) whenever the tab regains focus
-  // or its access token auto-refreshes — including right when the browser's
-  // print dialog opens/closes. Keying on `session` itself re-ran this fetch
-  // on every one of those, which set storeLoading back to true and made
-  // AppGate below unmount its entire tree (loading spinner in its place),
-  // wiping every screen's in-memory state — e.g. AppModeContext's `mode`
-  // reset to its default 'customer', and an in-flight print job vanished.
-  // That was the "prints blank" / "kicks me out to the customer view" bug.
-  const userId = session?.user.id;
-
   useEffect(() => {
     if (!session) {
       setStore(null);
@@ -109,8 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, storeFetchAttempt]);
+  }, [session, storeFetchAttempt]);
 
   function retryStoreFetch() {
     setStoreFetchAttempt((n) => n + 1);

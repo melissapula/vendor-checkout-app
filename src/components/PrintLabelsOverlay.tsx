@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Text } from 'react-native';
 import { Piece } from '../types/database';
-import { renderBarcode, BARCODE_MODULE_WIDTH_PX, BARCODE_IN_PER_PX } from '../lib/barcode';
+import { renderBarcode } from '../lib/barcode';
 import { renderQrDataUrl } from '../lib/payLinks';
 import { LabelSizeSpec, SHEET_WIDTH_IN, SHEET_HEIGHT_IN } from '../lib/labelSizes';
 
@@ -25,6 +25,22 @@ export type LabelFields = {
 // print CSS can hide the whole app and show only this while printing, then
 // restore normal display once the print dialog closes.
 const PRINT_STYLE_ID = 'print-labels-style';
+
+// The barcode used to always print at a fixed 1.8in width no matter what —
+// so a long SKU (e.g. an "-STICKLG" or "-VINYLSTICK" variant, 18-20+
+// characters) packed the same number of physical inches full of far more
+// bars than a short one, squeezing each bar well below what a phone camera
+// can reliably resolve at normal scanning distance. That's very likely why
+// scans of some pieces were failing while the underlying decode logic was
+// fine. Fixed by deriving the printed width from the barcode's actual pixel
+// width (which JsBarcode sizes proportionally to content length) at this
+// fixed physical bar width instead, so bar width — the thing that actually
+// determines scanability — stays constant regardless of SKU length. The
+// barcode simply gets physically wider for longer SKUs, same as a real
+// product barcode would.
+const BARCODE_MODULE_WIDTH_PX = 1.6; // passed to JsBarcode as `width` below
+const BARCODE_TARGET_MODULE_WIDTH_IN = 0.013; // ~0.33mm — safe for handheld/phone scanning
+const BARCODE_IN_PER_PX = BARCODE_TARGET_MODULE_WIDTH_IN / BARCODE_MODULE_WIDTH_PX;
 
 function ensurePrintStyleInjected() {
   if (document.getElementById(PRINT_STYLE_ID)) return;
