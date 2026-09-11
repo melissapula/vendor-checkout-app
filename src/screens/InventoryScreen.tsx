@@ -11,6 +11,8 @@ import PrintLabelsBuilderScreen from './PrintLabelsBuilderScreen';
 import { LabelSizeKey, labelSizeFor } from '../lib/labelSizes';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 import { thumbUrl } from '../lib/images';
+import HiddenScanCapture from '../components/HiddenScanCapture';
+import { appAlert } from '../lib/alert';
 
 function statusLabel(piece: Piece): string {
   if (piece.status === 'sold') return 'Sold';
@@ -156,6 +158,21 @@ export default function InventoryScreen() {
     setBuilderOpen(true);
   }
 
+  // Scanning a piece's own label here is a quick way to pull up its edit
+  // form (e.g. to adjust stock or price) without hunting for it in a long
+  // list — a different action than Cart/CustomerScreen's "add to cart"
+  // scan, matching what this screen is actually for.
+  function handleWedgeScan(code: string) {
+    const piece = pieces.find((p) => p.sku.toLowerCase() === code.trim().toLowerCase());
+    if (!piece) {
+      appAlert('Not found', `No item found for SKU "${code}".`);
+      return;
+    }
+    openEdit(piece);
+  }
+
+  const scanCaptureEnabled = !formOpen && !builderOpen && !adjustingPiece;
+
   return (
     <>
       <FlatList
@@ -215,6 +232,7 @@ export default function InventoryScreen() {
           <LogAdjustmentScreen piece={adjustingPiece} onClose={() => setAdjustingPiece(null)} />
         )}
       </AppModal>
+      <HiddenScanCapture onScan={handleWedgeScan} enabled={scanCaptureEnabled} />
     </>
   );
 }

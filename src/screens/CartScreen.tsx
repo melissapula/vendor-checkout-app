@@ -5,6 +5,7 @@ import { CartItem, effectivePrice, useCart } from '../context/CartContext';
 import { useDeals } from '../context/DealsContext';
 import { evaluateDeals } from '../lib/deals';
 import { useScanToCart } from '../lib/scanToCart';
+import HiddenScanCapture from '../components/HiddenScanCapture';
 import CameraScanner from '../components/CameraScanner';
 import CheckoutScreen from './CheckoutScreen';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
@@ -119,6 +120,11 @@ export default function CartScreen() {
     setSkuInput('');
   }
 
+  function handleWedgeScan(code: string) {
+    const result = addBySku(code);
+    setScanMessage({ text: result.message, ok: result.success });
+  }
+
   return (
     <View style={styles.container}>
       <View style={[styles.content, centeredColumn(isTabletUp, CONTENT_WIDTH.wide)]}>
@@ -210,6 +216,7 @@ export default function CartScreen() {
         }}
         onClose={() => setCameraOpen(false)}
       />
+      <HiddenScanCapture onScan={handleWedgeScan} enabled={!checkoutOpen && !cameraOpen} />
     </View>
   );
 }

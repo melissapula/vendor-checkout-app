@@ -7,6 +7,7 @@ import { evaluateDeals } from '../lib/deals';
 import { useAppMode } from '../context/AppModeContext';
 import { useAuth } from '../context/AuthContext';
 import { useScanToCart } from '../lib/scanToCart';
+import HiddenScanCapture from '../components/HiddenScanCapture';
 import CameraScanner from '../components/CameraScanner';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 import { thumbUrl } from '../lib/images';
@@ -38,7 +39,7 @@ export default function CustomerScreen() {
   const { deals } = useDeals();
   const { requestAdmin } = useAppMode();
   const { store } = useAuth();
-  const { lookupSku } = useScanToCart();
+  const { addBySku, lookupSku } = useScanToCart();
   const { isTabletUp } = useBreakpoint();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
@@ -47,6 +48,11 @@ export default function CustomerScreen() {
   const dealsResult = useMemo(() => evaluateDeals(items, deals), [items, deals]);
   const total = subtotal - dealsResult.totalDiscount;
   const hasPaymentMethods = (store?.enabled_payment_methods ?? []).length > 0;
+
+  function handleWedgeScan(code: string) {
+    const result = addBySku(code);
+    setScanMessage({ text: result.message, ok: result.success });
+  }
 
   if (checkoutOpen) {
     return <CheckoutScreen onClose={() => setCheckoutOpen(false)} initialStep="buyerTip" />;
@@ -123,6 +129,7 @@ export default function CustomerScreen() {
         }}
         onClose={() => setCameraOpen(false)}
       />
+      <HiddenScanCapture onScan={handleWedgeScan} enabled={!checkoutOpen && !cameraOpen} />
     </SafeAreaView>
   );
 }

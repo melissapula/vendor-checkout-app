@@ -5,6 +5,7 @@ import { usePieces } from '../context/PiecesContext';
 import { thumbUrl } from '../lib/images';
 import { LabelFields } from '../components/PrintLabelsOverlay';
 import { LABEL_SIZES, LabelSizeKey, labelSizeFor } from '../lib/labelSizes';
+import { appAlert } from '../lib/alert';
 
 type QueueEntry = { piece: Piece; quantity: number };
 
@@ -177,6 +178,40 @@ export default function PrintLabelsBuilderScreen({
     setEntries((prev) => prev.filter((e) => e.piece.id !== pieceId));
   }
 
+  // Queues one barcode per unit currently in stock, for every piece in the
+  // catalog — meant for a vendor bulk-labeling their whole starting
+  // inventory rather than hunting down and adding each piece by hand. Out
+  // of stock pieces are skipped (nothing to label). Merges with whatever's
+  // already queued rather than replacing it outright, so it composes with
+  // manual additions instead of discarding them.
+  function addEntireInventory() {
+    const inStock = pieces.filter((p) => p.quantity_remaining > 0);
+    const totalLabels = inStock.reduce((sum, p) => sum + p.quantity_remaining, 0);
+    if (inStock.length === 0) {
+      appAlert('Nothing in stock', 'No pieces currently have stock to label.');
+      return;
+    }
+    appAlert(
+      'Add entire inventory?',
+      `This queues a barcode for every unit in stock — ${inStock.length} piece${inStock.length === 1 ? '' : 's'}, ${totalLabels} label${totalLabels === 1 ? '' : 's'} total. You can still remove or adjust items before printing.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Add All',
+          onPress: () => {
+            setEntries((prev) => {
+              const byId = new Map(prev.map((e) => [e.piece.id, e]));
+              for (const piece of inStock) {
+                byId.set(piece.id, { piece, quantity: piece.quantity_remaining });
+              }
+              return Array.from(byId.values());
+            });
+          },
+        },
+      ]
+    );
+  }
+
   function handlePrint() {
     const flat = entries.flatMap((e) => Array(e.quantity).fill(e.piece));
     onPrint(flat, fields, sizeKey);
@@ -246,7 +281,12 @@ export default function PrintLabelsBuilderScreen({
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Add pieces</Text>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionLabel}>Add pieces</Text>
+          <Pressable onPress={addEntireInventory}>
+            <Text style={styles.link}>+ Add entire inventory</Text>
+          </Pressable>
+        </View>
         <TextInput
           style={styles.searchInput}
           value={search}
@@ -318,6 +358,8 @@ const styles = StyleSheet.create({
   bodyContent: { flexGrow: 1 },
   section: { padding: 16, borderBottomWidth: 1, borderBottomColor: '#eee', gap: 10 },
   sectionLabel: { fontSize: 13, fontWeight: '600', color: '#666', textTransform: 'uppercase' },
+  sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  link: { fontSize: 13, color: '#1a1a1a', fontWeight: '600', textDecorationLine: 'underline' },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
     borderWidth: 1,

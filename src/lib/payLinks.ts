@@ -35,7 +35,7 @@ export function cashAppPayUrl(cashtag: string, amount: number): string {
 
 // Web-only (see README's "Web distribution" / "Barcode labels" sections for
 // why this app leans on plain browser APIs for generated-image needs rather
-// than a cross-platform native library) — mirrors renderBarcodeDataUrl in
+// than a cross-platform native library) — mirrors renderBarcode in
 // src/lib/barcode.ts.
 export async function renderQrDataUrl(value: string): Promise<string | null> {
   if (!value) return null;

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Text } from 'react-native';
 import { Piece } from '../types/database';
-import { renderBarcodeDataUrl } from '../lib/barcode';
+import { renderBarcode } from '../lib/barcode';
 import { renderQrDataUrl } from '../lib/payLinks';
 import { LabelSizeSpec, SHEET_WIDTH_IN, SHEET_HEIGHT_IN } from '../lib/labelSizes';
 
@@ -25,6 +25,22 @@ export type LabelFields = {
 // print CSS can hide the whole app and show only this while printing, then
 // restore normal display once the print dialog closes.
 const PRINT_STYLE_ID = 'print-labels-style';
+
+// The barcode used to always print at a fixed 1.8in width no matter what —
+// so a long SKU (e.g. an "-STICKLG" or "-VINYLSTICK" variant, 18-20+
+// characters) packed the same number of physical inches full of far more
+// bars than a short one, squeezing each bar well below what a phone camera
+// can reliably resolve at normal scanning distance. That's very likely why
+// scans of some pieces were failing while the underlying decode logic was
+// fine. Fixed by deriving the printed width from the barcode's actual pixel
+// width (which JsBarcode sizes proportionally to content length) at this
+// fixed physical bar width instead, so bar width — the thing that actually
+// determines scanability — stays constant regardless of SKU length. The
+// barcode simply gets physically wider for longer SKUs, same as a real
+// product barcode would.
+const BARCODE_MODULE_WIDTH_PX = 1.6; // passed to JsBarcode as `width` below
+const BARCODE_TARGET_MODULE_WIDTH_IN = 0.013; // ~0.33mm — safe for handheld/phone scanning
+const BARCODE_IN_PER_PX = BARCODE_TARGET_MODULE_WIDTH_IN / BARCODE_MODULE_WIDTH_PX;
 
 function ensurePrintStyleInjected() {
   if (document.getElementById(PRINT_STYLE_ID)) return;
@@ -74,9 +90,16 @@ function Label({
   linkQrDataUrl?: string | null;
 }) {
   const scale = size.labelHeightIn / 1;
-  const barcodeUri = fields.barcode
-    ? renderBarcodeDataUrl(piece.sku, { width: 1.6, height: 26, fontSize: 9 })
+  const barcode = fields.barcode
+    ? renderBarcode(piece.sku, { width: BARCODE_MODULE_WIDTH_PX, height: 26, fontSize: 9 })
     : null;
+  // Print at a constant physical bar width (see BARCODE_IN_PER_PX above),
+  // clamped to the space actually available on this label — a very long
+  // SKU on the smallest label size may still need to shrink below the safe
+  // width to fit at all; there's a hard physical limit to how much a small
+  // label can hold, not something sizing math alone can fix.
+  const availableWidthIn = size.labelWidthIn - 2 * (0.1 * scale);
+  const barcodeWidthIn = barcode ? Math.min(barcode.widthPx * BARCODE_IN_PER_PX, availableWidthIn) : 0;
   const hasSize = piece.width_in != null && piece.height_in != null;
   const hasLink = !!piece.info_url;
 
@@ -100,10 +123,11 @@ function Label({
           {piece.title}
         </Text>
       )}
-      {fields.barcode && barcodeUri && (
-        // Explicit physical width with height:auto so the browser scales
-        // the barcode uniformly (no distortion) to fit the label.
-        <img src={barcodeUri} style={{ width: `${1.8 * scale}in`, height: 'auto', display: 'block' }} />
+      {fields.barcode && barcode && (
+        // Width is derived from content length at a constant physical bar
+        // width (see BARCODE_IN_PER_PX above), not a fixed size — height:
+        // auto so the browser scales proportionally, no distortion.
+        <img src={barcode.dataUrl} style={{ width: `${barcodeWidthIn}in`, height: 'auto', display: 'block' }} />
       )}
       {fields.qr && skuQrDataUrl && (
         <img src={skuQrDataUrl} style={{ width: `${0.55 * scale}in`, height: `${0.55 * scale}in`, display: 'block' }} />
