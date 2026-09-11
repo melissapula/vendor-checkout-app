@@ -19,7 +19,16 @@ export default function CameraScanner({
   onScan: (code: string) => void;
   onClose: () => void;
 }) {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+  // A plain ref here raced AppModal's own portal setup: AppModal renders
+  // `null` for one commit after `visible` flips true (it waits on its own
+  // effect to create the portal DOM node), so on that first pass the
+  // <video> element didn't exist yet and videoRef.current was still null
+  // when decodeFromVideoDevice ran below. zxing then fell back to creating
+  // its own detached video element — decoding could still work, but nothing
+  // ever streamed into the actually-visible <video> tag, which stayed a
+  // static black box forever. A state-backed callback ref re-fires the
+  // effect once the element genuinely mounts, closing that race.
+  const [videoEl, setVideoEl] = useState<HTMLVideoElement | null>(null);
   const controlsRef = useRef<IScannerControls | null>(null);
   const lastCodeRef = useRef<string | null>(null);
   const lastScanAtRef = useRef(0);
@@ -34,7 +43,7 @@ export default function CameraScanner({
   onScanRef.current = onScan;
 
   useEffect(() => {
-    if (!visible) return;
+    if (!visible || !videoEl) return;
 
     let cancelled = false;
     setError(null);
@@ -48,7 +57,7 @@ export default function CameraScanner({
     const reader = new BrowserMultiFormatReader(hints);
 
     reader
-      .decodeFromVideoDevice(undefined, videoRef.current ?? undefined, (result, _err, controls) => {
+      .decodeFromVideoDevice(undefined, videoEl, (result, _err, controls) => {
         controlsRef.current = controls;
         if (cancelled || !result) return;
 
@@ -76,7 +85,7 @@ export default function CameraScanner({
       controlsRef.current?.stop();
       controlsRef.current = null;
     };
-  }, [visible]);
+  }, [visible, videoEl]);
 
   return (
     <AppModal visible={visible} onRequestClose={onClose}>
@@ -87,7 +96,7 @@ export default function CameraScanner({
         ) : (
           // Raw DOM <video> — web-only, same reasoning as elsewhere in this
           // app's web-specific components (see PrintLabelsOverlay).
-          <video ref={videoRef} muted playsInline style={videoStyle} />
+          <video ref={setVideoEl} muted playsInline style={videoStyle} />
         )}
         <Pressable style={styles.closeButton} onPress={onClose}>
           <Text style={styles.closeButtonText}>Done</Text>
