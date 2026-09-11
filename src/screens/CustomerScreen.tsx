@@ -34,11 +34,11 @@ function CustomerRow({ item }: { item: CartItem }) {
 }
 
 export default function CustomerScreen() {
-  const { items, subtotal } = useCart();
+  const { items, subtotal, addItem } = useCart();
   const { deals } = useDeals();
   const { requestAdmin } = useAppMode();
   const { store } = useAuth();
-  const { addBySku } = useScanToCart();
+  const { lookupSku } = useScanToCart();
   const { isTabletUp } = useBreakpoint();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
@@ -47,11 +47,6 @@ export default function CustomerScreen() {
   const dealsResult = useMemo(() => evaluateDeals(items, deals), [items, deals]);
   const total = subtotal - dealsResult.totalDiscount;
   const hasPaymentMethods = (store?.enabled_payment_methods ?? []).length > 0;
-
-  function handleCameraScan(code: string) {
-    const result = addBySku(code);
-    setScanMessage({ text: result.message, ok: result.success });
-  }
 
   if (checkoutOpen) {
     return <CheckoutScreen onClose={() => setCheckoutOpen(false)} initialStep="buyerTip" />;
@@ -119,7 +114,15 @@ export default function CustomerScreen() {
         <Text style={styles.staffButtonText}>Staff Access</Text>
       </Pressable>
 
-      <CameraScanner visible={cameraOpen} onScan={handleCameraScan} onClose={() => setCameraOpen(false)} />
+      <CameraScanner
+        visible={cameraOpen}
+        resolveCode={lookupSku}
+        onAdd={(piece) => {
+          addItem(piece);
+          setScanMessage({ text: `Added ${piece.title}.`, ok: true });
+        }}
+        onClose={() => setCameraOpen(false)}
+      />
     </SafeAreaView>
   );
 }

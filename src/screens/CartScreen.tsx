@@ -100,9 +100,9 @@ function CartRow({ item }: { item: CartItem }) {
 }
 
 export default function CartScreen() {
-  const { items, subtotal, clear } = useCart();
+  const { items, subtotal, clear, addItem } = useCart();
   const { deals } = useDeals();
-  const { addBySku } = useScanToCart();
+  const { addBySku, lookupSku } = useScanToCart();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [skuInput, setSkuInput] = useState('');
@@ -117,11 +117,6 @@ export default function CartScreen() {
     const result = addBySku(skuInput);
     setScanMessage({ text: result.message, ok: result.success });
     setSkuInput('');
-  }
-
-  function handleCameraScan(code: string) {
-    const result = addBySku(code);
-    setScanMessage({ text: result.message, ok: result.success });
   }
 
   return (
@@ -206,7 +201,15 @@ export default function CartScreen() {
       <AppModal visible={checkoutOpen} onRequestClose={() => setCheckoutOpen(false)}>
         <CheckoutScreen onClose={() => setCheckoutOpen(false)} />
       </AppModal>
-      <CameraScanner visible={cameraOpen} onScan={handleCameraScan} onClose={() => setCameraOpen(false)} />
+      <CameraScanner
+        visible={cameraOpen}
+        resolveCode={lookupSku}
+        onAdd={(piece) => {
+          addItem(piece);
+          setScanMessage({ text: `Added ${piece.title}.`, ok: true });
+        }}
+        onClose={() => setCameraOpen(false)}
+      />
     </View>
   );
 }
