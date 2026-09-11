@@ -98,6 +98,17 @@ export type Store = {
   fee_overrides: Partial<Record<PaymentMethod, FeeRate>>;
 };
 
+// One row per store — the shared "current cart" every device signed into
+// that store sees live. `items` is CartItem[] (defined in CartContext.tsx,
+// not here, since it's an app-level shape built on Piece) stored as Json;
+// the client casts on read the same way finalize_sale's sale_rows does.
+export type StoreCart = {
+  store_id: string;
+  items: Json;
+  location: string;
+  updated_at: string;
+};
+
 // supabase-js v2's client generic expects this full shape (Relationships,
 // Views, Functions, etc.) even when unused — a minimal { Row, Insert, Update }
 // per table isn't enough for it to infer .insert()/.update() argument types.
@@ -132,6 +143,12 @@ export type Database = {
         Row: Store;
         Insert: Partial<Store>;
         Update: Partial<Store>;
+        Relationships: [];
+      };
+      store_carts: {
+        Row: StoreCart;
+        Insert: Partial<StoreCart>;
+        Update: Partial<StoreCart>;
         Relationships: [];
       };
     };

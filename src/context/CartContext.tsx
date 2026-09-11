@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { RealtimeChannel } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase';
 import { Piece } from '../types/database';
 import { usePieces } from './PiecesContext';
 import { useAuth } from './AuthContext';
@@ -41,124 +42,176 @@ interface CartContextValue {
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-function cartStorageKey(storeId: string): string {
-  return `cart:${storeId}`;
-}
-
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
-  const [location, setLocation] = useState('');
+  const [location, setLocationState] = useState('');
   const [hydrated, setHydrated] = useState(false);
   const { pieces } = usePieces();
   const { store } = useAuth();
 
-  // A cart left mid-sale used to vanish on any page reload — this is a
-  // kiosk-style app left running in a browser tab, so an accidental
-  // refresh, a WiFi hiccup, or the browser reclaiming the tab could wipe
-  // an in-progress sale for no reason. Persist it (scoped per store, so a
-  // shared device switching vendors never shows the wrong cart) and only
-  // ever clear it the two ways staff actually expect: a completed
-  // checkout (CheckoutScreen.finalizeSale calls clear()) or the explicit
-  // "Clear cart" button in CartScreen (admin-only — it doesn't exist
-  // anywhere in CustomerScreen).
-  //
-  // Loading is async (AsyncStorage), so `hydrated` gates the save effect
-  // below — without it, the very first render's empty `items`/`location`
-  // defaults would get written to storage and clobber whatever was there
-  // before the load even finishes.
+  // The cart is shared across every device signed into this store — one
+  // row per store in `store_carts`, synced live via Realtime — rather than
+  // local to whatever device happens to be holding it. This app runs one
+  // active sale at a time by design (a vendor's own choice, not a
+  // limitation worth working around with per-transaction carts), so
+  // "the store's current cart" is the right model: a phone scanning an
+  // item shows up immediately on the iPad running checkout, instead of
+  // being invisible to it. Replaces the old local-only AsyncStorage
+  // version, which never left the device that wrote it.
   useEffect(() => {
     if (!store) return;
     let cancelled = false;
     setHydrated(false);
     setItems([]);
-    setLocation('');
-    AsyncStorage.getItem(cartStorageKey(store.id))
-      .then((raw) => {
-        if (cancelled || !raw) return;
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed.items)) setItems(parsed.items);
-        if (typeof parsed.location === 'string') setLocation(parsed.location);
-      })
-      .catch(() => {
-        // Corrupt/unreadable data — start fresh rather than crash the cart.
-      })
-      .finally(() => {
+    setLocationState('');
+
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from('store_carts')
+          .select('items, location')
+          .eq('store_id', store.id)
+          .maybeSingle();
+        if (cancelled || !data) return;
+        if (Array.isArray(data.items)) setItems(data.items as unknown as CartItem[]);
+        if (typeof data.location === 'string') setLocationState(data.location);
+      } catch {
+        // Corrupt/unreadable row, or none yet — start fresh rather than
+        // crash the cart.
+      } finally {
         if (!cancelled) setHydrated(true);
-      });
+      }
+    })();
+
+    let channel: RealtimeChannel | null = supabase
+      .channel(`store_carts:${store.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'store_carts', filter: `store_id=eq.${store.id}` },
+        (payload) => {
+          const row = payload.new as { items?: unknown; location?: string } | undefined;
+          if (!row) return; // a delete — nothing to apply
+          if (Array.isArray(row.items)) setItems(row.items as unknown as CartItem[]);
+          if (typeof row.location === 'string') setLocationState(row.location);
+        }
+      )
+      .subscribe();
+
     return () => {
       cancelled = true;
+      if (channel) {
+        supabase.removeChannel(channel);
+        channel = null;
+      }
     };
   }, [store]);
 
-  useEffect(() => {
+  // Fire-and-forget from every caller's perspective — local state is
+  // already updated optimistically by whichever mutator calls this, so a
+  // slow network round-trip never blocks this device's own UI. Other
+  // devices pick up the change via the Realtime subscription above; this
+  // device's own echo of that same change is a harmless no-op re-render.
+  function persist(nextItems: CartItem[], nextLocation: string) {
     if (!store || !hydrated) return;
-    AsyncStorage.setItem(cartStorageKey(store.id), JSON.stringify({ items, location })).catch(() => {
-      // Best-effort — a failed write just means the next reload won't
-      // recover this state; nothing in the current session breaks.
-    });
-  }, [store, hydrated, items, location]);
+    supabase
+      .from('store_carts')
+      .upsert({ store_id: store.id, items: nextItems as unknown as never, location: nextLocation })
+      .then(() => {});
+  }
 
   // A cart line's `piece` is a snapshot from whenever it was added — but
-  // stock can change after that (another sale on this device, or staff
+  // stock can change after that (a sale on any device now, or staff
   // editing quantity_remaining in Inventory), and the quantity cap used to
   // be checked against that stale snapshot forever. Re-sync against
   // PiecesContext's live data any time it changes, so the cap (and the
-  // displayed price/title) stay current for the rest of the checkout
-  // session; a line whose stock has dropped to 0 is dropped the same way
-  // updateQuantity(..., 0) drops it. A piece deleted outright (not just
-  // sold out) is dropped too — with the cart now persisting across
-  // reloads, a stale line with no live piece behind it could otherwise
-  // sit there indefinitely instead of failing fast the moment it happens.
+  // displayed price/title) stay current; a line whose stock has dropped to
+  // 0 is dropped the same way updateQuantity(..., 0) drops it. A piece
+  // deleted outright (not just sold out) is dropped too. Writes the
+  // correction back to the shared row (not just local state) so every
+  // device converges on it, not only whichever one happened to notice.
   useEffect(() => {
-    setItems((prev) =>
-      prev
+    setItems((prev) => {
+      const next = prev
         .flatMap((item) => {
           const live = pieces.find((p) => p.id === item.piece.id);
           if (!live) return [];
           return [{ ...item, piece: live, quantity: Math.min(item.quantity, live.quantity_remaining) }];
         })
-        .filter((item) => item.quantity > 0)
-    );
+        .filter((item) => item.quantity > 0);
+      if (hydrated && JSON.stringify(next) !== JSON.stringify(prev)) {
+        persist(next, location);
+      }
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pieces]);
 
   function addItem(piece: Piece) {
+    let next: CartItem[] | null = null;
     setItems((prev) => {
       const live = pieces.find((p) => p.id === piece.id) ?? piece;
       const existing = prev.find((i) => i.piece.id === live.id);
       if (existing) {
-        if (existing.quantity >= live.quantity_remaining) return prev;
-        return prev.map((i) =>
-          i.piece.id === live.id ? { ...i, piece: live, quantity: i.quantity + 1 } : i
-        );
+        if (existing.quantity >= live.quantity_remaining) {
+          next = prev;
+          return prev;
+        }
+        next = prev.map((i) => (i.piece.id === live.id ? { ...i, piece: live, quantity: i.quantity + 1 } : i));
+      } else {
+        if (live.quantity_remaining <= 0) {
+          next = prev;
+          return prev;
+        }
+        next = [...prev, { piece: live, quantity: 1 }];
       }
-      if (live.quantity_remaining <= 0) return prev;
-      return [...prev, { piece: live, quantity: 1 }];
+      return next;
     });
+    if (next) persist(next, location);
   }
 
   function removeItem(pieceId: string) {
-    setItems((prev) => prev.filter((i) => i.piece.id !== pieceId));
+    let next: CartItem[] = [];
+    setItems((prev) => {
+      next = prev.filter((i) => i.piece.id !== pieceId);
+      return next;
+    });
+    persist(next, location);
   }
 
   function updateQuantity(pieceId: string, quantity: number) {
+    let next: CartItem[] = [];
     setItems((prev) => {
-      if (quantity <= 0) return prev.filter((i) => i.piece.id !== pieceId);
-      return prev.map((i) => {
-        if (i.piece.id !== pieceId) return i;
-        const live = pieces.find((p) => p.id === pieceId) ?? i.piece;
-        return { ...i, piece: live, quantity: Math.min(quantity, live.quantity_remaining) };
-      });
+      if (quantity <= 0) {
+        next = prev.filter((i) => i.piece.id !== pieceId);
+      } else {
+        next = prev.map((i) => {
+          if (i.piece.id !== pieceId) return i;
+          const live = pieces.find((p) => p.id === pieceId) ?? i.piece;
+          return { ...i, piece: live, quantity: Math.min(quantity, live.quantity_remaining) };
+        });
+      }
+      return next;
     });
+    persist(next, location);
   }
 
   function setItemPrice(pieceId: string, price: number | null) {
-    setItems((prev) =>
-      prev.map((i) => (i.piece.id === pieceId ? { ...i, overridePrice: price } : i))
-    );
+    let next: CartItem[] = [];
+    setItems((prev) => {
+      next = prev.map((i) => (i.piece.id === pieceId ? { ...i, overridePrice: price } : i));
+      return next;
+    });
+    persist(next, location);
   }
 
   function clear() {
     setItems([]);
+    persist([], location);
+  }
+
+  function setLocation(nextLocation: string) {
+    setLocationState(nextLocation);
+    persist(items, nextLocation);
   }
 
   const subtotal = useMemo(

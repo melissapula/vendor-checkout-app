@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Piece } from '../types/database';
 import { usePieces } from '../context/PiecesContext';
+import { useAuth } from '../context/AuthContext';
 import { thumbUrl } from '../lib/images';
 import { LabelFields } from '../components/PrintLabelsOverlay';
 import { LABEL_SIZES, LabelSizeKey, labelSizeFor } from '../lib/labelSizes';
@@ -38,6 +40,10 @@ const LABEL_TYPE_OPTIONS: { key: LabelType; label: string; fields: LabelFields; 
 const DEFAULT_TYPE: LabelType = 'barcode';
 const DEFAULT_FIELDS: LabelFields = LABEL_TYPE_OPTIONS[0].fields;
 const DEFAULT_SIZE: LabelSizeKey = LABEL_TYPE_OPTIONS[0].size;
+
+export function printQueueStorageKey(storeId: string): string {
+  return `printQueue:${storeId}`;
+}
 
 function SearchResultRow({ piece, onAdd }: { piece: Piece; onAdd: () => void }) {
   return (
@@ -104,13 +110,79 @@ export default function PrintLabelsBuilderScreen({
   onPrint: (pieces: Piece[], fields: LabelFields, sizeKey: LabelSizeKey) => void;
 }) {
   const { pieces } = usePieces();
+  const { store } = useAuth();
   const [labelType, setLabelType] = useState<LabelType>(DEFAULT_TYPE);
   const [fields, setFields] = useState<LabelFields>(DEFAULT_FIELDS);
   const [sizeKey, setSizeKey] = useState<LabelSizeKey>(DEFAULT_SIZE);
-  const [entries, setEntries] = useState<QueueEntry[]>(
-    initialPiece ? [{ piece: initialPiece, quantity: 1 }] : []
-  );
+  const [entries, setEntries] = useState<QueueEntry[]>([]);
   const [search, setSearch] = useState('');
+  const [hydrated, setHydrated] = useState(false);
+
+  // Persisted per store so the queue survives more than just this modal
+  // closing — an accidental Cancel, but also a full page reload, which
+  // iOS Safari can trigger on its own mid-print if it decides to reclaim
+  // memory while the browser is backgrounded during the OS printer-picker
+  // flow (AirPrint's "find a printer" step). Without this, either would
+  // silently wipe a queue that took real time to build. Restores by piece
+  // id (not a frozen snapshot) so it stays consistent with the same
+  // live-resync behavior as the rest of this screen; any initialPiece
+  // (opened via a specific row's "Print label" link) merges into whatever
+  // was already queued rather than replacing it.
+  useEffect(() => {
+    if (!store) return;
+    let cancelled = false;
+    AsyncStorage.getItem(printQueueStorageKey(store.id))
+      .then((raw) => {
+        if (cancelled) return;
+        let restored: QueueEntry[] = [];
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed.entries)) {
+              restored = parsed.entries
+                .map((e: { pieceId: string; quantity: number }) => {
+                  const piece = pieces.find((p) => p.id === e.pieceId);
+                  return piece ? { piece, quantity: e.quantity } : null;
+                })
+                .filter((e: QueueEntry | null): e is QueueEntry => e !== null);
+            }
+            if (parsed.labelType === 'barcode' || parsed.labelType === 'nametag') {
+              setLabelType(parsed.labelType);
+            }
+            if (typeof parsed.sizeKey === 'string') setSizeKey(parsed.sizeKey);
+            if (parsed.fields) setFields(parsed.fields);
+          } catch {
+            // Corrupt — start fresh rather than crash the screen.
+          }
+        }
+        if (initialPiece) {
+          const existing = restored.find((e) => e.piece.id === initialPiece.id);
+          restored = existing
+            ? restored.map((e) => (e.piece.id === initialPiece.id ? { ...e, quantity: e.quantity + 1 } : e))
+            : [...restored, { piece: initialPiece, quantity: 1 }];
+        }
+        setEntries(restored);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setHydrated(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store]);
+
+  useEffect(() => {
+    if (!store || !hydrated) return;
+    const payload = {
+      entries: entries.map((e) => ({ pieceId: e.piece.id, quantity: e.quantity })),
+      labelType,
+      sizeKey,
+      fields,
+    };
+    AsyncStorage.setItem(printQueueStorageKey(store.id), JSON.stringify(payload)).catch(() => {});
+  }, [store, hydrated, entries, labelType, sizeKey, fields]);
 
   // A queued entry's `piece` is a snapshot from whenever it was added — but
   // the Edit form and this builder can be open at the same time (see

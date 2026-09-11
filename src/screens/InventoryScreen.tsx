@@ -7,12 +7,14 @@ import PieceFormScreen from './PieceFormScreen';
 import LogAdjustmentScreen from './LogAdjustmentScreen';
 import AppModal from '../components/AppModal';
 import PrintLabelsOverlay, { LabelFields } from '../components/PrintLabelsOverlay';
-import PrintLabelsBuilderScreen from './PrintLabelsBuilderScreen';
+import PrintLabelsBuilderScreen, { printQueueStorageKey } from './PrintLabelsBuilderScreen';
 import { LabelSizeKey, labelSizeFor } from '../lib/labelSizes';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 import { thumbUrl } from '../lib/images';
 import HiddenScanCapture from '../components/HiddenScanCapture';
 import { appAlert } from '../lib/alert';
+import { useAuth } from '../context/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 function statusLabel(piece: Piece): string {
   if (piece.status === 'sold') return 'Sold';
@@ -101,6 +103,7 @@ function PieceRow({
 
 export default function InventoryScreen() {
   const { pieces, loading, error } = usePieces();
+  const { store } = useAuth();
   const [editingPiece, setEditingPiece] = useState<Piece | null>(null);
   const [presetOriginalId, setPresetOriginalId] = useState<string | undefined>(undefined);
   const [formOpen, setFormOpen] = useState(false);
@@ -225,7 +228,17 @@ export default function InventoryScreen() {
         pieces={printJob?.pieces ?? null}
         fields={printJob?.fields ?? null}
         size={printJob ? labelSizeFor(printJob.sizeKey) : null}
-        onDone={() => setPrintJob(null)}
+        onDone={() => {
+          setPrintJob(null);
+          // Only clear the persisted queue once printing has genuinely
+          // finished (this fires from the browser's real afterprint event,
+          // whether the vendor actually printed or backed out of the OS
+          // dialog) — not when the builder merely hands off to this
+          // overlay, since a page reload mid-flight (see
+          // PrintLabelsBuilderScreen's note on why iOS can do this while
+          // picking a printer) needs the queue to still be there.
+          if (store) AsyncStorage.removeItem(printQueueStorageKey(store.id)).catch(() => {});
+        }}
       />
       <AppModal visible={!!adjustingPiece} onRequestClose={() => setAdjustingPiece(null)}>
         {adjustingPiece && (
