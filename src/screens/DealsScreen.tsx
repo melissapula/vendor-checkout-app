@@ -13,6 +13,7 @@ function describeScope(deal: Deal): string {
   if (appliesTo.scope === 'type') return `Type: ${appliesTo.type}`;
   if (appliesTo.scope === 'series') return `Series: ${appliesTo.series}`;
   if (appliesTo.scope === 'skus') return `${appliesTo.skus.length} SKU(s)`;
+  if (appliesTo.scope === 'size') return `${appliesTo.type}, size: ${appliesTo.sizes.join(', ')}`;
   return '';
 }
 

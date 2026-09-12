@@ -15,6 +15,13 @@ import { appAlert } from '../lib/alert';
 
 const STATUSES: PieceStatus[] = ['available', 'sold', 'reserved'];
 
+// Just quick-fill suggestions for the freely-editable Size field below —
+// common print dimensions and the small/medium/large convention for stickers.
+const SIZE_SUGGESTIONS: Record<string, string[]> = {
+  print: ['4x6', '5x7', '8x10', '11x14', '16x20'],
+  sticker: ['Small', 'Medium', 'Large'],
+};
+
 // Sensible starting point for a brand-new original — next unused SKU-####.
 // Purely a suggestion; the field stays freely editable.
 function suggestSku(pieces: Piece[]): string {
@@ -60,6 +67,7 @@ export default function PieceFormScreen({
   const [quantity, setQuantity] = useState(piece ? String(piece.quantity_remaining) : '1');
   const [status, setStatus] = useState<PieceStatus>(piece?.status ?? 'available');
   const [series, setSeries] = useState(piece?.series ?? '');
+  const [size, setSize] = useState(piece?.size ?? '');
   const [widthIn, setWidthIn] = useState(piece?.width_in != null ? String(piece.width_in) : '');
   const [heightIn, setHeightIn] = useState(piece?.height_in != null ? String(piece.height_in) : '');
   const [costBasis, setCostBasis] = useState(piece?.cost_basis != null ? String(piece.cost_basis) : '');
@@ -109,6 +117,7 @@ export default function PieceFormScreen({
       quantity_remaining: quantityValue,
       status,
       series: series.trim() || null,
+      size: size.trim() || null,
       width_in: parseOptionalNumber(widthIn),
       height_in: parseOptionalNumber(heightIn),
       cost_basis: parseOptionalNumber(costBasis),
@@ -301,6 +310,24 @@ export default function PieceFormScreen({
           value={series}
           onChangeText={setSeries}
           placeholder="e.g. Northern Skies"
+          onSubmitEditing={handleSave}
+        />
+
+        <Text style={styles.label}>Size (optional — lets deals target this size)</Text>
+        {SIZE_SUGGESTIONS[type] && (
+          <View style={[styles.chipRow, { marginBottom: 8 }]}>
+            {SIZE_SUGGESTIONS[type].map((s) => (
+              <Pressable key={s} style={[styles.chip, size === s && styles.chipSelected]} onPress={() => setSize(s)}>
+                <Text style={[styles.chipText, size === s && styles.chipTextSelected]}>{s}</Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
+        <TextInput
+          style={styles.input}
+          value={size}
+          onChangeText={setSize}
+          placeholder="e.g. 4x6, Small"
           onSubmitEditing={handleSave}
         />
 

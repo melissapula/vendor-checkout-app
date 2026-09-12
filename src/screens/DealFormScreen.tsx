@@ -37,16 +37,25 @@ const DISCOUNT_LABEL: Record<DealType, string> = {
   bogo: 'Free items per cycle (usually 1)',
 };
 
-type Scope = 'all' | 'type' | 'skus';
+type Scope = 'all' | 'type' | 'skus' | 'size';
 
-function parseAppliesTo(deal: Deal | undefined): { scope: Scope; type: PieceType; skusText: string } {
+function parseAppliesTo(
+  deal: Deal | undefined
+): { scope: Scope; type: PieceType; skusText: string; sizesText: string } {
   const appliesTo = deal?.applies_to as unknown as AppliesTo | undefined;
-  if (!appliesTo || appliesTo.scope === 'all') return { scope: 'all', type: 'print', skusText: '' };
-  if (appliesTo.scope === 'type') return { scope: 'type', type: appliesTo.type, skusText: '' };
-  if (appliesTo.scope === 'skus') return { scope: 'all', type: 'print', skusText: appliesTo.skus.join(', ') };
+  if (!appliesTo || appliesTo.scope === 'all') {
+    return { scope: 'all', type: 'print', skusText: '', sizesText: '' };
+  }
+  if (appliesTo.scope === 'type') return { scope: 'type', type: appliesTo.type, skusText: '', sizesText: '' };
+  if (appliesTo.scope === 'skus') {
+    return { scope: 'all', type: 'print', skusText: appliesTo.skus.join(', '), sizesText: '' };
+  }
+  if (appliesTo.scope === 'size') {
+    return { scope: 'size', type: appliesTo.type, skusText: '', sizesText: appliesTo.sizes.join(', ') };
+  }
   // 'series' scope isn't editable here yet (no piece has a series set) —
   // fall back to 'all' rather than silently dropping the deal's real scope.
-  return { scope: 'all', type: 'print', skusText: '' };
+  return { scope: 'all', type: 'print', skusText: '', sizesText: '' };
 }
 
 export default function DealFormScreen({
@@ -76,6 +85,11 @@ export default function DealFormScreen({
   );
   const [scopeType, setScopeType] = useState<PieceType>(initialScope.type);
   const [skusText, setSkusText] = useState(initialScope.skusText);
+  const [selectedSizes, setSelectedSizes] = useState<string[]>(
+    initialScope.sizesText
+      ? initialScope.sizesText.split(',').map((s) => s.trim()).filter(Boolean)
+      : []
+  );
   const [startDate, setStartDate] = useState(deal?.start_date?.slice(0, 10) ?? '');
   const [endDate, setEndDate] = useState(deal?.end_date?.slice(0, 10) ?? '');
 
@@ -84,8 +98,29 @@ export default function DealFormScreen({
     [pieces]
   );
 
+  // Every distinct size already in use for the currently-picked type — the
+  // deal can only usefully target sizes that exist on real pieces.
+  const availableSizes = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          pieces
+            .filter((p) => p.type === scopeType && p.size)
+            .map((p) => p.size as string)
+        )
+      ).sort(),
+    [pieces, scopeType]
+  );
+
+  function toggleSize(size: string) {
+    setSelectedSizes((prev) =>
+      prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size]
+    );
+  }
+
   function buildAppliesTo(): AppliesTo {
     if (scope === 'type') return { scope: 'type', type: scopeType };
+    if (scope === 'size') return { scope: 'size', type: scopeType, sizes: selectedSizes };
     if (scope === 'skus') {
       const skus = skusText
         .split(',')
@@ -111,6 +146,9 @@ export default function DealFormScreen({
     if (isNaN(value) || value < 0) return appAlert('Invalid discount', 'Enter a discount value.');
     if (scope === 'skus' && !skusText.trim()) {
       return appAlert('Missing SKUs', 'Enter at least one SKU, comma-separated.');
+    }
+    if (scope === 'size' && selectedSizes.length === 0) {
+      return appAlert('Missing size', 'Pick at least one size for this deal to apply to.');
     }
 
     const payload = {
@@ -237,18 +275,50 @@ export default function DealFormScreen({
               By SKU list
             </Text>
           </Pressable>
+          <Pressable
+            style={[styles.chip, scope === 'size' && styles.chipSelected]}
+            onPress={() => setScope('size')}
+          >
+            <Text style={[styles.chipText, scope === 'size' && styles.chipTextSelected]}>
+              By size
+            </Text>
+          </Pressable>
         </View>
 
-        {scope === 'type' && (
+        {(scope === 'type' || scope === 'size') && (
           <View style={styles.chipRow}>
             {pieceTypes.map((t) => (
               <Pressable
                 key={t}
                 style={[styles.chip, scopeType === t && styles.chipSelected]}
-                onPress={() => setScopeType(t)}
+                onPress={() => {
+                  setScopeType(t);
+                  if (scope === 'size') setSelectedSizes([]);
+                }}
               >
                 <Text style={[styles.chipText, scopeType === t && styles.chipTextSelected]}>
                   {t}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
+
+        {scope === 'size' && (
+          <View style={[styles.chipRow, { marginTop: 8 }]}>
+            {availableSizes.length === 0 && (
+              <Text style={styles.meta}>
+                No {scopeType} pieces have a size set yet — add sizes on those pieces in Inventory first.
+              </Text>
+            )}
+            {availableSizes.map((s) => (
+              <Pressable
+                key={s}
+                style={[styles.chip, selectedSizes.includes(s) && styles.chipSelected]}
+                onPress={() => toggleSize(s)}
+              >
+                <Text style={[styles.chipText, selectedSizes.includes(s) && styles.chipTextSelected]}>
+                  {s}
                 </Text>
               </Pressable>
             ))}
@@ -319,6 +389,7 @@ const styles = StyleSheet.create({
   scroll: { padding: 16 },
   heading: { fontSize: 20, fontWeight: '700', marginBottom: 16 },
   label: { fontSize: 13, color: '#666', marginTop: 16, marginBottom: 8 },
+  meta: { fontSize: 13, color: '#666' },
   input: {
     borderWidth: 1,
     borderColor: '#ddd',

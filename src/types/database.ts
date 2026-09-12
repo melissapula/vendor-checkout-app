@@ -25,6 +25,7 @@ export type Piece = {
   width_in: number | null;
   height_in: number | null;
   series: string | null;
+  size: string | null;
   price: number;
   cost_basis: number | null;
   status: PieceStatus;

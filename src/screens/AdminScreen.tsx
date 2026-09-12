@@ -37,9 +37,17 @@ export default function AdminScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
+        <View style={styles.headerSide}>
+          {page !== 'inventory' && (
+            <Pressable style={styles.backButton} onPress={() => setPage('inventory')} hitSlop={10}>
+              <Text style={styles.backButtonText}>‹ Back</Text>
+            </Pressable>
+          )}
+        </View>
         <Pressable style={styles.menuButton} onPress={() => setMenuOpen(true)}>
           <Text style={styles.menuButtonText}>{title} ▾</Text>
         </Pressable>
+        <View style={styles.headerSide} />
       </View>
 
       <View style={styles.body}>
@@ -103,12 +111,17 @@ function MenuItem({
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   header: {
-    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
-    alignItems: 'center',
   },
+  headerSide: { minWidth: 64 },
+  backButton: { paddingVertical: 4, paddingHorizontal: 8, alignSelf: 'flex-start' },
+  backButtonText: { fontSize: 16, fontWeight: '600', color: '#1a1a1a' },
   menuButton: { paddingVertical: 4, paddingHorizontal: 8 },
   menuButtonText: { fontSize: 18, fontWeight: '700' },
   body: { flex: 1 },

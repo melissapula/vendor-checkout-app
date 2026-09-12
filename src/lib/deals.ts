@@ -8,7 +8,8 @@ export type AppliesTo =
   | { scope: 'all' }
   | { scope: 'type'; type: PieceType }
   | { scope: 'series'; series: string }
-  | { scope: 'skus'; skus: string[] };
+  | { scope: 'skus'; skus: string[] }
+  | { scope: 'size'; type: PieceType; sizes: string[] };
 
 export type TriggerCondition = { count: number };
 
@@ -21,7 +22,7 @@ export interface AppliedDeal {
 
 export interface DealsEvaluation {
   applied: AppliedDeal[];
-  overridden: AppliedDeal[]; // non-stackable deals that matched but lost to a better same-scope deal
+  overridden: AppliedDeal[]; // non-stackable deals that matched but lost a contested piece to a bigger discount
   totalDiscount: number;
   // Total discount attributed to each piece_id, spread evenly across that
   // piece's units in the cart — the engine doesn't track which specific
@@ -39,11 +40,9 @@ function matchesScope(piece: CartItem['piece'], appliesTo: AppliesTo): boolean {
       return piece.series === appliesTo.series;
     case 'skus':
       return appliesTo.skus.includes(piece.sku);
+    case 'size':
+      return piece.type === appliesTo.type && !!piece.size && appliesTo.sizes.includes(piece.size);
   }
-}
-
-function scopeKey(appliesTo: AppliesTo): string {
-  return JSON.stringify(appliesTo);
 }
 
 function withinDateWindow(deal: Deal, now: Date): boolean {
@@ -135,21 +134,27 @@ export function evaluateDeals(items: CartItem[], deals: Deal[], now = new Date()
   const stackable = matches.filter((m) => m.deal.stackable);
   const nonStackable = matches.filter((m) => !m.deal.stackable);
 
-  // Non-stackable deals competing over the identical applies_to scope: keep
-  // only the single biggest discount per scope, per the design doc's rule.
-  const byScope = new Map<string, AppliedDeal[]>();
-  for (const m of nonStackable) {
-    const key = scopeKey(m.deal.applies_to as unknown as AppliesTo);
-    byScope.set(key, [...(byScope.get(key) ?? []), m]);
-  }
+  // Non-stackable deals that touch any of the same pieces conflict — the
+  // customer can only get one non-stackable discount per piece. Resolve
+  // greedily, biggest discount first, so whichever deal saves the customer
+  // the most always wins a contested piece (a deal isn't just compared
+  // against others with the identical scope — any real overlap counts).
+  const sorted = [...nonStackable].sort((a, b) => b.discountAmount - a.discountAmount);
+  const claimedPieceIds = new Set<string>();
 
   const applied: AppliedDeal[] = [...stackable];
   const overridden: AppliedDeal[] = [];
 
-  for (const group of byScope.values()) {
-    const sorted = [...group].sort((a, b) => b.discountAmount - a.discountAmount);
-    applied.push(sorted[0]);
-    overridden.push(...sorted.slice(1));
+  for (const match of sorted) {
+    const appliesTo = match.deal.applies_to as unknown as AppliesTo;
+    const matchedPieceIds = items.filter((i) => matchesScope(i.piece, appliesTo)).map((i) => i.piece.id);
+    const conflicts = matchedPieceIds.some((id) => claimedPieceIds.has(id));
+    if (conflicts) {
+      overridden.push(match);
+    } else {
+      applied.push(match);
+      matchedPieceIds.forEach((id) => claimedPieceIds.add(id));
+    }
   }
 
   const totalDiscount = Math.round(applied.reduce((s, a) => s + a.discountAmount, 0) * 100) / 100;
