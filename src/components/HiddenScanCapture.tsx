@@ -10,9 +10,8 @@ import { TextInput } from 'react-native';
 // focused often just never fires. This sidesteps that limitation instead
 // of fighting it: keep a real, always-focused (but invisible) TextInput
 // mounted, so there's always something legitimate for the OS to route
-// keyboard input into — the exact same mechanism that already works for
-// CartScreen's visible "Scan or type a SKU" field, just auto-focused and
-// off-screen instead of requiring a tap first.
+// keyboard input into, auto-focused and off-screen instead of requiring a
+// tap on a visible field first.
 export default function HiddenScanCapture({
   onScan,
   enabled,

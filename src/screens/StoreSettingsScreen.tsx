@@ -4,6 +4,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
@@ -17,6 +18,7 @@ export default function StoreSettingsScreen() {
   const { store, updateStore, signOut } = useAuth();
   const [name, setName] = useState(store?.name ?? '');
   const [pin, setPin] = useState(store?.admin_pin ?? '');
+  const [requirePin, setRequirePin] = useState(store?.require_admin_pin ?? true);
   const [submitting, setSubmitting] = useState(false);
   const [view, setView] = useState<'main' | 'payments'>('main');
   const { isTabletUp } = useBreakpoint();
@@ -38,7 +40,7 @@ export default function StoreSettingsScreen() {
 
     setSubmitting(true);
     try {
-      await updateStore({ name: name.trim(), admin_pin: pin });
+      await updateStore({ name: name.trim(), admin_pin: pin, require_admin_pin: requirePin });
       appAlert('Saved', 'Store settings updated.');
     } catch (err) {
       appAlert('Save failed', err instanceof Error ? err.message : 'Could not save changes.');
@@ -70,6 +72,17 @@ export default function StoreSettingsScreen() {
         onSubmitEditing={handleSave}
       />
 
+      <View style={styles.switchRow}>
+        <Text style={styles.label}>Require PIN for staff access</Text>
+        <Switch value={requirePin} onValueChange={setRequirePin} />
+      </View>
+      {!requirePin && (
+        <Text style={styles.hint}>
+          "Staff Access" will skip the PIN prompt and go straight to the admin view — anyone using
+          this device can get in.
+        </Text>
+      )}
+
       <Pressable style={[styles.saveButton, submitting && styles.disabled]} disabled={submitting} onPress={handleSave}>
         {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveButtonText}>Save changes</Text>}
       </Pressable>
@@ -93,6 +106,8 @@ const styles = StyleSheet.create({
   scroll: { padding: 16 },
   heading: { fontSize: 20, fontWeight: '700', marginBottom: 16 },
   label: { fontSize: 13, color: '#666', marginTop: 16, marginBottom: 8 },
+  switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 },
+  hint: { fontSize: 12, color: '#b00020', marginTop: 6 },
   input: {
     borderWidth: 1,
     borderColor: '#ddd',

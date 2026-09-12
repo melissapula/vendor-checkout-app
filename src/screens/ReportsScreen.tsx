@@ -1,9 +1,21 @@
 import React, { useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import AppModal from '../components/AppModal';
+import EventsScreen from './EventsScreen';
 import { useSales } from '../context/SalesContext';
 import { usePieces } from '../context/PiecesContext';
 import { useAdjustments } from '../context/AdjustmentsContext';
-import { Sale, PaymentMethod, PieceType, AdjustmentType, InventoryAdjustment } from '../types/database';
+import { useEvents, eventForDate } from '../context/EventsContext';
+import { useSavedReports } from '../context/SavedReportsContext';
+import {
+  Sale,
+  PaymentMethod,
+  PieceType,
+  AdjustmentType,
+  InventoryAdjustment,
+  SavedReport,
+  ReportSnapshot,
+} from '../types/database';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 import { refundSale } from '../lib/refunds';
 import { appAlert } from '../lib/alert';
@@ -29,6 +41,27 @@ function parseLocalDate(dateStr: string): Date | null {
   return new Date(parts[0], parts[1] - 1, parts[2]);
 }
 
+function toYMD(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// Concrete YYYY-MM-DD bounds for whichever date-range mode is active —
+// needed when saving a report snapshot, since 'today'/'7days' aren't
+// concrete dates on their own the way 'custom' already is.
+function resolveDateRangeBounds(range: DateRange, from: string, to: string): { from: string | null; to: string | null } {
+  if (range === 'all') return { from: null, to: null };
+  if (range === 'today') {
+    const today = toYMD(new Date());
+    return { from: today, to: today };
+  }
+  if (range === '7days') {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 7);
+    return { from: toYMD(cutoff), to: toYMD(new Date()) };
+  }
+  return { from: from.trim() || null, to: to.trim() || null };
+}
+
 function isWithinRange(iso: string, range: DateRange, from: string, to: string): boolean {
   const date = new Date(iso);
   if (range === 'all') return true;
@@ -50,7 +83,8 @@ function isWithinRange(iso: string, range: DateRange, from: string, to: string):
 }
 
 export default function ReportsScreen() {
-  const [view, setView] = useState<'sales' | 'adjustments'>('sales');
+  const [view, setView] = useState<'sales' | 'adjustments' | 'saved'>('sales');
+  const [eventsOpen, setEventsOpen] = useState(false);
   const { isTabletUp } = useBreakpoint();
 
   return (
@@ -70,8 +104,21 @@ export default function ReportsScreen() {
             Losses &amp; Donations
           </Text>
         </Pressable>
+        <Pressable
+          style={[styles.viewChip, view === 'saved' && styles.viewChipSelected]}
+          onPress={() => setView('saved')}
+        >
+          <Text style={[styles.viewChipText, view === 'saved' && styles.viewChipTextSelected]}>Saved Reports</Text>
+        </Pressable>
+        <Pressable style={styles.eventsLink} onPress={() => setEventsOpen(true)}>
+          <Text style={styles.eventsLinkText}>Manage Events</Text>
+        </Pressable>
       </View>
-      {view === 'sales' ? <SalesReport /> : <AdjustmentsReport />}
+      {view === 'sales' ? <SalesReport /> : view === 'adjustments' ? <AdjustmentsReport /> : <SavedReportsView />}
+
+      <AppModal visible={eventsOpen} onRequestClose={() => setEventsOpen(false)}>
+        <EventsScreen onClose={() => setEventsOpen(false)} />
+      </AppModal>
     </View>
   );
 }
@@ -79,34 +126,34 @@ export default function ReportsScreen() {
 function SalesReport() {
   const { sales, loading, error, applySaleUpdate } = useSales();
   const { pieces, applyPieceUpdates } = usePieces();
+  const { events } = useEvents();
+  const { addSavedReport } = useSavedReports();
 
   const [dateRange, setDateRange] = useState<DateRange>('today');
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
   const [methodFilter, setMethodFilter] = useState<PaymentMethod | 'all'>('all');
   const [typeFilter, setTypeFilter] = useState<PieceType | 'all'>('all');
-  const [locationFilter, setLocationFilter] = useState<string | 'all'>('all');
+  const [eventFilter, setEventFilter] = useState<string | 'all'>('all');
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
   const { isTabletUp } = useBreakpoint();
 
   const pieceById = useMemo(() => new Map(pieces.map((p) => [p.id, p])), [pieces]);
   const knownTypes = useMemo(() => Array.from(new Set(pieces.map((p) => p.type))).sort(), [pieces]);
-  const knownLocations = useMemo(
-    () => Array.from(new Set(sales.map((s) => s.location).filter((l): l is string => !!l))).sort(),
-    [sales]
-  );
+  const eventById = useMemo(() => new Map(events.map((e) => [e.id, e])), [events]);
 
   const filtered = useMemo(() => {
     return sales.filter((s) => {
       if (!isWithinRange(s.sale_date, dateRange, customFrom, customTo)) return false;
       if (methodFilter !== 'all' && s.payment_method !== methodFilter) return false;
-      if (locationFilter !== 'all' && s.location !== locationFilter) return false;
+      if (eventFilter !== 'all' && eventForDate(events, s.sale_date)?.id !== eventFilter) return false;
       if (typeFilter !== 'all') {
         const piece = pieceById.get(s.piece_id);
         if (!piece || piece.type !== typeFilter) return false;
       }
       return true;
     });
-  }, [sales, dateRange, customFrom, customTo, methodFilter, typeFilter, locationFilter, pieceById]);
+  }, [sales, dateRange, customFrom, customTo, methodFilter, typeFilter, eventFilter, events, pieceById]);
 
   // Refunded sales stay in the filtered list/count for the audit trail
   // (staff can still see what happened), but shouldn't count toward
@@ -142,6 +189,31 @@ function SalesReport() {
     }
   }
 
+  async function handleSaveReport(title: string, notes: string) {
+    const bounds = resolveDateRangeBounds(dateRange, customFrom, customTo);
+    const snapshot: ReportSnapshot = {
+      summary,
+      byType: byType.map(([type, stats]) => ({ type, ...stats })),
+      sales: activeFiltered.map((s) => ({
+        id: s.id,
+        title: pieceById.get(s.piece_id)?.title ?? 'Unknown item',
+        sale_price: s.sale_price,
+        tip_amount: s.tip_amount,
+        payment_method: s.payment_method,
+        sale_date: s.sale_date,
+        refunded_at: s.refunded_at,
+      })),
+    };
+    await addSavedReport({
+      title,
+      notes: notes.trim() || null,
+      event_name: eventFilter !== 'all' ? eventById.get(eventFilter)?.name ?? null : null,
+      from_date: bounds.from,
+      to_date: bounds.to,
+      snapshot: snapshot as unknown as Record<string, unknown>,
+    });
+  }
+
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -159,13 +231,19 @@ function SalesReport() {
   }
 
   return (
+    <>
     <FlatList
       style={styles.list}
       contentContainerStyle={centeredColumn(isTabletUp, CONTENT_WIDTH.wide)}
       data={filtered}
       keyExtractor={(s) => s.id}
       renderItem={({ item }) => (
-        <SaleRow sale={item} title={pieceById.get(item.piece_id)?.title ?? 'Unknown item'} onRefund={handleRefund} />
+        <SaleRow
+          sale={item}
+          title={pieceById.get(item.piece_id)?.title ?? 'Unknown item'}
+          eventName={eventForDate(events, item.sale_date)?.name ?? item.location}
+          onRefund={handleRefund}
+        />
       )}
       ItemSeparatorComponent={() => <View style={styles.separator} />}
       ListEmptyComponent={<Text style={styles.emptyText}>No sales match these filters.</Text>}
@@ -240,23 +318,23 @@ function SalesReport() {
             ))}
           </View>
 
-          {knownLocations.length > 0 && (
+          {events.length > 0 && (
             <>
-              <Text style={styles.filterLabel}>Show / venue</Text>
+              <Text style={styles.filterLabel}>Event</Text>
               <View style={styles.chipRow}>
                 <Pressable
-                  style={[styles.chip, locationFilter === 'all' && styles.chipSelected]}
-                  onPress={() => setLocationFilter('all')}
+                  style={[styles.chip, eventFilter === 'all' && styles.chipSelected]}
+                  onPress={() => setEventFilter('all')}
                 >
-                  <Text style={[styles.chipText, locationFilter === 'all' && styles.chipTextSelected]}>All</Text>
+                  <Text style={[styles.chipText, eventFilter === 'all' && styles.chipTextSelected]}>All</Text>
                 </Pressable>
-                {knownLocations.map((l) => (
+                {events.map((e) => (
                   <Pressable
-                    key={l}
-                    style={[styles.chip, locationFilter === l && styles.chipSelected]}
-                    onPress={() => setLocationFilter(l)}
+                    key={e.id}
+                    style={[styles.chip, eventFilter === e.id && styles.chipSelected]}
+                    onPress={() => setEventFilter(e.id)}
                   >
-                    <Text style={[styles.chipText, locationFilter === l && styles.chipTextSelected]}>{l}</Text>
+                    <Text style={[styles.chipText, eventFilter === e.id && styles.chipTextSelected]}>{e.name}</Text>
                   </Pressable>
                 ))}
               </View>
@@ -285,10 +363,95 @@ function SalesReport() {
             </View>
           )}
 
+          <Pressable style={styles.saveReportButton} onPress={() => setSaveModalOpen(true)}>
+            <Text style={styles.saveReportButtonText}>Save this report</Text>
+          </Pressable>
+
           <Text style={styles.filterLabel}>Sales ({filtered.length})</Text>
         </View>
       }
     />
+    <SaveReportModal visible={saveModalOpen} onClose={() => setSaveModalOpen(false)} onSave={handleSaveReport} />
+    </>
+  );
+}
+
+function SaveReportModal({
+  visible,
+  onClose,
+  onSave,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onSave: (title: string, notes: string) => Promise<void>;
+}) {
+  const [title, setTitle] = useState('');
+  const [notes, setNotes] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  function reset() {
+    setTitle('');
+    setNotes('');
+  }
+
+  async function handleSave() {
+    if (!title.trim()) return appAlert('Missing title', 'Give this report a title.');
+    setSubmitting(true);
+    try {
+      await onSave(title.trim(), notes);
+      reset();
+      onClose();
+    } catch (err) {
+      appAlert('Save failed', err instanceof Error ? err.message : 'Could not save this report.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <AppModal
+      visible={visible}
+      transparent
+      onRequestClose={() => {
+        reset();
+        onClose();
+      }}
+    >
+      <View style={styles.saveModalBackdrop}>
+        <View style={styles.saveModalCard}>
+          <Text style={styles.saveModalHeading}>Save This Report</Text>
+          <Text style={styles.filterLabel}>Title</Text>
+          <TextInput
+            style={styles.input}
+            value={title}
+            onChangeText={setTitle}
+            placeholder='e.g. "Fall Festival 2026"'
+            autoFocus
+            onSubmitEditing={handleSave}
+          />
+          <Text style={styles.filterLabel}>Notes (optional)</Text>
+          <TextInput
+            style={[styles.input, styles.saveModalNotes]}
+            value={notes}
+            onChangeText={setNotes}
+            placeholder="How'd it go? Anything worth remembering for next time?"
+            multiline
+          />
+          <Pressable style={[styles.saveButton, submitting && styles.disabled]} disabled={submitting} onPress={handleSave}>
+            {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveButtonText}>Save</Text>}
+          </Pressable>
+          <Pressable
+            disabled={submitting}
+            onPress={() => {
+              reset();
+              onClose();
+            }}
+          >
+            <Text style={styles.cancelLink}>Cancel</Text>
+          </Pressable>
+        </View>
+      </View>
+    </AppModal>
   );
 }
 
@@ -318,10 +481,12 @@ function SummaryRow({
 function SaleRow({
   sale,
   title,
+  eventName,
   onRefund,
 }: {
   sale: Sale;
   title: string;
+  eventName: string | null;
   onRefund: (sale: Sale) => Promise<void>;
 }) {
   const [refunding, setRefunding] = useState(false);
@@ -351,7 +516,7 @@ function SaleRow({
         <Text style={[styles.saleTitle, refunded && styles.refundedText]}>{title}</Text>
         <Text style={styles.saleMeta}>
           {new Date(sale.sale_date).toLocaleString()} · {sale.payment_method}
-          {sale.location ? ` · ${sale.location}` : ''}
+          {eventName ? ` · ${eventName}` : ''}
         </Text>
         {refunded && (
           <Text style={styles.refundedBadge}>Refunded {new Date(sale.refunded_at!).toLocaleDateString()}</Text>
@@ -512,6 +677,170 @@ function AdjustmentRow({ adjustment, title }: { adjustment: InventoryAdjustment;
   );
 }
 
+function SavedReportsView() {
+  const { savedReports, loading, error, deleteSavedReport } = useSavedReports();
+  const [selected, setSelected] = useState<SavedReport | null>(null);
+  const { isTabletUp } = useBreakpoint();
+
+  if (loading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.errorText}>Couldn't load saved reports: {error}</Text>
+      </View>
+    );
+  }
+
+  function handleDelete(report: SavedReport) {
+    appAlert('Delete this saved report?', report.title, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => {
+          deleteSavedReport(report.id);
+          setSelected(null);
+        },
+      },
+    ]);
+  }
+
+  return (
+    <>
+      {savedReports.length === 0 ? (
+        <View style={styles.centered}>
+          <Text style={styles.emptyText}>
+            No saved reports yet — run a Sales report below and tap "Save this report".
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          style={styles.list}
+          contentContainerStyle={centeredColumn(isTabletUp, CONTENT_WIDTH.wide)}
+          data={savedReports}
+          keyExtractor={(r) => r.id}
+          renderItem={({ item }) => {
+            const snapshot = item.snapshot as unknown as ReportSnapshot;
+            return (
+              <Pressable style={styles.saleRow} onPress={() => setSelected(item)}>
+                <View style={styles.saleInfo}>
+                  <Text style={styles.saleTitle}>{item.title}</Text>
+                  <Text style={styles.saleMeta}>
+                    {new Date(item.created_at).toLocaleDateString()}
+                    {item.event_name ? ` · ${item.event_name}` : ''}
+                    {item.from_date
+                      ? ` · ${item.from_date}${item.to_date && item.to_date !== item.from_date ? ` – ${item.to_date}` : ''}`
+                      : ''}
+                  </Text>
+                </View>
+                <Text style={styles.salePrice}>${snapshot.summary.net.toFixed(2)}</Text>
+              </Pressable>
+            );
+          }}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+        />
+      )}
+
+      <AppModal visible={!!selected} onRequestClose={() => setSelected(null)}>
+        {selected && (
+          <SavedReportDetail
+            report={selected}
+            onClose={() => setSelected(null)}
+            onDelete={() => handleDelete(selected)}
+          />
+        )}
+      </AppModal>
+    </>
+  );
+}
+
+function SavedReportDetail({
+  report,
+  onClose,
+  onDelete,
+}: {
+  report: SavedReport;
+  onClose: () => void;
+  onDelete: () => void;
+}) {
+  const snapshot = report.snapshot as unknown as ReportSnapshot;
+  const { isTabletUp } = useBreakpoint();
+
+  return (
+    <View style={styles.screen}>
+      <View style={styles.savedDetailHeader}>
+        <Text style={styles.savedDetailHeading}>{report.title}</Text>
+        <Pressable onPress={onClose} hitSlop={10}>
+          <Text style={styles.closeText}>✕</Text>
+        </Pressable>
+      </View>
+      <ScrollView contentContainerStyle={[styles.filters, centeredColumn(isTabletUp, CONTENT_WIDTH.wide)]}>
+        <Text style={styles.filterLabel}>
+          Saved {new Date(report.created_at).toLocaleDateString()}
+          {report.event_name ? ` · ${report.event_name}` : ''}
+          {report.from_date
+            ? ` · ${report.from_date}${report.to_date && report.to_date !== report.from_date ? ` – ${report.to_date}` : ''}`
+            : ''}
+        </Text>
+        {report.notes && <Text style={styles.savedNotes}>{report.notes}</Text>}
+
+        <View style={styles.summaryBox}>
+          <SummaryRow label="Items sold" value={snapshot.summary.count} isCount />
+          <SummaryRow label="Gross sales" value={snapshot.summary.gross} />
+          <SummaryRow label="Tips collected" value={snapshot.summary.tips} />
+          <SummaryRow label="Fees deducted" value={-snapshot.summary.fees} muted />
+          <SummaryRow label="Net revenue" value={snapshot.summary.net} bold />
+        </View>
+
+        {snapshot.byType.length > 0 && (
+          <View style={styles.summaryBox}>
+            <Text style={styles.filterLabel}>By type</Text>
+            {snapshot.byType.map((t) => (
+              <View key={t.type} style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>
+                  {t.type} ({t.count})
+                </Text>
+                <Text style={styles.summaryValue}>${t.gross.toFixed(2)}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        <Text style={styles.filterLabel}>Sales ({snapshot.sales.length})</Text>
+        {snapshot.sales.map((s) => (
+          <View key={s.id} style={styles.saleRow}>
+            <View style={styles.saleInfo}>
+              <Text style={[styles.saleTitle, s.refunded_at && styles.refundedText]}>{s.title}</Text>
+              <Text style={styles.saleMeta}>
+                {new Date(s.sale_date).toLocaleString()} · {s.payment_method}
+              </Text>
+              {s.refunded_at && <Text style={styles.refundedBadge}>Refunded</Text>}
+            </View>
+            <View style={styles.saleAmounts}>
+              <Text style={[styles.salePrice, s.refunded_at && styles.refundedText]}>
+                ${s.sale_price.toFixed(2)}
+              </Text>
+              {s.tip_amount ? <Text style={styles.saleTip}>+${s.tip_amount.toFixed(2)} tip</Text> : null}
+            </View>
+          </View>
+        ))}
+      </ScrollView>
+      <View style={styles.savedDetailFooter}>
+        <Pressable onPress={onDelete}>
+          <Text style={styles.deleteText}>Delete saved report</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#fff' },
   viewToggleRow: { flexDirection: 'row', gap: 8, padding: 16, paddingBottom: 0 },
@@ -565,4 +894,48 @@ const styles = StyleSheet.create({
   lossBadge: { color: '#b00020' },
   donationBadge: { color: '#2a7a2a' },
   separator: { height: 1, backgroundColor: '#eee', marginLeft: 16 },
+  eventsLink: { marginLeft: 'auto', paddingVertical: 10, paddingHorizontal: 4 },
+  eventsLinkText: { color: '#1a1a1a', fontWeight: '600', fontSize: 13, textDecorationLine: 'underline' },
+  saveReportButton: {
+    marginTop: 20,
+    backgroundColor: '#1a1a1a',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  saveReportButtonText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  saveModalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  saveModalCard: { backgroundColor: '#fff', borderRadius: 12, padding: 20, width: '100%', maxWidth: 420 },
+  saveModalHeading: { fontSize: 18, fontWeight: '700', marginBottom: 8 },
+  saveModalNotes: { minHeight: 70, textAlignVertical: 'top' },
+  saveButton: {
+    backgroundColor: '#1a1a1a',
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  disabled: { opacity: 0.6 },
+  saveButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  cancelLink: { textAlign: 'center', color: '#666', marginTop: 12 },
+  savedDetailHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  savedDetailHeading: { fontSize: 17, fontWeight: '700' },
+  closeText: { fontSize: 18, color: '#666', paddingHorizontal: 4 },
+  savedNotes: { fontSize: 14, color: '#444', marginTop: 8, fontStyle: 'italic' },
+  savedDetailFooter: { padding: 16, borderTopWidth: 1, borderTopColor: '#eee' },
+  deleteText: { textAlign: 'center', color: '#b00020', fontWeight: '600' },
 });

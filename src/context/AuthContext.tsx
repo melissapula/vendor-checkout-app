@@ -22,6 +22,7 @@ interface AuthContextValue {
         Store,
         | 'name'
         | 'admin_pin'
+        | 'require_admin_pin'
         | 'enabled_payment_methods'
         | 'pass_fee_to_buyer'
         | 'venmo_username'

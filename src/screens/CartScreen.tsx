@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { FlatList, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import AppModal from '../components/AppModal';
+import AddItemModal from '../components/AddItemModal';
 import { CartItem, effectivePrice, useCart } from '../context/CartContext';
 import { useDeals } from '../context/DealsContext';
 import { evaluateDeals } from '../lib/deals';
@@ -106,19 +107,12 @@ export default function CartScreen() {
   const { addBySku, lookupSku } = useScanToCart();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
-  const [skuInput, setSkuInput] = useState('');
+  const [addItemOpen, setAddItemOpen] = useState(false);
   const [scanMessage, setScanMessage] = useState<{ text: string; ok: boolean } | null>(null);
   const { isTabletUp } = useBreakpoint();
 
   const dealsResult = useMemo(() => evaluateDeals(items, deals), [items, deals]);
   const total = subtotal - dealsResult.totalDiscount;
-
-  function handleSkuSubmit() {
-    if (!skuInput.trim()) return;
-    const result = addBySku(skuInput);
-    setScanMessage({ text: result.message, ok: result.success });
-    setSkuInput('');
-  }
 
   function handleWedgeScan(code: string) {
     const result = addBySku(code);
@@ -129,15 +123,9 @@ export default function CartScreen() {
     <View style={styles.container}>
       <View style={[styles.content, centeredColumn(isTabletUp, CONTENT_WIDTH.wide)]}>
         <View style={styles.scanBar}>
-          <TextInput
-            style={styles.scanInput}
-            value={skuInput}
-            onChangeText={setSkuInput}
-            onSubmitEditing={handleSkuSubmit}
-            placeholder="Scan or type a SKU, then Enter"
-            autoCapitalize="characters"
-            returnKeyType="done"
-          />
+          <Pressable style={styles.addItemButton} onPress={() => setAddItemOpen(true)}>
+            <Text style={styles.addItemButtonText}>+ Add Item</Text>
+          </Pressable>
           <Pressable style={styles.cameraButton} onPress={() => setCameraOpen(true)}>
             <Text style={styles.cameraButtonText}>Scan with camera</Text>
           </Pressable>
@@ -216,7 +204,8 @@ export default function CartScreen() {
         }}
         onClose={() => setCameraOpen(false)}
       />
-      <HiddenScanCapture onScan={handleWedgeScan} enabled={!checkoutOpen && !cameraOpen} />
+      <HiddenScanCapture onScan={handleWedgeScan} enabled={!checkoutOpen && !cameraOpen && !addItemOpen} />
+      <AddItemModal visible={addItemOpen} onClose={() => setAddItemOpen(false)} />
     </View>
   );
 }
@@ -233,15 +222,15 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
-  scanInput: {
+  addItemButton: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: '#ddd',
+    backgroundColor: '#1a1a1a',
     borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 15,
+    paddingHorizontal: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
+  addItemButtonText: { color: '#fff', fontWeight: '700', fontSize: 15 },
   cameraButton: {
     borderWidth: 1,
     borderColor: '#1a1a1a',

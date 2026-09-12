@@ -8,6 +8,8 @@ import { CartProvider } from './src/context/CartContext';
 import { SalesProvider } from './src/context/SalesContext';
 import { AdjustmentsProvider } from './src/context/AdjustmentsContext';
 import { DealsProvider } from './src/context/DealsContext';
+import { EventsProvider } from './src/context/EventsContext';
+import { SavedReportsProvider } from './src/context/SavedReportsContext';
 import { AppModeProvider } from './src/context/AppModeContext';
 import RootNavigator from './src/navigation/RootNavigator';
 import AuthScreen from './src/screens/auth/AuthScreen';
@@ -66,11 +68,15 @@ function AppGate() {
       <DealsProvider>
         <SalesProvider>
           <AdjustmentsProvider>
-            <CartProvider>
-              <AppModeProvider>
-                <RootNavigator />
-              </AppModeProvider>
-            </CartProvider>
+            <EventsProvider>
+              <SavedReportsProvider>
+                <CartProvider>
+                  <AppModeProvider>
+                    <RootNavigator />
+                  </AppModeProvider>
+                </CartProvider>
+              </SavedReportsProvider>
+            </EventsProvider>
           </AdjustmentsProvider>
         </SalesProvider>
       </DealsProvider>

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
+import { useAuth } from './AuthContext';
 
 type Mode = 'customer' | 'pin' | 'admin';
 
@@ -14,12 +15,20 @@ const AppModeContext = createContext<AppModeContextValue | null>(null);
 
 export function AppModeProvider({ children }: { children: React.ReactNode }) {
   const [mode, setMode] = useState<Mode>('customer');
+  const { store } = useAuth();
+
+  // Defaults to requiring the PIN (matches the DB column's default) unless
+  // a vendor has explicitly turned it off in Store Settings — a solo seller
+  // with no one else to gate out of the admin view.
+  function requestAdmin() {
+    setMode(store?.require_admin_pin === false ? 'admin' : 'pin');
+  }
 
   return (
     <AppModeContext.Provider
       value={{
         mode,
-        requestAdmin: () => setMode('pin'),
+        requestAdmin,
         unlockAdmin: () => setMode('admin'),
         cancelPinEntry: () => setMode('customer'),
         exitToCustomer: () => setMode('customer'),

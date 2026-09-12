@@ -81,11 +81,59 @@ export type Deal = {
   applies_to: Record<string, unknown>;
 };
 
+export type Event = {
+  id: string;
+  store_id: string;
+  name: string;
+  // Plain YYYY-MM-DD (a `date` column, not a timestamp) — a whole-day range
+  // compared against each sale's sale_date at report time, not stored on
+  // the sale itself. See supabase/migrations/0014_events.sql.
+  start_date: string;
+  end_date: string;
+  notes: string | null;
+  created_at: string;
+};
+
+// Frozen contents of a saved report — see supabase/migrations/
+// 0015_saved_reports.sql. Line items are denormalized (piece title as
+// plain text, not piece_id) so the snapshot stays meaningful even if the
+// underlying piece or sale is later edited or deleted. Stored as jsonb, so
+// (like Deal.applies_to) SavedReport keeps the column as Record<string,
+// unknown> and callers cast to this shape — see src/screens/ReportsScreen.tsx.
+export type ReportSnapshotSaleLine = {
+  id: string;
+  title: string;
+  sale_price: number;
+  tip_amount: number | null;
+  payment_method: PaymentMethod;
+  sale_date: string;
+  refunded_at: string | null;
+};
+
+export type ReportSnapshot = {
+  summary: { count: number; gross: number; fees: number; tips: number; net: number };
+  byType: { type: string; count: number; gross: number }[];
+  sales: ReportSnapshotSaleLine[];
+};
+
+export type SavedReport = {
+  id: string;
+  store_id: string;
+  title: string;
+  notes: string | null;
+  event_name: string | null;
+  from_date: string | null;
+  to_date: string | null;
+  snapshot: Record<string, unknown>;
+  created_at: string;
+};
+
 export type Store = {
   id: string;
   owner_id: string;
   name: string;
   admin_pin: string;
+  require_admin_pin: boolean;
   created_at: string;
   enabled_payment_methods: PaymentMethod[];
   pass_fee_to_buyer: boolean;
@@ -150,6 +198,18 @@ export type Database = {
         Row: StoreCart;
         Insert: Partial<StoreCart>;
         Update: Partial<StoreCart>;
+        Relationships: [];
+      };
+      events: {
+        Row: Event;
+        Insert: Partial<Event>;
+        Update: Partial<Event>;
+        Relationships: [];
+      };
+      saved_reports: {
+        Row: SavedReport;
+        Insert: Partial<SavedReport>;
+        Update: Partial<SavedReport>;
         Relationships: [];
       };
     };

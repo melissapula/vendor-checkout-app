@@ -33,18 +33,12 @@ interface CartContextValue {
   clear: () => void;
   subtotal: number;
   itemCount: number;
-  // Current show/venue name, attached to each Sale at checkout. Lives here
-  // (not local to CheckoutScreen) so it persists across a whole session of
-  // checkouts instead of needing retyping for every sale.
-  location: string;
-  setLocation: (location: string) => void;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
-  const [location, setLocationState] = useState('');
   const [hydrated, setHydrated] = useState(false);
   const { pieces } = usePieces();
   const { store } = useAuth();
@@ -63,18 +57,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     let cancelled = false;
     setHydrated(false);
     setItems([]);
-    setLocationState('');
 
     (async () => {
       try {
         const { data } = await supabase
           .from('store_carts')
-          .select('items, location')
+          .select('items')
           .eq('store_id', store.id)
           .maybeSingle();
         if (cancelled || !data) return;
         if (Array.isArray(data.items)) setItems(data.items as unknown as CartItem[]);
-        if (typeof data.location === 'string') setLocationState(data.location);
       } catch {
         // Corrupt/unreadable row, or none yet — start fresh rather than
         // crash the cart.
@@ -89,10 +81,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'store_carts', filter: `store_id=eq.${store.id}` },
         (payload) => {
-          const row = payload.new as { items?: unknown; location?: string } | undefined;
+          const row = payload.new as { items?: unknown } | undefined;
           if (!row) return; // a delete — nothing to apply
           if (Array.isArray(row.items)) setItems(row.items as unknown as CartItem[]);
-          if (typeof row.location === 'string') setLocationState(row.location);
         }
       )
       .subscribe();
@@ -111,11 +102,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // slow network round-trip never blocks this device's own UI. Other
   // devices pick up the change via the Realtime subscription above; this
   // device's own echo of that same change is a harmless no-op re-render.
-  function persist(nextItems: CartItem[], nextLocation: string) {
+  function persist(nextItems: CartItem[]) {
     if (!store || !hydrated) return;
     supabase
       .from('store_carts')
-      .upsert({ store_id: store.id, items: nextItems as unknown as never, location: nextLocation })
+      .upsert({ store_id: store.id, items: nextItems as unknown as never })
       .then(() => {});
   }
 
@@ -139,7 +130,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         })
         .filter((item) => item.quantity > 0);
       if (hydrated && JSON.stringify(next) !== JSON.stringify(prev)) {
-        persist(next, location);
+        persist(next);
       }
       return next;
     });
@@ -166,7 +157,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
       return next;
     });
-    if (next) persist(next, location);
+    if (next) persist(next);
   }
 
   function removeItem(pieceId: string) {
@@ -175,7 +166,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       next = prev.filter((i) => i.piece.id !== pieceId);
       return next;
     });
-    persist(next, location);
+    persist(next);
   }
 
   function updateQuantity(pieceId: string, quantity: number) {
@@ -192,7 +183,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
       return next;
     });
-    persist(next, location);
+    persist(next);
   }
 
   function setItemPrice(pieceId: string, price: number | null) {
@@ -201,17 +192,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       next = prev.map((i) => (i.piece.id === pieceId ? { ...i, overridePrice: price } : i));
       return next;
     });
-    persist(next, location);
+    persist(next);
   }
 
   function clear() {
     setItems([]);
-    persist([], location);
-  }
-
-  function setLocation(nextLocation: string) {
-    setLocationState(nextLocation);
-    persist(items, nextLocation);
+    persist([]);
   }
 
   const subtotal = useMemo(
@@ -234,8 +220,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         clear,
         subtotal,
         itemCount,
-        location,
-        setLocation,
       }}
     >
       {children}

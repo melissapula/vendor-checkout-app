@@ -60,11 +60,11 @@ export default function CheckoutScreen({
   onClose: () => void;
   // Customer View's own "Confirm Cart" button jumps straight to 'buyerTip' —
   // the live cart the buyer's already looking at stands in for the
-  // 'buyerReview' step, and 'staffSetup' (the optional show/venue field)
-  // doesn't apply when the buyer starts checkout themselves.
+  // 'buyerReview' step, and 'staffSetup' (the "no payment methods enabled"
+  // gate) doesn't apply when the buyer starts checkout themselves.
   initialStep?: Step;
 }) {
-  const { items, subtotal, clear, location, setLocation } = useCart();
+  const { items, subtotal, clear } = useCart();
   const { applyPieceUpdates } = usePieces();
   const { applySales } = useSales();
   const { deals } = useDeals();
@@ -73,6 +73,20 @@ export default function CheckoutScreen({
   const { isTabletUp } = useBreakpoint();
 
   const [step, setStep] = useState<Step>(initialStep);
+
+  // 'staffSetup' used to also collect the show/venue name — now that
+  // Reports attributes sales to events by date instead, its only remaining
+  // purpose is the "no payment methods configured" gate below, so skip
+  // straight past it (once, on entry) whenever there's nothing to warn
+  // about, instead of showing staff an empty screen with just a Continue
+  // button.
+  useEffect(() => {
+    if (initialStep === 'staffSetup' && enabledMethods.length > 0) {
+      setStep('buyerReview');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [method, setMethod] = useState<PaymentMethod | null>(null);
   const [tipText, setTipText] = useState('');
   const [customTipText, setCustomTipText] = useState('');
@@ -147,7 +161,7 @@ export default function CheckoutScreen({
           fee_amount: perUnitFee,
           sale_date: new Date().toISOString(),
           processor_payment_id: itemIndex === 0 && i === 0 ? processorPaymentId : null,
-          location: location.trim() || null,
+          location: null,
         });
       }
     });
@@ -314,16 +328,6 @@ export default function CheckoutScreen({
       <View style={styles.container}>
         <ScrollView contentContainerStyle={[styles.scroll, centeredColumn(isTabletUp, CONTENT_WIDTH.narrow)]}>
           <Text style={styles.heading}>Checkout</Text>
-          <Text style={styles.sectionLabel}>Show / venue (optional, for reports)</Text>
-          <TextInput
-            style={styles.tipInput}
-            value={location}
-            onChangeText={setLocation}
-            placeholder="e.g. Bemidji Farmers Market"
-            onSubmitEditing={() => {
-              if (enabledMethods.length > 0) setStep('buyerReview');
-            }}
-          />
           {enabledMethods.length === 0 && (
             <Text style={styles.error}>No payment methods enabled — set some up in Admin &gt; Settings &gt; Payment Methods.</Text>
           )}
@@ -484,7 +488,9 @@ export default function CheckoutScreen({
           </>
         ) : (
           <>
-            <Text style={[styles.heading, isTabletUp && styles.headingTabletUp]}>Please scan this QR code to pay</Text>
+            <Text style={[styles.heading, isTabletUp && styles.headingTabletUp]}>
+              Scan this QR code with your phone's camera to pay
+            </Text>
             <Text style={styles.qrMethodLabel}>
               {method ? METHOD_LABELS[method] : ''} — ${buyerTotal.toFixed(2)}
             </Text>
@@ -500,7 +506,9 @@ export default function CheckoutScreen({
                 {cardPaid ? 'Payment received — recording sale…' : 'Waiting for payment…'}
               </Text>
             ) : (
-              <Text style={styles.qrHint}>Scan the code and pay in your {method ? METHOD_LABELS[method] : ''} app.</Text>
+              <Text style={styles.qrHint}>
+                Scan with your phone's camera, then pay in {method ? METHOD_LABELS[method] : ''}.
+              </Text>
             )}
           </>
         )}

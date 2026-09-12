@@ -14,7 +14,7 @@ interface PiecesContextValue {
   // of re-deriving the new quantity from a possibly-stale client snapshot.
   applyPieceUpdates: (updated: Piece[]) => void;
   updatePiece: (pieceId: string, updates: Partial<Piece>) => Promise<void>;
-  addPiece: (piece: NewPiece) => Promise<void>;
+  addPiece: (piece: NewPiece) => Promise<Piece>;
   deletePiece: (pieceId: string) => Promise<void>;
 }
 
@@ -57,6 +57,7 @@ export function PiecesProvider({ children }: { children: React.ReactNode }) {
     const { data, error } = await supabase.from('pieces').insert(piece).select().single();
     if (error) throw error;
     setPieces((prev) => [...prev, data].sort((a, b) => a.sku.localeCompare(b.sku)));
+    return data;
   }
 
   async function deletePiece(pieceId: string) {
