@@ -24,8 +24,21 @@ function statusLabel(piece: Piece): string {
   return `${piece.quantity_remaining} left`;
 }
 
+// Originals are never "low stock" — there's exactly one of each, so a
+// threshold-based warning would just fire on every original all the time
+// and mean nothing (nothing to reorder).
+function isLowStock(piece: Piece, threshold: number): boolean {
+  return (
+    piece.type !== 'original' &&
+    piece.status === 'available' &&
+    piece.quantity_remaining > 0 &&
+    piece.quantity_remaining <= threshold
+  );
+}
+
 function PieceRow({
   piece,
+  lowStockThreshold,
   onEdit,
   onAddVariant,
   onPrintLabel,
@@ -34,6 +47,7 @@ function PieceRow({
   onAdded,
 }: {
   piece: Piece;
+  lowStockThreshold: number;
   onEdit: () => void;
   onAddVariant: () => void;
   onPrintLabel: () => void;
@@ -43,6 +57,7 @@ function PieceRow({
 }) {
   const { addItem } = useCart();
   const sellable = isSellable(piece);
+  const lowStock = isLowStock(piece, lowStockThreshold);
 
   return (
     <View style={styles.row}>
@@ -59,6 +74,7 @@ function PieceRow({
         <Text style={[styles.status, !sellable && styles.statusUnavailable]}>
           {statusLabel(piece)}
         </Text>
+        {lowStock && <Text style={styles.lowStockBadge}>Low stock — reorder soon</Text>}
         {piece.type === 'original' && (
           <Pressable onPress={onAddVariant}>
             <Text style={styles.variantLink}>+ Add variant</Text>
@@ -215,6 +231,7 @@ export default function InventoryScreen() {
         renderItem={({ item }) => (
           <PieceRow
             piece={item}
+            lowStockThreshold={store?.low_stock_threshold ?? 3}
             onEdit={() => openEdit(item)}
             onAddVariant={() => openAddVariant(item.id)}
             onPrintLabel={() => openBuilder(item)}
@@ -313,6 +330,7 @@ const styles = StyleSheet.create({
   meta: { fontSize: 13, color: '#666', marginTop: 2 },
   status: { fontSize: 13, color: '#2a7a2a', marginTop: 4 },
   statusUnavailable: { color: '#999' },
+  lowStockBadge: { fontSize: 12, color: '#b36b00', marginTop: 2, fontWeight: '600' },
   variantLink: { fontSize: 12, color: '#1a1a1a', marginTop: 4, fontWeight: '600' },
   rowActions: { alignItems: 'flex-end' },
   price: { fontSize: 16, fontWeight: '600', marginBottom: 6 },

@@ -10,15 +10,23 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
+import { usePieces } from '../context/PiecesContext';
+import { useSales } from '../context/SalesContext';
 import { appAlert } from '../lib/alert';
+import { exportInventoryCsv, exportSalesCsv } from '../lib/dataExport';
 import PaymentSettingsScreen from './PaymentSettingsScreen';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 
 export default function StoreSettingsScreen() {
   const { store, updateStore, signOut } = useAuth();
+  const { pieces } = usePieces();
+  const { sales } = useSales();
   const [name, setName] = useState(store?.name ?? '');
   const [pin, setPin] = useState(store?.admin_pin ?? '');
   const [requirePin, setRequirePin] = useState(store?.require_admin_pin ?? true);
+  const [lowStockThreshold, setLowStockThreshold] = useState(
+    store?.low_stock_threshold != null ? String(store.low_stock_threshold) : '3'
+  );
   const [submitting, setSubmitting] = useState(false);
   const [view, setView] = useState<'main' | 'payments'>('main');
   const { isTabletUp } = useBreakpoint();
@@ -37,10 +45,19 @@ export default function StoreSettingsScreen() {
   async function handleSave() {
     if (!name.trim()) return appAlert('Missing name', 'Give your store a name.');
     if (!/^\d{4,6}$/.test(pin)) return appAlert('Invalid PIN', 'Pick a 4–6 digit staff PIN.');
+    const threshold = parseInt(lowStockThreshold, 10);
+    if (isNaN(threshold) || threshold < 0) {
+      return appAlert('Invalid threshold', 'Enter a low-stock threshold of 0 or more.');
+    }
 
     setSubmitting(true);
     try {
-      await updateStore({ name: name.trim(), admin_pin: pin, require_admin_pin: requirePin });
+      await updateStore({
+        name: name.trim(),
+        admin_pin: pin,
+        require_admin_pin: requirePin,
+        low_stock_threshold: threshold,
+      });
       appAlert('Saved', 'Store settings updated.');
     } catch (err) {
       appAlert('Save failed', err instanceof Error ? err.message : 'Could not save changes.');
@@ -83,6 +100,20 @@ export default function StoreSettingsScreen() {
         </Text>
       )}
 
+      <Text style={styles.label}>Low stock threshold</Text>
+      <TextInput
+        style={styles.input}
+        value={lowStockThreshold}
+        onChangeText={setLowStockThreshold}
+        placeholder="3"
+        keyboardType="number-pad"
+        onSubmitEditing={handleSave}
+      />
+      <Text style={styles.helper}>
+        Inventory flags a print/sticker/etc. as "Low stock" once it's at or under this many units left
+        (originals aren't flagged — there's only ever one).
+      </Text>
+
       <Pressable style={[styles.saveButton, submitting && styles.disabled]} disabled={submitting} onPress={handleSave}>
         {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveButtonText}>Save changes</Text>}
       </Pressable>
@@ -92,6 +123,19 @@ export default function StoreSettingsScreen() {
       <Pressable style={styles.paymentSettingsRow} onPress={() => setView('payments')}>
         <Text style={styles.paymentSettingsText}>Payment Methods →</Text>
       </Pressable>
+
+      <View style={styles.divider} />
+
+      <Text style={styles.label}>Export data</Text>
+      <Text style={styles.helper}>Download a CSV for your own records, accountant, or insurance.</Text>
+      <View style={styles.exportRow}>
+        <Pressable style={styles.exportButton} onPress={() => exportInventoryCsv(pieces)}>
+          <Text style={styles.exportButtonText}>Export Inventory</Text>
+        </Pressable>
+        <Pressable style={styles.exportButton} onPress={() => exportSalesCsv(sales, pieces)}>
+          <Text style={styles.exportButtonText}>Export Sales</Text>
+        </Pressable>
+      </View>
 
       <View style={styles.divider} />
 
@@ -108,6 +152,17 @@ const styles = StyleSheet.create({
   label: { fontSize: 13, color: '#666', marginTop: 16, marginBottom: 8 },
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 },
   hint: { fontSize: 12, color: '#b00020', marginTop: 6 },
+  helper: { fontSize: 12, color: '#888', marginTop: 6 },
+  exportRow: { flexDirection: 'row', gap: 10, marginTop: 12 },
+  exportButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#1a1a1a',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  exportButtonText: { color: '#1a1a1a', fontWeight: '700', fontSize: 14 },
   input: {
     borderWidth: 1,
     borderColor: '#ddd',

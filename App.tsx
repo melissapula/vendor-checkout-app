@@ -11,11 +11,13 @@ import { DealsProvider } from './src/context/DealsContext';
 import { EventsProvider } from './src/context/EventsContext';
 import { SavedReportsProvider } from './src/context/SavedReportsContext';
 import { AppModeProvider } from './src/context/AppModeContext';
+import { ConnectivityProvider } from './src/context/ConnectivityContext';
 import RootNavigator from './src/navigation/RootNavigator';
 import AuthScreen from './src/screens/auth/AuthScreen';
 import CreateStoreScreen from './src/screens/auth/CreateStoreScreen';
 import ResetPasswordScreen from './src/screens/auth/ResetPasswordScreen';
 import AlertHost from './src/components/AlertHost';
+import OfflineBanner from './src/components/OfflineBanner';
 
 function AppGate() {
   const { session, authLoading, store, storeLoading, storeError, retryStoreFetch } = useAuth();
@@ -87,11 +89,14 @@ function AppGate() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <AppGate />
-        <StatusBar style="auto" />
-      </AuthProvider>
-      <AlertHost />
+      <ConnectivityProvider>
+        <OfflineBanner />
+        <AuthProvider>
+          <AppGate />
+          <StatusBar style="auto" />
+        </AuthProvider>
+        <AlertHost />
+      </ConnectivityProvider>
     </SafeAreaProvider>
   );
 }
