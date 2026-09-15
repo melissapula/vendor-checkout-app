@@ -9,7 +9,7 @@ import { LabelFields } from '../components/PrintLabelsOverlay';
 import { LABEL_SIZES, LabelSizeKey, labelSizeFor } from '../lib/labelSizes';
 import { appAlert } from '../lib/alert';
 
-type QueueEntry = { piece: Piece; quantity: number };
+export type QueueEntry = { piece: Piece; quantity: number };
 
 const FIELD_OPTIONS: { key: keyof LabelFields; label: string }[] = [
   { key: 'title', label: 'Title' },
@@ -102,10 +102,16 @@ function QueueRow({
 
 export default function PrintLabelsBuilderScreen({
   initialPiece,
+  initialEntries,
   onClose,
   onPrint,
 }: {
   initialPiece?: Piece;
+  // Seeds the queue with a whole batch at once (e.g. everything just
+  // restocked via Import Print Order) — merges with whatever's already
+  // queued and with `initialPiece`, same as those two already merge with
+  // each other below, rather than replacing it outright.
+  initialEntries?: QueueEntry[];
   onClose: () => void;
   onPrint: (pieces: Piece[], fields: LabelFields, sizeKey: LabelSizeKey) => void;
 }) {
@@ -160,6 +166,14 @@ export default function PrintLabelsBuilderScreen({
           restored = existing
             ? restored.map((e) => (e.piece.id === initialPiece.id ? { ...e, quantity: e.quantity + 1 } : e))
             : [...restored, { piece: initialPiece, quantity: 1 }];
+        }
+        if (initialEntries && initialEntries.length > 0) {
+          const byId = new Map(restored.map((e) => [e.piece.id, e]));
+          for (const entry of initialEntries) {
+            const existing = byId.get(entry.piece.id);
+            byId.set(entry.piece.id, existing ? { ...existing, quantity: existing.quantity + entry.quantity } : entry);
+          }
+          restored = Array.from(byId.values());
         }
         setEntries(restored);
       })

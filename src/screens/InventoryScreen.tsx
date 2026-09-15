@@ -7,7 +7,8 @@ import PieceFormScreen from './PieceFormScreen';
 import LogAdjustmentScreen from './LogAdjustmentScreen';
 import AppModal from '../components/AppModal';
 import PrintLabelsOverlay, { LabelFields } from '../components/PrintLabelsOverlay';
-import PrintLabelsBuilderScreen, { printQueueStorageKey } from './PrintLabelsBuilderScreen';
+import PrintLabelsBuilderScreen, { printQueueStorageKey, QueueEntry } from './PrintLabelsBuilderScreen';
+import ImportPrintOrderScreen from './ImportPrintOrderScreen';
 import { LabelSizeKey, labelSizeFor } from '../lib/labelSizes';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 import { thumbUrl } from '../lib/images';
@@ -109,6 +110,8 @@ export default function InventoryScreen() {
   const [formOpen, setFormOpen] = useState(false);
   const [builderOpen, setBuilderOpen] = useState(false);
   const [builderInitialPiece, setBuilderInitialPiece] = useState<Piece | undefined>(undefined);
+  const [builderInitialEntries, setBuilderInitialEntries] = useState<QueueEntry[] | undefined>(undefined);
+  const [importOpen, setImportOpen] = useState(false);
   const [printJob, setPrintJob] = useState<{ pieces: Piece[]; fields: LabelFields; sizeKey: LabelSizeKey } | null>(
     null
   );
@@ -158,7 +161,33 @@ export default function InventoryScreen() {
 
   function openBuilder(piece?: Piece) {
     setBuilderInitialPiece(piece);
+    setBuilderInitialEntries(undefined);
     setBuilderOpen(true);
+  }
+
+  // After Import Print Order finishes writing to inventory, ask before
+  // jumping into printing — restocking without wanting new labels right
+  // that moment (e.g. importing at night, printing at the studio tomorrow)
+  // is a completely normal thing to want.
+  function handleImported(entries: QueueEntry[]) {
+    setImportOpen(false);
+    if (entries.length === 0) return;
+    const totalLabels = entries.reduce((sum, e) => sum + e.quantity, 0);
+    appAlert(
+      'Inventory updated',
+      `Added ${totalLabels} unit${totalLabels === 1 ? '' : 's'} across ${entries.length} piece${entries.length === 1 ? '' : 's'}. Print labels for these now?`,
+      [
+        { text: 'Not now', style: 'cancel' },
+        {
+          text: 'Print Labels',
+          onPress: () => {
+            setBuilderInitialPiece(undefined);
+            setBuilderInitialEntries(entries);
+            setBuilderOpen(true);
+          },
+        },
+      ]
+    );
   }
 
   // Scanning a piece's own label here is a quick way to pull up its edit
@@ -200,12 +229,17 @@ export default function InventoryScreen() {
         }
       />
       <View style={[styles.footer, centeredColumn(isTabletUp, CONTENT_WIDTH.wide)]}>
-        <Pressable style={styles.printAllButton} onPress={() => openBuilder()}>
-          <Text style={styles.printAllButtonText}>Print Labels</Text>
+        <Pressable style={styles.importButton} onPress={() => setImportOpen(true)}>
+          <Text style={styles.importButtonText}>Import Print Order</Text>
         </Pressable>
-        <Pressable style={styles.addPieceButton} onPress={openAddNew}>
-          <Text style={styles.addPieceButtonText}>+ Add Piece</Text>
-        </Pressable>
+        <View style={styles.footerRow}>
+          <Pressable style={styles.printAllButton} onPress={() => openBuilder()}>
+            <Text style={styles.printAllButtonText}>Print Labels</Text>
+          </Pressable>
+          <Pressable style={styles.addPieceButton} onPress={openAddNew}>
+            <Text style={styles.addPieceButtonText}>+ Add Piece</Text>
+          </Pressable>
+        </View>
       </View>
       <AppModal visible={formOpen} onRequestClose={() => setFormOpen(false)}>
         <PieceFormScreen
@@ -214,9 +248,13 @@ export default function InventoryScreen() {
           onClose={() => setFormOpen(false)}
         />
       </AppModal>
+      <AppModal visible={importOpen} onRequestClose={() => setImportOpen(false)}>
+        <ImportPrintOrderScreen onClose={() => setImportOpen(false)} onImported={handleImported} />
+      </AppModal>
       <AppModal visible={builderOpen} onRequestClose={() => setBuilderOpen(false)}>
         <PrintLabelsBuilderScreen
           initialPiece={builderInitialPiece}
+          initialEntries={builderInitialEntries}
           onClose={() => setBuilderOpen(false)}
           onPrint={(pieces, fields, sizeKey) => {
             setPrintJob({ pieces, fields, sizeKey });
@@ -312,7 +350,17 @@ const styles = StyleSheet.create({
   addedBadgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
   labelLink: { fontSize: 12, color: '#666', marginTop: 8, textDecorationLine: 'underline' },
   separator: { height: 1, backgroundColor: '#eee', marginLeft: 16 },
-  footer: { flexDirection: 'row', gap: 8, padding: 16, borderTopWidth: 1, borderTopColor: '#eee' },
+  footer: { gap: 8, padding: 16, borderTopWidth: 1, borderTopColor: '#eee' },
+  footerRow: { flexDirection: 'row', gap: 8 },
+  importButton: {
+    borderWidth: 1,
+    borderColor: '#666',
+    borderStyle: 'dashed',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  importButtonText: { color: '#444', fontWeight: '700', fontSize: 15 },
   addPieceButton: { flex: 1, backgroundColor: '#1a1a1a', paddingVertical: 14, borderRadius: 8, alignItems: 'center' },
   addPieceButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   printAllButton: {
