@@ -240,6 +240,15 @@ export type Database = {
         Args: { p_piece_id: string; p_type: AdjustmentType; p_quantity: number; p_reason: string | null };
         Returns: { piece: Piece; adjustment: InventoryAdjustment };
       };
+      // Claims a beta invite code for the signed-in user, atomically and
+      // idempotently — see supabase/migrations/0017_beta_invite_codes.sql.
+      // Returns true if the code was valid and is now (or already was, for
+      // this same user) claimed by them; false if invalid/already taken by
+      // someone else.
+      redeem_beta_code: {
+        Args: { p_code: string };
+        Returns: boolean;
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

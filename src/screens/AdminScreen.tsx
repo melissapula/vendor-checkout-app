@@ -45,7 +45,9 @@ export default function AdminScreen() {
           )}
         </View>
         <Pressable style={styles.menuButton} onPress={() => setMenuOpen(true)}>
-          <Text style={styles.menuButtonText}>{title} ▾</Text>
+          <Text style={styles.menuButtonText}>
+            {title} ▾ <Text style={styles.betaBadgeText}>BETA</Text>
+          </Text>
         </Pressable>
         <View style={styles.headerSide} />
       </View>
@@ -124,6 +126,7 @@ const styles = StyleSheet.create({
   backButtonText: { fontSize: 16, fontWeight: '600', color: '#1a1a1a' },
   menuButton: { paddingVertical: 4, paddingHorizontal: 8 },
   menuButtonText: { fontSize: 18, fontWeight: '700' },
+  betaBadgeText: { fontSize: 11, fontWeight: '700', color: '#8a6300' },
   body: { flex: 1 },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.15)' },
   menuWrap: { alignItems: 'center' },

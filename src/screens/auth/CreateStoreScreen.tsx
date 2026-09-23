@@ -9,14 +9,24 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { appAlert } from '../../lib/alert';
+import { redeemBetaCode } from '../../lib/betaInvite';
+
+// One line to update if the beta's point of contact changes — surfaced to
+// every new vendor on this screen.
+const BETA_CONTACT = 'mfpstudioart@gmail.com';
 
 export default function CreateStoreScreen() {
   const { createStore, signOut } = useAuth();
   const [name, setName] = useState('');
   const [pin, setPin] = useState('');
+  const [inviteCode, setInviteCode] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   async function handleCreate() {
+    if (!inviteCode.trim()) {
+      appAlert('Missing invite code', "This app is invite-only during beta — enter the code you were given.");
+      return;
+    }
     if (!name.trim()) {
       appAlert('Missing name', 'Give your store a name — customers will see this.');
       return;
@@ -27,6 +37,11 @@ export default function CreateStoreScreen() {
     }
     setSubmitting(true);
     try {
+      const valid = await redeemBetaCode(inviteCode.trim());
+      if (!valid) {
+        appAlert('Invalid invite code', "That code isn't valid or has already been used — check it and try again.");
+        return;
+      }
       await createStore(name.trim(), pin);
     } catch (err) {
       appAlert('Could not create store', err instanceof Error ? err.message : 'Please try again.');
@@ -41,6 +56,21 @@ export default function CreateStoreScreen() {
       <Text style={styles.subheading}>
         This shows up on your checkout screen. You can change it later in Settings.
       </Text>
+
+      <Text style={styles.betaNotice}>
+        This app is currently in beta and invite-only. Expect occasional bugs, and please keep your own
+        backup of anything important. Questions or something broken? {BETA_CONTACT}
+      </Text>
+
+      <Text style={styles.label}>Invite code</Text>
+      <TextInput
+        style={styles.input}
+        value={inviteCode}
+        onChangeText={setInviteCode}
+        placeholder="Enter the code you were given"
+        autoCapitalize="characters"
+        onSubmitEditing={handleCreate}
+      />
 
       <TextInput
         style={styles.input}
@@ -79,6 +109,14 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', padding: 24, gap: 10 },
   heading: { fontSize: 22, fontWeight: '700', textAlign: 'center' },
   subheading: { fontSize: 13, color: '#666', textAlign: 'center', maxWidth: 280, marginBottom: 4 },
+  betaNotice: {
+    fontSize: 12,
+    color: '#8a6300',
+    textAlign: 'center',
+    maxWidth: 300,
+    marginTop: 8,
+    marginBottom: 4,
+  },
   label: { fontSize: 15, fontWeight: '600', marginTop: 12 },
   input: {
     borderWidth: 1,
