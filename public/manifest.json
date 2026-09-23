@@ -1,6 +1,6 @@
 {
-  "name": "Studio Checkout",
-  "short_name": "Checkout",
+  "name": "Vendor Checkout",
+  "short_name": "Vendor Checkout",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
