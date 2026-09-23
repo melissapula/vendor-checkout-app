@@ -40,6 +40,10 @@ yarn-error.*
 # Supabase CLI local state
 supabase/.temp/
 
+# Playwright demo recordings (see scripts/record-demo.js) — ephemeral
+# output, not source
+videos/
+
 # generated native folders
 /ios
 /android
