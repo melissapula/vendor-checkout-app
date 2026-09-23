@@ -183,21 +183,44 @@ async function main() {
   await page.waitForTimeout(800);
   await page.getByText('Payment Methods →', { exact: true }).click();
   await page.waitForTimeout(800);
-  const cashSelected = await page.evaluate(() => {
-    const els = Array.from(document.querySelectorAll('div'));
-    const el = els.find((e) => e.textContent.trim() === 'Cash' && e.children.length === 0);
-    if (!el) return null;
-    const chip = el.closest('[tabindex]');
-    return chip ? getComputedStyle(chip).backgroundColor : null;
-  });
-  if (cashSelected !== 'rgb(26, 26, 26)') {
+
+  // Enable Cash, Venmo, and PayPal (Card and Cash App Pay need a real
+  // Stripe Connect account, which this throwaway demo store deliberately
+  // doesn't have — but showing only Cash at checkout would wrongly suggest
+  // it's the only option, so these two self-reported methods stand in for
+  // "vendors can accept several ways to pay").
+  async function isChipSelected(label) {
+    return page.evaluate((lbl) => {
+      const els = Array.from(document.querySelectorAll('div'));
+      const el = els.find((e) => e.textContent.trim() === lbl && e.children.length === 0);
+      if (!el) return false;
+      const chip = el.closest('[tabindex]');
+      return chip ? getComputedStyle(chip).backgroundColor === 'rgb(26, 26, 26)' : false;
+    }, label);
+  }
+
+  let changedPaymentMethods = false;
+  if (!(await isChipSelected('Cash'))) {
     await clickStep(page, page.getByText('Cash', { exact: true }), 'Turning on Cash as a payment method...');
+    changedPaymentMethods = true;
+  }
+  if (!(await isChipSelected('Venmo'))) {
+    await clickStep(page, page.getByText('Venmo', { exact: true }), 'Also turning on Venmo...');
+    await typeStep(page, page.getByPlaceholder('e.g. Four-Seasons-Studio'), 'TwinMaplesStudio');
+    changedPaymentMethods = true;
+  }
+  if (!(await isChipSelected('PayPal'))) {
+    await clickStep(page, page.getByText('PayPal', { exact: true }), 'And PayPal...');
+    await typeStep(page, page.getByPlaceholder('e.g. FourSeasonsStudio'), 'TwinMaplesStudio');
+    changedPaymentMethods = true;
+  }
+  if (changedPaymentMethods) {
     await clickStep(page, page.getByText('Save changes', { exact: true }), null, { pauseAfter: 1600 });
     const okVisible = await page.getByText('OK', { exact: true }).isVisible().catch(() => false);
     if (okVisible) await page.getByText('OK', { exact: true }).click();
-    log('Enabled Cash payment method.');
+    log('Updated payment methods (Cash/Venmo/PayPal).');
   } else {
-    log('Cash already enabled — skipping.');
+    log('Cash/Venmo/PayPal already enabled — skipping.');
   }
   await page.getByText('← Back to Settings', { exact: true }).click();
   await page.waitForTimeout(400);
@@ -243,7 +266,8 @@ async function main() {
     pauseAfter: 1600,
   });
   await clickStep(page, page.getByText('No tip', { exact: true }), 'Skipping the tip...', { pauseAfter: 1600 });
-  await clickStep(page, page.getByText('Cash', { exact: true }), 'Paying with cash...', { pauseAfter: 1800 });
+  await setCaption(page, 'Buyers can pay with Venmo, PayPal, cash — or card and Cash App Pay once Stripe is connected.', 3200);
+  await clickStep(page, page.getByText('Cash', { exact: true }), "We'll pick cash for this one...", { pauseAfter: 1800 });
   await clickStep(page, page.getByText('Confirm Paid', { exact: true }), 'Confirming payment received...', {
     pauseAfter: 2600,
   });
