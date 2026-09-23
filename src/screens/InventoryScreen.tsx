@@ -9,6 +9,7 @@ import AppModal from '../components/AppModal';
 import PrintLabelsOverlay, { LabelFields } from '../components/PrintLabelsOverlay';
 import PrintLabelsBuilderScreen, { printQueueStorageKey, QueueEntry } from './PrintLabelsBuilderScreen';
 import ImportPrintOrderScreen from './ImportPrintOrderScreen';
+import OnboardingChecklist from '../components/OnboardingChecklist';
 import { LabelSizeKey, labelSizeFor } from '../lib/labelSizes';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 import { thumbUrl } from '../lib/images';
@@ -118,7 +119,11 @@ function PieceRow({
   );
 }
 
-export default function InventoryScreen() {
+export default function InventoryScreen({
+  onNavigate,
+}: {
+  onNavigate: (page: 'deals' | 'settings') => void;
+}) {
   const { pieces, loading, error } = usePieces();
   const { store } = useAuth();
   const [editingPiece, setEditingPiece] = useState<Piece | null>(null);
@@ -241,6 +246,9 @@ export default function InventoryScreen() {
           />
         )}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ListHeaderComponent={
+          <OnboardingChecklist onAddPiece={openAddNew} onNavigate={onNavigate} />
+        }
         ListEmptyComponent={
           <Text style={styles.emptyText}>No pieces yet — tap "+ Add Piece" to create one.</Text>
         }

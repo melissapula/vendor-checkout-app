@@ -135,6 +135,7 @@ export type Store = {
   admin_pin: string;
   require_admin_pin: boolean;
   low_stock_threshold: number;
+  terms_accepted_at: string | null;
   created_at: string;
   enabled_payment_methods: PaymentMethod[];
   pass_fee_to_buyer: boolean;

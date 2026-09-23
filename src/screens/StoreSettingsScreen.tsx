@@ -15,6 +15,7 @@ import { useSales } from '../context/SalesContext';
 import { appAlert } from '../lib/alert';
 import { exportInventoryCsv, exportSalesCsv } from '../lib/dataExport';
 import PaymentSettingsScreen from './PaymentSettingsScreen';
+import TermsScreen from './TermsScreen';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 
 export default function StoreSettingsScreen() {
@@ -28,7 +29,7 @@ export default function StoreSettingsScreen() {
     store?.low_stock_threshold != null ? String(store.low_stock_threshold) : '3'
   );
   const [submitting, setSubmitting] = useState(false);
-  const [view, setView] = useState<'main' | 'payments'>('main');
+  const [view, setView] = useState<'main' | 'payments' | 'terms'>('main');
   const { isTabletUp } = useBreakpoint();
 
   if (view === 'payments') {
@@ -40,6 +41,10 @@ export default function StoreSettingsScreen() {
         <PaymentSettingsScreen />
       </View>
     );
+  }
+
+  if (view === 'terms') {
+    return <TermsScreen onClose={() => setView('main')} />;
   }
 
   async function handleSave() {
@@ -122,6 +127,10 @@ export default function StoreSettingsScreen() {
 
       <Pressable style={styles.paymentSettingsRow} onPress={() => setView('payments')}>
         <Text style={styles.paymentSettingsText}>Payment Methods →</Text>
+      </Pressable>
+
+      <Pressable style={styles.paymentSettingsRow} onPress={() => setView('terms')}>
+        <Text style={styles.paymentSettingsText}>Terms of Service & Privacy Policy →</Text>
       </Pressable>
 
       <View style={styles.divider} />

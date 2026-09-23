@@ -173,7 +173,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // brand-new store starts with — card/Cash App Pay need Stripe Connect,
       // Venmo/PayPal need a handle, so all three stay unselected in Payment
       // Settings until the vendor actually configures them.
-      .insert({ owner_id: session.user.id, name, admin_pin: adminPin, enabled_payment_methods: ['cash'] })
+      .insert({
+        owner_id: session.user.id,
+        name,
+        admin_pin: adminPin,
+        enabled_payment_methods: ['cash'],
+        // The UI only calls this once the Terms/Privacy checkbox on
+        // CreateStoreScreen is checked, so acceptance is stamped right here
+        // rather than needing a separate write.
+        terms_accepted_at: new Date().toISOString(),
+      })
       .select()
       .single();
     if (error) throw error;

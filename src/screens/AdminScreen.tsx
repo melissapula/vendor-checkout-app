@@ -53,7 +53,7 @@ export default function AdminScreen() {
       </View>
 
       <View style={styles.body}>
-        {page === 'inventory' && <InventoryScreen />}
+        {page === 'inventory' && <InventoryScreen onNavigate={setPage} />}
         {page === 'cart' && <CartScreen />}
         {page === 'deals' && <DealsScreen />}
         {page === 'reports' && <ReportsScreen />}

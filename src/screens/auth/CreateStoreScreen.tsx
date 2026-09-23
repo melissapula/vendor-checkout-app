@@ -5,11 +5,14 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { appAlert } from '../../lib/alert';
 import { redeemBetaCode } from '../../lib/betaInvite';
+import AppModal from '../../components/AppModal';
+import TermsScreen from '../TermsScreen';
 
 // One line to update if the beta's point of contact changes — surfaced to
 // every new vendor on this screen.
@@ -20,6 +23,8 @@ export default function CreateStoreScreen() {
   const [name, setName] = useState('');
   const [pin, setPin] = useState('');
   const [inviteCode, setInviteCode] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [termsOpen, setTermsOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   async function handleCreate() {
@@ -33,6 +38,10 @@ export default function CreateStoreScreen() {
     }
     if (!/^\d{4,6}$/.test(pin)) {
       appAlert('Invalid PIN', 'Pick a 4–6 digit staff PIN.');
+      return;
+    }
+    if (!termsAccepted) {
+      appAlert('Terms required', 'Please agree to the Terms of Service and Privacy Policy to continue.');
       return;
     }
     setSubmitting(true);
@@ -94,6 +103,18 @@ export default function CreateStoreScreen() {
         onSubmitEditing={handleCreate}
       />
 
+      <Pressable style={styles.termsRow} onPress={() => setTermsAccepted((v) => !v)}>
+        <View style={[styles.checkbox, termsAccepted && styles.checkboxChecked]}>
+          {termsAccepted && <Text style={styles.checkmark}>✓</Text>}
+        </View>
+        <Text style={styles.termsText}>
+          I agree to the{' '}
+          <Text style={styles.termsLink} onPress={() => setTermsOpen(true)}>
+            Terms of Service and Privacy Policy
+          </Text>
+        </Text>
+      </Pressable>
+
       <Pressable style={[styles.submitButton, submitting && styles.disabled]} disabled={submitting} onPress={handleCreate}>
         {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitButtonText}>Create store</Text>}
       </Pressable>
@@ -101,6 +122,10 @@ export default function CreateStoreScreen() {
       <Pressable disabled={submitting} onPress={signOut}>
         <Text style={styles.signOut}>Sign out</Text>
       </Pressable>
+
+      <AppModal visible={termsOpen} onRequestClose={() => setTermsOpen(false)}>
+        <TermsScreen onClose={() => setTermsOpen(false)} />
+      </AppModal>
     </SafeAreaView>
   );
 }
@@ -129,6 +154,26 @@ const styles = StyleSheet.create({
     maxWidth: 280,
     textAlign: 'center',
   },
+  termsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 14,
+    maxWidth: 280,
+    gap: 10,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#999',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxChecked: { backgroundColor: '#1a1a1a', borderColor: '#1a1a1a' },
+  checkmark: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  termsText: { fontSize: 13, color: '#333', flexShrink: 1 },
+  termsLink: { textDecorationLine: 'underline', fontWeight: '600' },
   submitButton: {
     backgroundColor: '#1a1a1a',
     paddingVertical: 14,
