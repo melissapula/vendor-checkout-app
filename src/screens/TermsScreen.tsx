@@ -6,7 +6,7 @@ import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive'
 // date changes.
 const SERVICE_NAME = 'MFP Apps';
 const CONTACT_EMAIL = 'mfpstudioart@gmail.com';
-const LAST_UPDATED = 'September 2026';
+const LAST_UPDATED = 'October 2026';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -35,9 +35,8 @@ export default function TermsScreen({ onClose }: { onClose: () => void }) {
       <ScrollView contentContainerStyle={[styles.scroll, centeredColumn(isTabletUp, CONTENT_WIDTH.narrow)]}>
         <View style={styles.draftNotice}>
           <Text style={styles.draftNoticeText}>
-            This app is currently in a private beta. This document is a good-faith working draft, not
-            something an attorney has reviewed — it'll be finalized before any public or paid launch.
-            Last updated {LAST_UPDATED}.
+            This app is currently in beta. This document is a good-faith working draft, not
+            something an attorney has reviewed. Last updated {LAST_UPDATED}.
           </Text>
         </View>
 

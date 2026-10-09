@@ -30,7 +30,19 @@ export default function AuthScreen({ onForgotPassword }: { onForgotPassword: () 
     setSubmitting(true);
     try {
       if (mode === 'sign-up') {
-        await signUp(email.trim(), password);
+        const { needsEmailConfirmation } = await signUp(email.trim(), password);
+        if (needsEmailConfirmation) {
+          // The confirmation link lands back on this screen signed out (see
+          // detectSessionInUrl in src/lib/supabase.ts), so leave it on
+          // sign-in with the email still filled in.
+          setMode('sign-in');
+          setPassword('');
+          setConfirmPassword('');
+          appAlert(
+            'Check your email',
+            `We sent a confirmation link to ${email.trim()}. Click it, then come back here and sign in.`
+          );
+        }
       } else {
         await signIn(email.trim(), password);
       }

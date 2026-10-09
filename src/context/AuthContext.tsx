@@ -7,7 +7,7 @@ interface AuthContextValue {
   session: Session | null;
   authLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<{ needsEmailConfirmation: boolean }>;
   signOut: () => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
   confirmPasswordReset: (email: string, code: string, newPassword: string) => Promise<void>;
@@ -126,16 +126,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function signUp(email: string, password: string) {
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
-    // If the Supabase project still has "Confirm email" turned on, signUp
-    // succeeds (account exists) but returns no session — so the UI would
-    // otherwise just sit there with no feedback. This app's onboarding is
-    // designed for immediate access (see README's "Multi-tenant" section),
-    // so surface this clearly instead of silently doing nothing.
-    if (!data.session) {
-      throw new Error(
-        'Your account was created, but email confirmation is turned on for this project, so you\'re not signed in yet. Check your email for a confirmation link, or — for instant access next time — turn off "Confirm email" under Authentication > Sign In / Providers > Email in the Supabase dashboard.'
-      );
-    }
+    // With "Confirm email" turned on in the Supabase project, signUp succeeds
+    // (account exists) but returns no session until the emailed link is
+    // clicked — so the UI would otherwise just sit there with no feedback.
+    // Returning that to the caller lets AuthScreen tell the user to go check
+    // their inbox. Still returns false if the setting is ever turned back off.
+    return { needsEmailConfirmation: !data.session };
   }
 
   async function signOut() {

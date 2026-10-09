@@ -10,7 +10,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { appAlert } from '../../lib/alert';
-import { redeemBetaCode } from '../../lib/betaInvite';
 import AppModal from '../../components/AppModal';
 import TermsScreen from '../TermsScreen';
 
@@ -22,16 +21,11 @@ export default function CreateStoreScreen() {
   const { createStore, signOut } = useAuth();
   const [name, setName] = useState('');
   const [pin, setPin] = useState('');
-  const [inviteCode, setInviteCode] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   async function handleCreate() {
-    if (!inviteCode.trim()) {
-      appAlert('Missing invite code', "This app is invite-only during beta — enter the code you were given.");
-      return;
-    }
     if (!name.trim()) {
       appAlert('Missing name', 'Give your store a name — customers will see this.');
       return;
@@ -46,11 +40,6 @@ export default function CreateStoreScreen() {
     }
     setSubmitting(true);
     try {
-      const valid = await redeemBetaCode(inviteCode.trim());
-      if (!valid) {
-        appAlert('Invalid invite code', "That code isn't valid or has already been used — check it and try again.");
-        return;
-      }
       await createStore(name.trim(), pin);
     } catch (err) {
       appAlert('Could not create store', err instanceof Error ? err.message : 'Please try again.');
@@ -67,19 +56,9 @@ export default function CreateStoreScreen() {
       </Text>
 
       <Text style={styles.betaNotice}>
-        This app is currently in beta and invite-only. Expect occasional bugs, and please keep your own
+        This app is currently in beta. Expect occasional bugs, and please keep your own
         backup of anything important. Questions or something broken? {BETA_CONTACT}
       </Text>
-
-      <Text style={styles.label}>Invite code</Text>
-      <TextInput
-        style={styles.input}
-        value={inviteCode}
-        onChangeText={setInviteCode}
-        placeholder="Enter the code you were given"
-        autoCapitalize="characters"
-        onSubmitEditing={handleCreate}
-      />
 
       <TextInput
         style={styles.input}

@@ -149,8 +149,8 @@ isolation is Supabase Auth + RLS's job (see "Multi-tenant" below), not the PIN's
 ## Multi-tenant
 
 Originally single-tenant (all data was implicitly Chrissy's). Now every
-business signs up with email/password (Supabase Auth — no email confirmation
-step, so access is immediate) and gets one `stores` row tied to their
+business signs up with email/password (Supabase Auth — with "Confirm email" turned
+on in the project, so they click an emailed link before their first sign-in) and gets one `stores` row tied to their
 `auth.users` id. `pieces`/`sales`/`deals` all carry a `store_id`,
 stamped server-side by a Postgres trigger on every insert/update (so a client
 can't spoof another store's id even by accident) and enforced by RLS scoped
