@@ -10,6 +10,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { appAlert } from '../../lib/alert';
 
+// Shown to new users so they know what to look for in their inbox — must
+// match the sender address in the Supabase project's custom SMTP settings.
+const CONFIRMATION_SENDER = 'mfpstudioart@gmail.com';
+
 export default function AuthScreen({ onForgotPassword }: { onForgotPassword: () => void }) {
   const { signIn, signUp } = useAuth();
   const [mode, setMode] = useState<'sign-in' | 'sign-up'>('sign-up');
@@ -39,8 +43,8 @@ export default function AuthScreen({ onForgotPassword }: { onForgotPassword: () 
           setPassword('');
           setConfirmPassword('');
           appAlert(
-            'Check your email',
-            `We sent a confirmation link to ${email.trim()}. Click it, then come back here and sign in.`
+            "You're almost in!",
+            `We just sent a confirmation email to ${email.trim()}. It will come from ${CONFIRMATION_SENDER}, so check your spam folder if you don't see it in a few minutes. Click the button in that email, then come back here and sign in.`
           );
         }
       } else {
