@@ -44,7 +44,7 @@ export default function AuthScreen({ onForgotPassword }: { onForgotPassword: () 
           setConfirmPassword('');
           appAlert(
             "You're almost in!",
-            `We just sent a confirmation email to ${email.trim()}. It will come from ${CONFIRMATION_SENDER}, so check your spam folder if you don't see it in a few minutes. Click the button in that email, then come back here and sign in.`
+            `We just sent a confirmation email to ${email.trim()}. It will come from ${CONFIRMATION_SENDER} and can take a few minutes to arrive. Don't see it? Please check your spam or junk folder, since it sometimes lands there. Click the button in that email, then come back here and sign in.`
           );
         }
       } else {
