@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Piece } from '../types/database';
 import { usePieces, isSellable } from '../context/PiecesContext';
 import { useCart } from '../context/CartContext';
@@ -138,7 +138,23 @@ export default function InventoryScreen({
   );
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
   const [adjustingPiece, setAdjustingPiece] = useState<Piece | null>(null);
+  const [search, setSearch] = useState('');
   const { isTabletUp } = useBreakpoint();
+
+  // Every typed word has to appear somewhere in the piece's details, in any
+  // order — so "sunset 4x6" finds the 4x6 print of Sunset without needing
+  // the exact title.
+  const visiblePieces = useMemo(() => {
+    const words = search.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    if (words.length === 0) return pieces;
+    return pieces.filter((p) => {
+      const haystack = [p.title, p.sku, p.size, p.series, p.medium, p.type]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return words.every((w) => haystack.includes(w));
+    });
+  }, [pieces, search]);
 
   useEffect(() => {
     if (!justAddedId) return;
@@ -228,10 +244,25 @@ export default function InventoryScreen({
 
   return (
     <>
+      <View style={[styles.searchBar, centeredColumn(isTabletUp, CONTENT_WIDTH.wide)]}>
+        <TextInput
+          style={styles.searchInput}
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Search by title, SKU, size…"
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+        {search.length > 0 && (
+          <Pressable style={styles.searchClear} onPress={() => setSearch('')} hitSlop={10}>
+            <Text style={styles.searchClearText}>✕</Text>
+          </Pressable>
+        )}
+      </View>
       <FlatList
         style={styles.list}
         contentContainerStyle={centeredColumn(isTabletUp, CONTENT_WIDTH.wide)}
-        data={pieces}
+        data={visiblePieces}
         keyExtractor={(p) => p.id}
         renderItem={({ item }) => (
           <PieceRow
@@ -250,7 +281,11 @@ export default function InventoryScreen({
           <OnboardingChecklist onAddPiece={openAddNew} onNavigate={onNavigate} />
         }
         ListEmptyComponent={
-          <Text style={styles.emptyText}>No pieces yet — tap "+ Add Piece" to create one.</Text>
+          <Text style={styles.emptyText}>
+            {pieces.length > 0
+              ? `No pieces match "${search.trim()}".`
+              : 'No pieces yet — tap "+ Add Piece" to create one.'}
+          </Text>
         }
       />
       <View style={[styles.footer, centeredColumn(isTabletUp, CONTENT_WIDTH.wide)]}>
@@ -315,6 +350,27 @@ export default function InventoryScreen({
 
 const styles = StyleSheet.create({
   list: { flex: 1, backgroundColor: '#fff' },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  searchInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+  },
+  searchClear: { paddingHorizontal: 4 },
+  searchClearText: { fontSize: 18, color: '#666' },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   errorText: { color: '#b00020', textAlign: 'center' },
   emptyText: { color: '#666', fontSize: 15, textAlign: 'center', padding: 24 },
