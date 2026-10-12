@@ -41,7 +41,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const { pieces } = usePieces();
-  const { store } = useAuth();
+  const { store, isDemo } = useAuth();
 
   // The cart is shared across every device signed into this store — one
   // row per store in `store_carts`, synced live via Realtime — rather than
@@ -102,8 +102,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // slow network round-trip never blocks this device's own UI. Other
   // devices pick up the change via the Realtime subscription above; this
   // device's own echo of that same change is a harmless no-op re-render.
+  //
+  // The demo store is read-only, so there the cart simply stays on this
+  // device: each visitor gets their own to play with, and nothing is sent.
   function persist(nextItems: CartItem[]) {
-    if (!store || !hydrated) return;
+    if (!store || !hydrated || isDemo) return;
     supabase
       .from('store_carts')
       .upsert({ store_id: store.id, items: nextItems as unknown as never })

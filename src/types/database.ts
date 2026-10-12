@@ -136,6 +136,9 @@ export type Store = {
   require_admin_pin: boolean;
   low_stock_threshold: number;
   terms_accepted_at: string | null;
+  // Only ever true for the public demo store, which the database treats as
+  // read-only. See supabase/migrations/0020_demo_read_only.sql.
+  is_demo: boolean;
   created_at: string;
   enabled_payment_methods: PaymentMethod[];
   pass_fee_to_buyer: boolean;

@@ -36,7 +36,7 @@ function formatRatePercent(rate: number): string {
 }
 
 export default function PaymentSettingsScreen() {
-  const { store, updateStore, refreshStore } = useAuth();
+  const { store, updateStore, refreshStore, isDemo } = useAuth();
   const [enabled, setEnabled] = useState<PaymentMethod[]>(store?.enabled_payment_methods ?? []);
   const [passFeeToBuyer, setPassFeeToBuyer] = useState(store?.pass_fee_to_buyer ?? false);
   const [venmoUsername, setVenmoUsername] = useState(store?.venmo_username ?? '');
@@ -98,6 +98,13 @@ export default function PaymentSettingsScreen() {
   async function handleConnectStripe() {
     if (Platform.OS !== 'web') {
       appAlert('Web only', 'Connect Stripe from the web app.');
+      return;
+    }
+    if (isDemo) {
+      appAlert(
+        'Not available in the demo',
+        "Connecting Stripe sets up a real payments account, so it's turned off in the shared demo store. Create your own account to accept card and Cash App Pay payments."
+      );
       return;
     }
     setConnecting(true);

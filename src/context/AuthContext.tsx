@@ -2,10 +2,13 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { Store } from '../types/database';
+import { isDemoEmail } from '../lib/demo';
 
 interface AuthContextValue {
   session: Session | null;
   authLoading: boolean;
+  // True when signed into the shared public demo store (see src/lib/demo.ts).
+  isDemo: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<{ needsEmailConfirmation: boolean }>;
   signOut: () => Promise<void>;
@@ -204,6 +207,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         session,
         authLoading,
+        isDemo: isDemoEmail(session?.user.email),
         signIn,
         signUp,
         signOut,

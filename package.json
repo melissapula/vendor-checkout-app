@@ -34,7 +34,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "deploy:web": "expo export --platform web && eas deploy --prod",
-    "record-demo": "node scripts/record-demo.js"
+    "record-demo": "node scripts/record-demo.js",
+    "seed-demo": "node scripts/seed-demo.js"
   },
   "private": true
 }

@@ -18,6 +18,7 @@ import CreateStoreScreen from './src/screens/auth/CreateStoreScreen';
 import ResetPasswordScreen from './src/screens/auth/ResetPasswordScreen';
 import AlertHost from './src/components/AlertHost';
 import OfflineBanner from './src/components/OfflineBanner';
+import DemoBanner from './src/components/DemoBanner';
 
 function AppGate() {
   const { session, authLoading, store, storeLoading, storeError, retryStoreFetch } = useAuth();
@@ -92,6 +93,7 @@ export default function App() {
       <ConnectivityProvider>
         <OfflineBanner />
         <AuthProvider>
+          <DemoBanner />
           <AppGate />
           <StatusBar style="auto" />
         </AuthProvider>

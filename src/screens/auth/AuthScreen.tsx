@@ -5,10 +5,12 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { appAlert } from '../../lib/alert';
+import { DEMO_EMAIL, DEMO_PASSWORD } from '../../lib/demo';
 
 // Shown to new users so they know what to look for in their inbox — must
 // match the sender address in the Supabase project's custom SMTP settings.
@@ -53,6 +55,20 @@ export default function AuthScreen({ onForgotPassword }: { onForgotPassword: () 
     } catch (err) {
       appAlert(
         mode === 'sign-up' ? 'Sign up failed' : 'Sign in failed',
+        err instanceof Error ? err.message : 'Something went wrong — check your connection and try again.'
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleExploreDemo() {
+    setSubmitting(true);
+    try {
+      await signIn(DEMO_EMAIL, DEMO_PASSWORD);
+    } catch (err) {
+      appAlert(
+        'Could not open the demo',
         err instanceof Error ? err.message : 'Something went wrong — check your connection and try again.'
       );
     } finally {
@@ -125,6 +141,24 @@ export default function AuthScreen({ onForgotPassword }: { onForgotPassword: () 
           <Text style={styles.toggle}>Forgot password?</Text>
         </Pressable>
       )}
+
+      <View style={styles.demoBox}>
+        <Text style={styles.demoHeading}>Just looking?</Text>
+        <Text style={styles.demoText}>
+          Explore a sample art booth with inventory, past art fairs and sales reports already filled in. No sign-up
+          needed.
+        </Text>
+        <Pressable
+          style={[styles.demoButton, submitting && styles.disabled]}
+          disabled={submitting}
+          onPress={handleExploreDemo}
+        >
+          <Text style={styles.demoButtonText}>Explore the demo store</Text>
+        </Pressable>
+        <Text style={styles.demoCredentials}>
+          Or sign in with {DEMO_EMAIL} and the password {DEMO_PASSWORD}
+        </Text>
+      </View>
     </SafeAreaView>
   );
 }
@@ -155,4 +189,27 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.6 },
   submitButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   toggle: { color: '#666', marginTop: 8 },
+  demoBox: {
+    marginTop: 20,
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: '#f6f4ef',
+    width: '100%',
+    maxWidth: 320,
+    alignItems: 'center',
+    gap: 8,
+  },
+  demoHeading: { fontSize: 16, fontWeight: '700' },
+  demoText: { fontSize: 13, color: '#555', textAlign: 'center' },
+  demoButton: {
+    borderWidth: 1,
+    borderColor: '#1a1a1a',
+    backgroundColor: '#fff',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    marginTop: 4,
+  },
+  demoButtonText: { color: '#1a1a1a', fontWeight: '700', fontSize: 15 },
+  demoCredentials: { fontSize: 12, color: '#777', textAlign: 'center' },
 });

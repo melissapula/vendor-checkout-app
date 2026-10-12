@@ -15,11 +15,29 @@ const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
   httpClient: Stripe.createFetchHttpClient(),
 });
 
+const DEMO_EMAIL = 'demo@example.com';
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
     const { supabase, store } = await getCallingStore(req);
+
+    // The shared public demo store (see src/lib/demo.ts) must never get a
+    // real connected account — its login is published on the sign-in
+    // screen, so anyone could otherwise attach their own Stripe identity
+    // to it. The app hides this path for the demo too; this is the check
+    // that actually enforces it.
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (store.is_demo || user?.email?.toLowerCase() === DEMO_EMAIL) {
+      return new Response(JSON.stringify({ error: 'Stripe is turned off in the demo store' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const { returnUrl, refreshUrl } = await req.json();
     if (!returnUrl || !refreshUrl) {
       return new Response(JSON.stringify({ error: 'returnUrl and refreshUrl are required' }), {

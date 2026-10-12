@@ -14,8 +14,12 @@ interface AppModeContextValue {
 const AppModeContext = createContext<AppModeContextValue | null>(null);
 
 export function AppModeProvider({ children }: { children: React.ReactNode }) {
-  const [mode, setMode] = useState<Mode>('customer');
-  const { store } = useAuth();
+  const { store, isDemo } = useAuth();
+  // A real store opens on the customer-facing screen, since that's what a
+  // booth's device should show by default. Someone exploring the demo
+  // store is there to see the vendor side, and the customer screen is
+  // nearly blank until a cart exists — so the demo opens straight into it.
+  const [mode, setMode] = useState<Mode>(isDemo ? 'admin' : 'customer');
 
   // Defaults to requiring the PIN (matches the DB column's default) unless
   // a vendor has explicitly turned it off in Store Settings — a solo seller

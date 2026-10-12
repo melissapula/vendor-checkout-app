@@ -7,6 +7,7 @@ import { usePieces } from '../context/PiecesContext';
 import { useAdjustments } from '../context/AdjustmentsContext';
 import { useEvents, eventForDate } from '../context/EventsContext';
 import { useSavedReports } from '../context/SavedReportsContext';
+import { useAuth } from '../context/AuthContext';
 import {
   Sale,
   PaymentMethod,
@@ -128,8 +129,11 @@ function SalesReport() {
   const { pieces, applyPieceUpdates } = usePieces();
   const { events } = useEvents();
   const { addSavedReport } = useSavedReports();
+  const { isDemo } = useAuth();
 
-  const [dateRange, setDateRange] = useState<DateRange>('today');
+  // The demo store's sales are all in the past, so "Today" would greet a
+  // visitor with an empty report.
+  const [dateRange, setDateRange] = useState<DateRange>(isDemo ? 'all' : 'today');
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
   const [methodFilter, setMethodFilter] = useState<PaymentMethod | 'all'>('all');
@@ -541,7 +545,9 @@ function AdjustmentsReport() {
   const { adjustments, loading, error } = useAdjustments();
   const { pieces } = usePieces();
 
-  const [dateRange, setDateRange] = useState<DateRange>('today');
+  const { isDemo } = useAuth();
+  // Same reason as SalesReport: the demo store's entries are all in the past.
+  const [dateRange, setDateRange] = useState<DateRange>(isDemo ? 'all' : 'today');
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
   const [typeFilter, setTypeFilter] = useState<AdjustmentType | 'all'>('all');
@@ -843,7 +849,7 @@ function SavedReportDetail({
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#fff' },
-  viewToggleRow: { flexDirection: 'row', gap: 8, padding: 16, paddingBottom: 0 },
+  viewToggleRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, padding: 16, paddingBottom: 0 },
   viewChip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8, backgroundColor: '#f0f0f0' },
   viewChipSelected: { backgroundColor: '#1a1a1a' },
   viewChipText: { fontWeight: '700', color: '#1a1a1a' },

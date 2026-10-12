@@ -180,6 +180,45 @@ deletion/data export, in-app billing (subscriptions are handled outside the
 app, e.g. Stripe/invoice). Per-store fee rates *were* on this list but have
 since shipped — see "Checkout payments" below.
 
+### Public demo store
+
+The sign-in screen has an "Explore the demo store" button that signs into a
+shared sample store, "Juniper Lane Studio" (login in `src/lib/demo.ts` — it's
+public on purpose). `npm run seed-demo` (`scripts/seed-demo.js`) creates it,
+and re-running it wipes and refills it: 26 pieces with thumbnails (the SVGs
+in `public/demo/`), three past art fairs plus one upcoming, their sales,
+deals, loss/donation entries and two saved reports. Dates are recalculated
+relative to the day it runs, and it puts the login's password back if a
+visitor changed it — so re-run it whenever the demo looks stale. It needs a
+logged-in Supabase CLI, since creating the login, flipping the store's
+`is_demo` flag and clearing the append-only loss/donation log all need the
+service-role key.
+
+The demo is read-only, enforced in two places that apply the same rule:
+
+- **Database** (`supabase/migrations/0020_demo_read_only.sql`): restrictive
+  row-level-security policies refuse every insert, update and delete from
+  whoever owns a store with `is_demo = true`. This is the real lock — it
+  holds even against someone calling the API directly with the demo login.
+  The seed script switches `is_demo` off, refills, switches it back on, and
+  then checks that a write as the demo login is refused.
+- **App** (`demoGuardedFetch` in `src/lib/supabase.ts`): every request to
+  Supabase passes through one function, which refuses the demo's writes
+  before they are sent and shows a single "The demo is read-only" message
+  (`showDemoReadOnlyAlert` in `src/lib/alert.ts`). This is only for a
+  friendly experience; it runs in the visitor's browser and can be bypassed.
+
+Not covered by either: the login itself lives in Supabase Auth, outside
+those tables, so a visitor calling the API directly could still change the
+demo password. Re-running the seed script puts it back.
+
+A few other things behave differently when signed in as the demo (`isDemo`
+on `AuthContext`): the app opens on the admin Inventory screen instead of
+the customer screen, Reports opens on "All time", a banner offers "Exit
+demo", connecting Stripe is refused (in `PaymentSettingsScreen.tsx` and,
+enforced, in the `stripe-connect-onboarding` function), and the cart stays
+on the visitor's own device instead of syncing through `store_carts`.
+
 ## Barcode labels
 
 Labels are built with a dedicated screen, `PrintLabelsBuilderScreen.tsx`
