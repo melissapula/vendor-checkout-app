@@ -9,9 +9,11 @@ import { useAuth } from '../context/AuthContext';
 import { useScanToCart } from '../lib/scanToCart';
 import HiddenScanCapture from '../components/HiddenScanCapture';
 import CameraScanner from '../components/CameraScanner';
+import AppModal from '../components/AppModal';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 import { thumbUrl } from '../lib/images';
 import CheckoutScreen from './CheckoutScreen';
+import { colors } from '../lib/theme';
 
 function CustomerRow({ item }: { item: CartItem }) {
   const price = effectivePrice(item);
@@ -43,6 +45,7 @@ export default function CustomerScreen() {
   const { isTabletUp } = useBreakpoint();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [scanMessage, setScanMessage] = useState<{ text: string; ok: boolean } | null>(null);
 
   const dealsResult = useMemo(() => evaluateDeals(items, deals), [items, deals]);
@@ -60,9 +63,16 @@ export default function CustomerScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      {/* Same title-with-dropdown as the admin side (AdminScreen.tsx), so
+          the way back into staff mode is in the same place in both views. */}
+      <View style={styles.titleBar}>
+        <Pressable style={styles.menuButton} onPress={() => setMenuOpen(true)}>
+          <Text style={styles.menuButtonText}>{store?.name} ▾</Text>
+        </Pressable>
+      </View>
+
       <View style={[styles.content, centeredColumn(isTabletUp, CONTENT_WIDTH.wide)]}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>{store?.name}</Text>
           <Pressable style={styles.cameraButton} onPress={() => setCameraOpen(true)}>
             <Text style={styles.cameraButtonText}>Scan with camera</Text>
           </Pressable>
@@ -116,9 +126,23 @@ export default function CustomerScreen() {
         )}
       </View>
 
-      <Pressable style={styles.staffButton} onPress={requestAdmin} hitSlop={12}>
-        <Text style={styles.staffButtonText}>Staff Access</Text>
-      </Pressable>
+      <AppModal visible={menuOpen} transparent onRequestClose={() => setMenuOpen(false)}>
+        <Pressable style={styles.backdrop} onPress={() => setMenuOpen(false)}>
+          <SafeAreaView edges={['top']} style={styles.menuWrap}>
+            <View style={styles.menu}>
+              <Pressable
+                style={styles.menuItem}
+                onPress={() => {
+                  setMenuOpen(false);
+                  requestAdmin();
+                }}
+              >
+                <Text style={styles.menuItemText}>Staff Access</Text>
+              </Pressable>
+            </View>
+          </SafeAreaView>
+        </Pressable>
+      </AppModal>
 
       <CameraScanner
         visible={cameraOpen}
@@ -135,26 +159,50 @@ export default function CustomerScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: colors.background },
   content: { flex: 1 },
-  header: { paddingTop: 20, paddingBottom: 20, alignItems: 'center', gap: 10 },
-  headerTitle: { fontSize: 22, fontWeight: '700' },
+  titleBar: {
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  menuButton: { paddingVertical: 4, paddingHorizontal: 8 },
+  menuButtonText: { fontSize: 20, fontWeight: '700' },
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.15)' },
+  menuWrap: { alignItems: 'center' },
+  menu: {
+    marginTop: 8,
+    width: 240,
+    backgroundColor: colors.background,
+    borderRadius: 10,
+    paddingVertical: 6,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  menuItem: { paddingVertical: 12, paddingHorizontal: 18 },
+  menuItemText: { fontSize: 16, color: colors.ink },
+  header: { paddingTop: 16, paddingBottom: 16, alignItems: 'center', gap: 10 },
   cameraButton: {
     borderWidth: 1,
-    borderColor: '#1a1a1a',
+    borderColor: colors.primary,
     borderRadius: 8,
     paddingHorizontal: 14,
     paddingVertical: 8,
   },
-  cameraButtonText: { color: '#1a1a1a', fontWeight: '600', fontSize: 13 },
+  cameraButtonText: { color: colors.primary, fontWeight: '600', fontSize: 13 },
   scanMessage: { fontSize: 13, fontWeight: '600' },
   scanMessageOk: { color: '#2a7a2a' },
   scanMessageError: { color: '#b00020' },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   emptyText: { color: '#999', fontSize: 18 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingVertical: 16 },
-  thumb: { width: 56, height: 56, borderRadius: 8, marginRight: 16, backgroundColor: '#f0f0f0' },
-  thumbPlaceholder: { width: 56, height: 56, borderRadius: 8, marginRight: 16, backgroundColor: '#f0f0f0' },
+  thumb: { width: 56, height: 56, borderRadius: 8, marginRight: 16, backgroundColor: colors.chip },
+  thumbPlaceholder: { width: 56, height: 56, borderRadius: 8, marginRight: 16, backgroundColor: colors.chip },
   rowInfo: { flex: 1, marginRight: 12 },
   title: { fontSize: 18, fontWeight: '600' },
   meta: { fontSize: 14, color: '#666', marginTop: 4 },
@@ -170,7 +218,7 @@ const styles = StyleSheet.create({
   totalLabel: { fontSize: 20, fontWeight: '700' },
   totalValue: { fontSize: 20, fontWeight: '700' },
   confirmCartButton: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: colors.primary,
     paddingVertical: 16,
     borderRadius: 10,
     alignItems: 'center',
@@ -179,6 +227,4 @@ const styles = StyleSheet.create({
   confirmCartButtonTabletUp: { paddingVertical: 20 },
   confirmCartButtonText: { color: '#fff', fontWeight: '700', fontSize: 17 },
   confirmCartButtonTextTabletUp: { fontSize: 19 },
-  staffButton: { alignSelf: 'center', paddingVertical: 14, paddingHorizontal: 16 },
-  staffButtonText: { color: '#999', fontSize: 13, fontWeight: '500' },
 });

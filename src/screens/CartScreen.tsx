@@ -11,6 +11,7 @@ import CameraScanner from '../components/CameraScanner';
 import CheckoutScreen from './CheckoutScreen';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 import { thumbUrl } from '../lib/images';
+import { colors } from '../lib/theme';
 
 function CartRow({ item }: { item: CartItem }) {
   const { updateQuantity, removeItem, setItemPrice } = useCart();
@@ -211,7 +212,7 @@ export default function CartScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: colors.background },
   content: { flex: 1 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   emptyText: { color: '#666', fontSize: 15, textAlign: 'center' },
@@ -224,21 +225,23 @@ const styles = StyleSheet.create({
   },
   addItemButton: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: colors.primary,
     borderRadius: 8,
     paddingHorizontal: 14,
+    paddingVertical: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
   addItemButtonText: { color: '#fff', fontWeight: '700', fontSize: 15 },
   cameraButton: {
     borderWidth: 1,
-    borderColor: '#1a1a1a',
+    borderColor: colors.primary,
     borderRadius: 8,
     paddingHorizontal: 14,
+    paddingVertical: 12,
     justifyContent: 'center',
   },
-  cameraButtonText: { color: '#1a1a1a', fontWeight: '600', fontSize: 13 },
+  cameraButtonText: { color: colors.primary, fontWeight: '600', fontSize: 13 },
   scanMessage: { paddingHorizontal: 16, paddingTop: 8, fontSize: 13, fontWeight: '600' },
   scanMessageOk: { color: '#2a7a2a' },
   scanMessageError: { color: '#b00020' },
@@ -249,14 +252,14 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     gap: 10,
   },
-  thumb: { width: 44, height: 44, borderRadius: 6, backgroundColor: '#f0f0f0' },
-  thumbPlaceholder: { width: 44, height: 44, borderRadius: 6, backgroundColor: '#f0f0f0' },
+  thumb: { width: 44, height: 44, borderRadius: 6, backgroundColor: colors.chip },
+  thumbPlaceholder: { width: 44, height: 44, borderRadius: 6, backgroundColor: colors.chip },
   rowInfo: { flex: 1 },
   title: { fontSize: 15, fontWeight: '600' },
   meta: { fontSize: 12, color: '#666', marginTop: 2 },
   priceRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2, flexWrap: 'wrap' },
   priceOriginal: { fontSize: 12, color: '#999', textDecorationLine: 'line-through' },
-  editPriceLink: { fontSize: 11, color: '#1a1a1a', textDecorationLine: 'underline' },
+  editPriceLink: { fontSize: 11, color: colors.primary, textDecorationLine: 'underline' },
   priceEditRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
   priceEditDollar: { fontSize: 14, color: '#666' },
   priceEditInput: {
@@ -268,7 +271,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     width: 70,
   },
-  priceEditSave: { fontSize: 12, color: '#1a1a1a', fontWeight: '700' },
+  priceEditSave: { fontSize: 12, color: colors.ink, fontWeight: '700' },
   priceEditCancel: { fontSize: 12, color: '#666' },
   qtyControls: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   qtyButton: {
@@ -299,7 +302,7 @@ const styles = StyleSheet.create({
   dealApplied: { color: '#2a7a2a', fontSize: 13, fontWeight: '600' },
   dealOverridden: { color: '#999', fontSize: 13, textDecorationLine: 'line-through' },
   checkoutButton: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: colors.primary,
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',

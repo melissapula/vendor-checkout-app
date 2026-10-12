@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppMode } from '../context/AppModeContext';
 import { useAuth } from '../context/AuthContext';
 import { useBreakpoint } from '../lib/responsive';
+import { colors } from '../lib/theme';
 
 export default function AdminPinScreen() {
   const { unlockAdmin, cancelPinEntry } = useAppMode();
@@ -51,7 +52,7 @@ export default function AdminPinScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', padding: 24, gap: 14 },
+  container: { flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 14 },
   heading: { fontSize: 22, fontWeight: '700', marginBottom: 8 },
   input: {
     borderWidth: 1,
@@ -67,7 +68,7 @@ const styles = StyleSheet.create({
   inputTabletUp: { width: 240, fontSize: 22, paddingVertical: 14 },
   error: { color: '#b00020' },
   unlockButton: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: colors.primary,
     paddingVertical: 14,
     paddingHorizontal: 40,
     borderRadius: 8,

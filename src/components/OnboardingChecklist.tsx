@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../context/AuthContext';
 import { usePieces } from '../context/PiecesContext';
 import { useDeals } from '../context/DealsContext';
+import { colors } from '../lib/theme';
 
 function dismissedStorageKey(storeId: string): string {
   return `onboardingDismissed:${storeId}`;
@@ -111,7 +112,7 @@ const styles = StyleSheet.create({
     margin: 16,
     marginBottom: 0,
     padding: 16,
-    backgroundColor: '#f7f7f7',
+    backgroundColor: colors.card,
     borderRadius: 10,
     gap: 10,
   },
@@ -131,7 +132,7 @@ const styles = StyleSheet.create({
   checkboxChecked: { backgroundColor: '#2a7a2a', borderColor: '#2a7a2a' },
   checkmark: { color: '#fff', fontSize: 12, fontWeight: '700' },
   rowInfo: { flex: 1 },
-  rowLabel: { fontSize: 14, color: '#1a1a1a' },
+  rowLabel: { fontSize: 14, color: colors.ink },
   rowLabelDone: { color: '#999', textDecorationLine: 'line-through' },
-  actionLink: { fontSize: 13, color: '#1a1a1a', fontWeight: '600', textDecorationLine: 'underline' },
+  actionLink: { fontSize: 13, color: colors.primary, fontWeight: '600', textDecorationLine: 'underline' },
 });

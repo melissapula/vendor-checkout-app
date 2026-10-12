@@ -5,6 +5,7 @@ import { usePieces } from '../context/PiecesContext';
 import { useAdjustments } from '../context/AdjustmentsContext';
 import { logInventoryAdjustment } from '../lib/adjustments';
 import { appAlert } from '../lib/alert';
+import { colors } from '../lib/theme';
 
 const TYPES: { value: AdjustmentType; label: string }[] = [
   { value: 'loss', label: 'Loss' },
@@ -102,9 +103,9 @@ const styles = StyleSheet.create({
   pieceMeta: { fontSize: 13, color: '#666', marginTop: 2, marginBottom: 16 },
   label: { fontSize: 13, color: '#666', marginTop: 14, marginBottom: 6 },
   typeRow: { flexDirection: 'row', gap: 8 },
-  typeChip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8, backgroundColor: '#f0f0f0' },
-  typeChipSelected: { backgroundColor: '#1a1a1a' },
-  typeChipText: { fontWeight: '600', color: '#1a1a1a' },
+  typeChip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8, backgroundColor: colors.chip },
+  typeChipSelected: { backgroundColor: colors.primary },
+  typeChipText: { fontWeight: '600', color: colors.ink },
   typeChipTextSelected: { color: '#fff' },
   input: {
     borderWidth: 1,
@@ -115,7 +116,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   saveButton: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: colors.primary,
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',

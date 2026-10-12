@@ -139,6 +139,10 @@ export type Store = {
   // Only ever true for the public demo store, which the database treats as
   // read-only. See supabase/migrations/0020_demo_read_only.sql.
   is_demo: boolean;
+  // The saved color theme's name (see src/lib/theme.ts), or null if never
+  // chosen. Optional because the column arrives with migration 0021 — the
+  // app checks for it before trying to save one.
+  theme?: string | null;
   created_at: string;
   enabled_payment_methods: PaymentMethod[];
   pass_fee_to_buyer: boolean;

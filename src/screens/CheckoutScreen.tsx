@@ -22,6 +22,7 @@ import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive'
 import { appAlert } from '../lib/alert';
 import { supabase } from '../lib/supabase';
 import { PaymentMethod, Sale } from '../types/database';
+import { colors } from '../lib/theme';
 
 type NewSale = Omit<Sale, 'id' | 'store_id' | 'refunded_at' | 'refund_reason'>;
 type Step = 'staffSetup' | 'buyerReview' | 'buyerTip' | 'buyerMethod' | 'confirm';
@@ -563,7 +564,7 @@ function SummaryRow({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: colors.background },
   scroll: { padding: 16 },
   qrScroll: { padding: 16, alignItems: 'center' },
   heading: { fontSize: 20, fontWeight: '700', marginBottom: 16 },
@@ -591,7 +592,7 @@ const styles = StyleSheet.create({
   error: { color: '#b00020', textAlign: 'center', marginTop: 8 },
   footer: { padding: 16, borderTopWidth: 1, borderTopColor: '#eee', gap: 10 },
   confirmButton: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: colors.primary,
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',
@@ -612,19 +613,19 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
-  reviewItemName: { fontSize: 16, color: '#1a1a1a', flex: 1, paddingRight: 12 },
-  reviewItemPrice: { fontSize: 16, fontWeight: '600', color: '#1a1a1a' },
+  reviewItemName: { fontSize: 16, color: colors.ink, flex: 1, paddingRight: 12 },
+  reviewItemPrice: { fontSize: 16, fontWeight: '600', color: colors.ink },
 
   tipPresetRow: { flexDirection: 'row', gap: 10 },
   tipPresetButton: {
     flex: 1,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: colors.chip,
     borderRadius: 10,
     paddingVertical: 18,
     alignItems: 'center',
   },
   tipPresetButtonTabletUp: { paddingVertical: 24 },
-  tipPresetPercent: { fontSize: 20, fontWeight: '700', color: '#1a1a1a' },
+  tipPresetPercent: { fontSize: 20, fontWeight: '700', color: colors.ink },
   tipPresetAmount: { fontSize: 13, color: '#666', marginTop: 4 },
   noTipButton: { marginTop: 12, paddingVertical: 12, alignItems: 'center' },
   noTipButtonText: { fontSize: 15, color: '#666', textDecorationLine: 'underline' },
@@ -634,12 +635,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
+    backgroundColor: colors.chip,
     borderRadius: 10,
     paddingVertical: 20,
     paddingHorizontal: 18,
   },
   methodCardTabletUp: { paddingVertical: 26, paddingHorizontal: 24 },
-  methodCardText: { fontSize: 18, fontWeight: '700', color: '#1a1a1a' },
+  methodCardText: { fontSize: 18, fontWeight: '700', color: colors.ink },
   methodCardAmount: { fontSize: 16, fontWeight: '600', color: '#333' },
 });

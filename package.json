@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
+    "@mfp-design-system/tokens": "^0.9.0",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@supabase/supabase-js": "^2.116.0",
     "@zxing/browser": "^0.2.1",
@@ -35,7 +36,8 @@
     "web": "expo start --web",
     "deploy:web": "expo export --platform web && eas deploy --prod",
     "record-demo": "node scripts/record-demo.js",
-    "seed-demo": "node scripts/seed-demo.js"
+    "seed-demo": "node scripts/seed-demo.js",
+    "sync-themes": "node scripts/sync-mfp-themes.js"
   },
   "private": true
 }

@@ -7,6 +7,7 @@ import { Piece } from '../types/database';
 import { appAlert } from '../lib/alert';
 import { parseOrderFile, matchPieceForLine, topMatchesForLine, ParsedOrderLine } from '../lib/orderImport';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
+import { colors } from '../lib/theme';
 
 // A hidden real <input type="file"> — react-native-web's own primitives
 // have no file-picker equivalent, and this is a web-only app, so this
@@ -437,7 +438,7 @@ export default function ImportPrintOrderScreen({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -451,7 +452,7 @@ const styles = StyleSheet.create({
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12 },
   uploadBody: { flex: 1, padding: 24, justifyContent: 'center', gap: 20 },
   uploadText: { fontSize: 15, color: '#444', lineHeight: 22, textAlign: 'center' },
-  uploadButton: { backgroundColor: '#1a1a1a', paddingVertical: 16, borderRadius: 10, alignItems: 'center' },
+  uploadButton: { backgroundColor: colors.primary, paddingVertical: 16, borderRadius: 10, alignItems: 'center' },
   uploadButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   error: { color: '#b00020', textAlign: 'center', fontSize: 14 },
   list: { flex: 1 },
@@ -460,7 +461,7 @@ const styles = StyleSheet.create({
   rawText: { fontSize: 12, color: '#999', fontStyle: 'italic' },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { borderWidth: 1, borderColor: '#ddd', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6 },
-  chipSelected: { backgroundColor: '#1a1a1a', borderColor: '#1a1a1a' },
+  chipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
   chipText: { fontSize: 13, color: '#333', fontWeight: '600' },
   chipTextSelected: { color: '#fff' },
   newPieceForm: { gap: 8, marginTop: 4 },
@@ -487,10 +488,10 @@ const styles = StyleSheet.create({
   },
   footer: { borderTopWidth: 1, borderTopColor: '#eee', padding: 16, gap: 10 },
   totalText: { fontSize: 13, color: '#666', textAlign: 'center' },
-  applyButton: { backgroundColor: '#1a1a1a', paddingVertical: 14, borderRadius: 8, alignItems: 'center' },
+  applyButton: { backgroundColor: colors.primary, paddingVertical: 14, borderRadius: 8, alignItems: 'center' },
   applyButtonDisabled: { backgroundColor: '#ccc' },
   applyButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
-  pickerContainer: { flex: 1, backgroundColor: '#fff' },
+  pickerContainer: { flex: 1, backgroundColor: colors.background },
   pickerHeader: {
     flexDirection: 'row',
     alignItems: 'center',

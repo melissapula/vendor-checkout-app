@@ -157,7 +157,9 @@ async function main() {
   log('Signed in.');
 
   // Into the admin view.
-  await clickStep(page, page.getByText('Staff Access', { exact: true }), 'Unlocking staff access with the store PIN...');
+  // Staff Access lives in the dropdown under the store name.
+  await clickStep(page, page.getByText(/▾/).first(), 'Unlocking staff access with the store PIN...', { pauseAfter: 700 });
+  await clickStep(page, page.getByText('Staff Access', { exact: true }), null);
   await typeStep(page, page.getByPlaceholder('Enter PIN'), PIN);
   await clickStep(page, page.getByText('Unlock', { exact: true }), null, { pauseAfter: 2000 });
   log('In admin — Inventory.');
@@ -195,7 +197,8 @@ async function main() {
       const el = els.find((e) => e.textContent.trim() === lbl && e.children.length === 0);
       if (!el) return false;
       const chip = el.closest('[tabindex]');
-      return chip ? getComputedStyle(chip).backgroundColor === 'rgb(26, 26, 26)' : false;
+      // A selected chip is filled with colors.primary from src/lib/theme.ts.
+      return chip ? getComputedStyle(chip).backgroundColor === 'rgb(91, 63, 217)' : false;
     }, label);
   }
 

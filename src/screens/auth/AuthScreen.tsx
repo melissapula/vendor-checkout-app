@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { appAlert } from '../../lib/alert';
 import { DEMO_EMAIL, DEMO_PASSWORD } from '../../lib/demo';
+import { colors } from '../../lib/theme';
 
 // Shown to new users so they know what to look for in their inbox — must
 // match the sender address in the Supabase project's custom SMTP settings.
@@ -164,7 +165,7 @@ export default function AuthScreen({ onForgotPassword }: { onForgotPassword: () 
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', padding: 24, gap: 14 },
+  container: { flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 14 },
   heading: { fontSize: 22, fontWeight: '700', textAlign: 'center' },
   subheading: { fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 8, maxWidth: 280 },
   input: {
@@ -178,7 +179,7 @@ const styles = StyleSheet.create({
     maxWidth: 280,
   },
   submitButton: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: colors.primary,
     paddingVertical: 14,
     paddingHorizontal: 40,
     borderRadius: 8,
@@ -193,7 +194,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     padding: 16,
     borderRadius: 12,
-    backgroundColor: '#f6f4ef',
+    backgroundColor: colors.card,
     width: '100%',
     maxWidth: 320,
     alignItems: 'center',
@@ -203,13 +204,13 @@ const styles = StyleSheet.create({
   demoText: { fontSize: 13, color: '#555', textAlign: 'center' },
   demoButton: {
     borderWidth: 1,
-    borderColor: '#1a1a1a',
-    backgroundColor: '#fff',
+    borderColor: colors.primary,
+    backgroundColor: colors.background,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
     marginTop: 4,
   },
-  demoButtonText: { color: '#1a1a1a', fontWeight: '700', fontSize: 15 },
+  demoButtonText: { color: colors.primary, fontWeight: '700', fontSize: 15 },
   demoCredentials: { fontSize: 12, color: '#777', textAlign: 'center' },
 });

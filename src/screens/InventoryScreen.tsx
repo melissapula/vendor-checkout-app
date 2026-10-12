@@ -17,6 +17,8 @@ import HiddenScanCapture from '../components/HiddenScanCapture';
 import { appAlert } from '../lib/alert';
 import { useAuth } from '../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { colors } from '../lib/theme';
+import { typeLabel } from '../lib/labels';
 
 function statusLabel(piece: Piece): string {
   if (piece.status === 'sold') return 'Sold';
@@ -70,7 +72,7 @@ function PieceRow({
       <View style={styles.rowInfo}>
         <Text style={styles.title}>{piece.title}</Text>
         <Text style={styles.meta}>
-          {piece.sku} · {piece.medium ?? piece.type}
+          {piece.sku} · {piece.medium ?? typeLabel(piece.type)}
         </Text>
         <Text style={[styles.status, !sellable && styles.statusUnavailable]}>
           {statusLabel(piece)}
@@ -349,14 +351,14 @@ export default function InventoryScreen({
 }
 
 const styles = StyleSheet.create({
-  list: { flex: 1, backgroundColor: '#fff' },
+  list: { flex: 1, backgroundColor: colors.background },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
@@ -381,13 +383,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
-  thumb: { width: 48, height: 48, borderRadius: 6, marginRight: 12, backgroundColor: '#f0f0f0' },
+  thumb: { width: 48, height: 48, borderRadius: 6, marginRight: 12, backgroundColor: colors.chip },
   thumbPlaceholder: {
     width: 48,
     height: 48,
     borderRadius: 6,
     marginRight: 12,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: colors.chip,
   },
   rowInfo: { flex: 1, marginRight: 12 },
   title: { fontSize: 16, fontWeight: '600' },
@@ -395,7 +397,7 @@ const styles = StyleSheet.create({
   status: { fontSize: 13, color: '#2a7a2a', marginTop: 4 },
   statusUnavailable: { color: '#999' },
   lowStockBadge: { fontSize: 12, color: '#b36b00', marginTop: 2, fontWeight: '600' },
-  variantLink: { fontSize: 12, color: '#1a1a1a', marginTop: 4, fontWeight: '600' },
+  variantLink: { fontSize: 12, color: colors.primary, marginTop: 4, fontWeight: '600' },
   rowActions: { alignItems: 'flex-end' },
   price: { fontSize: 16, fontWeight: '600', marginBottom: 6 },
   buttonRow: { flexDirection: 'row', gap: 8 },
@@ -404,11 +406,11 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#1a1a1a',
+    borderColor: colors.primary,
   },
-  editButtonText: { color: '#1a1a1a', fontWeight: '600' },
+  editButtonText: { color: colors.primary, fontWeight: '600' },
   addButton: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: colors.primary,
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 6,
@@ -443,15 +445,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   importButtonText: { color: '#444', fontWeight: '700', fontSize: 15 },
-  addPieceButton: { flex: 1, backgroundColor: '#1a1a1a', paddingVertical: 14, borderRadius: 8, alignItems: 'center' },
+  addPieceButton: { flex: 1, backgroundColor: colors.primary, paddingVertical: 14, borderRadius: 8, alignItems: 'center' },
   addPieceButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   printAllButton: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#1a1a1a',
+    borderColor: colors.primary,
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',
   },
-  printAllButtonText: { color: '#1a1a1a', fontWeight: '700', fontSize: 16 },
+  printAllButtonText: { color: colors.primary, fontWeight: '700', fontSize: 16 },
 });

@@ -5,6 +5,7 @@ import { useEvents } from '../context/EventsContext';
 import { Event } from '../types/database';
 import EventFormScreen from './EventFormScreen';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
+import { colors } from '../lib/theme';
 
 function formatRange(event: Event): string {
   if (event.start_date === event.end_date) return event.start_date;
@@ -90,7 +91,7 @@ export default function EventsScreen({ onClose }: { onClose: () => void }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -112,6 +113,6 @@ const styles = StyleSheet.create({
   notes: { fontSize: 13, color: '#999', marginTop: 2 },
   separator: { height: 1, backgroundColor: '#eee', marginLeft: 16 },
   footer: { padding: 16, borderTopWidth: 1, borderTopColor: '#eee' },
-  addButton: { backgroundColor: '#1a1a1a', paddingVertical: 14, borderRadius: 8, alignItems: 'center' },
+  addButton: { backgroundColor: colors.primary, paddingVertical: 14, borderRadius: 8, alignItems: 'center' },
   addButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
 });

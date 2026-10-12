@@ -8,6 +8,7 @@ import { thumbUrl } from '../lib/images';
 import { LabelFields } from '../components/PrintLabelsOverlay';
 import { LABEL_SIZES, LabelSizeKey, labelSizeFor } from '../lib/labelSizes';
 import { appAlert } from '../lib/alert';
+import { colors } from '../lib/theme';
 
 export type QueueEntry = { piece: Piece; quantity: number };
 
@@ -429,7 +430,7 @@ export default function PrintLabelsBuilderScreen({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -445,7 +446,7 @@ const styles = StyleSheet.create({
   section: { padding: 16, borderBottomWidth: 1, borderBottomColor: '#eee', gap: 10 },
   sectionLabel: { fontSize: 13, fontWeight: '600', color: '#666', textTransform: 'uppercase' },
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  link: { fontSize: 13, color: '#1a1a1a', fontWeight: '600', textDecorationLine: 'underline' },
+  link: { fontSize: 13, color: colors.primary, fontWeight: '600', textDecorationLine: 'underline' },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
     borderWidth: 1,
@@ -454,7 +455,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
   },
-  chipSelected: { backgroundColor: '#1a1a1a', borderColor: '#1a1a1a' },
+  chipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
   chipText: { fontSize: 14, color: '#333', fontWeight: '600' },
   chipTextSelected: { color: '#fff' },
   searchInput: {
@@ -478,11 +479,11 @@ const styles = StyleSheet.create({
     borderBottomColor: '#f2f2f2',
   },
   searchRowInfo: { flex: 1 },
-  thumb: { width: 40, height: 40, borderRadius: 6, backgroundColor: '#f0f0f0' },
-  thumbPlaceholder: { width: 40, height: 40, borderRadius: 6, backgroundColor: '#f0f0f0' },
+  thumb: { width: 40, height: 40, borderRadius: 6, backgroundColor: colors.chip },
+  thumbPlaceholder: { width: 40, height: 40, borderRadius: 6, backgroundColor: colors.chip },
   title: { fontSize: 14, fontWeight: '600' },
   meta: { fontSize: 12, color: '#666', marginTop: 2 },
-  addButton: { backgroundColor: '#1a1a1a', borderRadius: 6, paddingHorizontal: 14, paddingVertical: 8 },
+  addButton: { backgroundColor: colors.primary, borderRadius: 6, paddingHorizontal: 14, paddingVertical: 8 },
   addButtonText: { color: '#fff', fontWeight: '700', fontSize: 13 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   emptyText: { color: '#999', fontSize: 14, textAlign: 'center' },
@@ -514,7 +515,7 @@ const styles = StyleSheet.create({
   },
   totalText: { fontSize: 14, color: '#666', textAlign: 'center' },
   printButton: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: colors.primary,
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',

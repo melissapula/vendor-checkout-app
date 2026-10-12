@@ -17,9 +17,12 @@ import { exportInventoryCsv, exportSalesCsv } from '../lib/dataExport';
 import PaymentSettingsScreen from './PaymentSettingsScreen';
 import TermsScreen from './TermsScreen';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
+import { colors, switchColors, THEME_OPTIONS } from '../lib/theme';
+import { useTheme } from '../context/ThemeContext';
 
 export default function StoreSettingsScreen() {
-  const { store, updateStore, signOut } = useAuth();
+  const { store, updateStore, isDemo } = useAuth();
+  const { theme, setTheme } = useTheme();
   const { pieces } = usePieces();
   const { sales } = useSales();
   const [name, setName] = useState(store?.name ?? '');
@@ -62,6 +65,9 @@ export default function StoreSettingsScreen() {
         admin_pin: pin,
         require_admin_pin: requirePin,
         low_stock_threshold: threshold,
+        // Only once the store has somewhere to keep it (migration 0021);
+        // before that, naming the column would fail the whole save.
+        ...(store && 'theme' in store ? { theme } : {}),
       });
       appAlert('Saved', 'Store settings updated.');
     } catch (err) {
@@ -96,7 +102,7 @@ export default function StoreSettingsScreen() {
 
       <View style={styles.switchRow}>
         <Text style={styles.label}>Require PIN for staff access</Text>
-        <Switch value={requirePin} onValueChange={setRequirePin} />
+        <Switch {...switchColors} value={requirePin} onValueChange={setRequirePin} />
       </View>
       {!requirePin && (
         <Text style={styles.hint}>
@@ -118,6 +124,29 @@ export default function StoreSettingsScreen() {
         Inventory flags a print/sticker/etc. as "Low stock" once it's at or under this many units left
         (originals aren't flagged — there's only ever one).
       </Text>
+
+      <Text style={styles.label}>Theme</Text>
+      <Text style={styles.themeHelper}>
+        {isDemo
+          ? 'Tap one to try it on. In the demo, your pick is remembered on this device only.'
+          : 'Tap one to try it on. Press "Save changes" to keep it for your store on every device.'}
+      </Text>
+      <View style={styles.themeRow}>
+        {THEME_OPTIONS.map((option) => (
+          <Pressable
+            key={option.name}
+            style={[styles.themeChip, theme === option.name && styles.themeChipSelected]}
+            onPress={() => setTheme(option.name)}
+            accessibilityRole="button"
+            accessibilityLabel={`${option.label} theme${theme === option.name ? ', selected' : ''}`}
+          >
+            <View style={[styles.themeSwatch, { backgroundColor: option.swatch }]} />
+            <Text style={[styles.themeChipText, theme === option.name && styles.themeChipTextSelected]}>
+              {option.label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
 
       <Pressable style={[styles.saveButton, submitting && styles.disabled]} disabled={submitting} onPress={handleSave}>
         {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveButtonText}>Save changes</Text>}
@@ -146,11 +175,6 @@ export default function StoreSettingsScreen() {
         </Pressable>
       </View>
 
-      <View style={styles.divider} />
-
-      <Pressable disabled={submitting} onPress={signOut}>
-        <Text style={styles.signOut}>Sign out</Text>
-      </Pressable>
     </ScrollView>
   );
 }
@@ -162,16 +186,33 @@ const styles = StyleSheet.create({
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 },
   hint: { fontSize: 12, color: '#b00020', marginTop: 6 },
   helper: { fontSize: 12, color: '#888', marginTop: 6 },
+  themeHelper: { fontSize: 12, color: '#888', marginBottom: 8 },
+  themeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
+  themeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    backgroundColor: colors.chip,
+  },
+  themeChipSelected: { borderColor: colors.primary },
+  themeSwatch: { width: 16, height: 16, borderRadius: 8 },
+  themeChipText: { fontWeight: '600', color: colors.ink },
+  themeChipTextSelected: { fontWeight: '700' },
   exportRow: { flexDirection: 'row', gap: 10, marginTop: 12 },
   exportButton: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#1a1a1a',
+    borderColor: colors.primary,
     borderRadius: 8,
     paddingVertical: 12,
     alignItems: 'center',
   },
-  exportButtonText: { color: '#1a1a1a', fontWeight: '700', fontSize: 14 },
+  exportButtonText: { color: colors.primary, fontWeight: '700', fontSize: 14 },
   input: {
     borderWidth: 1,
     borderColor: '#ddd',
@@ -181,7 +222,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   saveButton: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: colors.primary,
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',
@@ -190,9 +231,8 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.6 },
   saveButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   divider: { height: 1, backgroundColor: '#eee', marginVertical: 24 },
-  signOut: { textAlign: 'center', color: '#b00020', fontWeight: '600' },
   paymentSettingsRow: { paddingVertical: 4 },
-  paymentSettingsText: { fontSize: 15, fontWeight: '600', color: '#1a1a1a' },
+  paymentSettingsText: { fontSize: 15, fontWeight: '600', color: colors.ink },
   backRow: { padding: 16, paddingBottom: 0 },
   backLink: { color: '#666', fontSize: 14 },
 });

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { registerAlertListener, AlertButton } from '../lib/alert';
+import { colors } from '../lib/theme';
 
 type AlertRequest = { title: string; message?: string; buttons: AlertButton[] };
 
@@ -85,12 +86,12 @@ const backdropStyle: React.CSSProperties = {
 };
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: '#fff', borderRadius: 12, padding: 20, width: '100%', maxWidth: 340 },
+  card: { backgroundColor: colors.background, borderRadius: 12, padding: 20, width: '100%', maxWidth: 340 },
   title: { fontSize: 17, fontWeight: '700', marginBottom: 6 },
   message: { fontSize: 14, color: '#333', marginBottom: 16 },
   buttonRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 20 },
   button: { paddingVertical: 8, paddingHorizontal: 4 },
-  buttonText: { fontSize: 15, fontWeight: '700', color: '#1a1a1a' },
+  buttonText: { fontSize: 15, fontWeight: '700', color: colors.primary },
   cancelText: { color: '#666', fontWeight: '500' },
   destructiveText: { color: '#b00020' },
 });

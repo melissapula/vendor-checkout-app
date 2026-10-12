@@ -20,6 +20,10 @@ import {
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 import { refundSale } from '../lib/refunds';
 import { appAlert } from '../lib/alert';
+import { salesGroupedBy, salesOverTime } from '../lib/reportCharts';
+import { RankedBarChart, TimeBarChart } from '../components/ReportCharts';
+import { colors } from '../lib/theme';
+import { paymentMethodLabel, typeLabel } from '../lib/labels';
 
 type DateRange = 'today' | '7days' | 'all' | 'custom';
 
@@ -91,6 +95,7 @@ export default function ReportsScreen() {
   return (
     <View style={styles.screen}>
       <View style={[styles.viewToggleRow, centeredColumn(isTabletUp, CONTENT_WIDTH.wide)]}>
+        <View style={styles.viewToggle}>
         <Pressable
           style={[styles.viewChip, view === 'sales' && styles.viewChipSelected]}
           onPress={() => setView('sales')}
@@ -111,11 +116,9 @@ export default function ReportsScreen() {
         >
           <Text style={[styles.viewChipText, view === 'saved' && styles.viewChipTextSelected]}>Saved Reports</Text>
         </Pressable>
-        <Pressable style={styles.eventsLink} onPress={() => setEventsOpen(true)}>
-          <Text style={styles.eventsLinkText}>Manage Events</Text>
-        </Pressable>
+        </View>
       </View>
-      {view === 'sales' ? <SalesReport /> : view === 'adjustments' ? <AdjustmentsReport /> : <SavedReportsView />}
+      {view === 'sales' ? <SalesReport onManageEvents={() => setEventsOpen(true)} /> : view === 'adjustments' ? <AdjustmentsReport /> : <SavedReportsView />}
 
       <AppModal visible={eventsOpen} onRequestClose={() => setEventsOpen(false)}>
         <EventsScreen onClose={() => setEventsOpen(false)} />
@@ -124,7 +127,7 @@ export default function ReportsScreen() {
   );
 }
 
-function SalesReport() {
+function SalesReport({ onManageEvents }: { onManageEvents: () => void }) {
   const { sales, loading, error, applySaleUpdate } = useSales();
   const { pieces, applyPieceUpdates } = usePieces();
   const { events } = useEvents();
@@ -182,6 +185,20 @@ function SalesReport() {
     }
     return Array.from(map.entries()).sort((a, b) => b[1].gross - a[1].gross);
   }, [activeFiltered, pieceById]);
+
+  // Charts are drawn from the same refund-free list as the summary, so
+  // their bars always add up to the "Gross sales" figure above them.
+  const charts = useMemo(() => {
+    const titleOf = (s: Sale) => pieceById.get(s.piece_id)?.title ?? 'Unknown item';
+    return {
+      overTime: salesOverTime(activeFiltered),
+      byEvent: salesGroupedBy(activeFiltered, (s) => eventForDate(events, s.sale_date)?.name ?? 'No event'),
+      byType: salesGroupedBy(activeFiltered, (s) => typeLabel(pieceById.get(s.piece_id)?.type ?? 'unknown')),
+      byMethod: salesGroupedBy(activeFiltered, (s) => paymentMethodLabel(s.payment_method)),
+      topItems: salesGroupedBy(activeFiltered, titleOf, 5),
+      itemCount: new Set(activeFiltered.map(titleOf)).size,
+    };
+  }, [activeFiltered, events, pieceById]);
 
   async function handleRefund(sale: Sale) {
     try {
@@ -298,7 +315,9 @@ function SalesReport() {
                 style={[styles.chip, methodFilter === m && styles.chipSelected]}
                 onPress={() => setMethodFilter(m)}
               >
-                <Text style={[styles.chipText, methodFilter === m && styles.chipTextSelected]}>{m}</Text>
+                <Text style={[styles.chipText, methodFilter === m && styles.chipTextSelected]}>
+                  {paymentMethodLabel(m)}
+                </Text>
               </Pressable>
             ))}
           </View>
@@ -317,14 +336,22 @@ function SalesReport() {
                 style={[styles.chip, typeFilter === t && styles.chipSelected]}
                 onPress={() => setTypeFilter(t)}
               >
-                <Text style={[styles.chipText, typeFilter === t && styles.chipTextSelected]}>{t}</Text>
+                <Text style={[styles.chipText, typeFilter === t && styles.chipTextSelected]}>{typeLabel(t)}</Text>
               </Pressable>
             ))}
           </View>
 
+          <View style={styles.eventsHeader}>
+            <Text style={styles.filterLabel}>Event</Text>
+            <Pressable style={styles.eventsLink} onPress={onManageEvents} hitSlop={8}>
+              <Text style={styles.eventsLinkText}>Manage Events</Text>
+            </Pressable>
+          </View>
+          {events.length === 0 && (
+            <Text style={styles.eventsEmpty}>No events yet. Add an art fair or market to see its sales on their own.</Text>
+          )}
           {events.length > 0 && (
             <>
-              <Text style={styles.filterLabel}>Event</Text>
               <View style={styles.chipRow}>
                 <Pressable
                   style={[styles.chip, eventFilter === 'all' && styles.chipSelected]}
@@ -353,19 +380,13 @@ function SalesReport() {
             <SummaryRow label="Net revenue" value={summary.net} bold />
           </View>
 
-          {byType.length > 0 && (
-            <View style={styles.summaryBox}>
-              <Text style={styles.filterLabel}>By type</Text>
-              {byType.map(([type, stats]) => (
-                <View key={type} style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>
-                    {type} ({stats.count})
-                  </Text>
-                  <Text style={styles.summaryValue}>${stats.gross.toFixed(2)}</Text>
-                </View>
-              ))}
-            </View>
-          )}
+          <TimeBarChart title={charts.overTime.title} bars={charts.overTime.bars} />
+          {/* A comparison needs at least two things to compare — with one
+              event, method or item the bar would only repeat the summary. */}
+          {charts.byEvent.length > 1 && <RankedBarChart title="By event" bars={charts.byEvent} />}
+          <RankedBarChart title="By type" bars={charts.byType} />
+          {charts.byMethod.length > 1 && <RankedBarChart title="By payment method" bars={charts.byMethod} />}
+          {charts.itemCount > 1 && <RankedBarChart title="Top items" bars={charts.topItems} />}
 
           <Pressable style={styles.saveReportButton} onPress={() => setSaveModalOpen(true)}>
             <Text style={styles.saveReportButtonText}>Save this report</Text>
@@ -499,7 +520,7 @@ function SaleRow({
   function confirmRefund() {
     appAlert(
       'Refund this sale?',
-      `${title} — $${sale.sale_price.toFixed(2)} via ${sale.payment_method}. This puts the item back in stock. Can't be undone from here.`,
+      `${title} — $${sale.sale_price.toFixed(2)} via ${paymentMethodLabel(sale.payment_method)}. This puts the item back in stock. Can't be undone from here.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -519,7 +540,7 @@ function SaleRow({
       <View style={styles.saleInfo}>
         <Text style={[styles.saleTitle, refunded && styles.refundedText]}>{title}</Text>
         <Text style={styles.saleMeta}>
-          {new Date(sale.sale_date).toLocaleString()} · {sale.payment_method}
+          {new Date(sale.sale_date).toLocaleString()} · {paymentMethodLabel(sale.payment_method)}
           {eventName ? ` · ${eventName}` : ''}
         </Text>
         {refunded && (
@@ -811,7 +832,7 @@ function SavedReportDetail({
             {snapshot.byType.map((t) => (
               <View key={t.type} style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>
-                  {t.type} ({t.count})
+                  {typeLabel(t.type)} ({t.count})
                 </Text>
                 <Text style={styles.summaryValue}>${t.gross.toFixed(2)}</Text>
               </View>
@@ -825,7 +846,7 @@ function SavedReportDetail({
             <View style={styles.saleInfo}>
               <Text style={[styles.saleTitle, s.refunded_at && styles.refundedText]}>{s.title}</Text>
               <Text style={styles.saleMeta}>
-                {new Date(s.sale_date).toLocaleString()} · {s.payment_method}
+                {new Date(s.sale_date).toLocaleString()} · {paymentMethodLabel(s.payment_method)}
               </Text>
               {s.refunded_at && <Text style={styles.refundedBadge}>Refunded</Text>}
             </View>
@@ -848,22 +869,33 @@ function SavedReportDetail({
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#fff' },
-  viewToggleRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, padding: 16, paddingBottom: 0 },
-  viewChip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8, backgroundColor: '#f0f0f0' },
-  viewChipSelected: { backgroundColor: '#1a1a1a' },
-  viewChipText: { fontWeight: '700', color: '#1a1a1a' },
+  screen: { flex: 1, backgroundColor: colors.background },
+  viewToggleRow: { alignItems: 'center', padding: 16, paddingBottom: 0 },
+  // One pill holding the three tabs, centered and in the accent color so
+  // it reads as "which report" rather than as another row of filters.
+  viewToggle: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 4,
+    padding: 4,
+    borderRadius: 12,
+    backgroundColor: colors.accentSoft,
+  },
+  viewChip: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: 9 },
+  viewChipSelected: { backgroundColor: colors.accent },
+  viewChipText: { fontWeight: '700', fontSize: 14, color: colors.accent },
   viewChipTextSelected: { color: '#fff' },
-  list: { flex: 1, backgroundColor: '#fff' },
+  list: { flex: 1, backgroundColor: colors.background },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   errorText: { color: '#b00020', textAlign: 'center' },
   emptyText: { color: '#666', textAlign: 'center', padding: 24 },
   filters: { padding: 16 },
   filterLabel: { fontSize: 13, color: '#666', marginTop: 16, marginBottom: 8 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, backgroundColor: '#f0f0f0' },
-  chipSelected: { backgroundColor: '#1a1a1a' },
-  chipText: { fontWeight: '600', color: '#1a1a1a' },
+  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.chip },
+  chipSelected: { backgroundColor: colors.primary },
+  chipText: { fontWeight: '600', color: colors.ink },
   chipTextSelected: { color: '#fff' },
   row: { flexDirection: 'row', gap: 12, marginTop: 8 },
   half: { flex: 1 },
@@ -875,7 +907,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 14,
   },
-  summaryBox: { marginTop: 20, padding: 16, backgroundColor: '#f7f7f7', borderRadius: 10, gap: 6 },
+  summaryBox: { marginTop: 20, padding: 16, backgroundColor: colors.card, borderRadius: 10, gap: 6 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between' },
   summaryLabel: { fontSize: 15, color: '#333' },
   summaryValue: { fontSize: 15, color: '#333' },
@@ -900,11 +932,13 @@ const styles = StyleSheet.create({
   lossBadge: { color: '#b00020' },
   donationBadge: { color: '#2a7a2a' },
   separator: { height: 1, backgroundColor: '#eee', marginLeft: 16 },
-  eventsLink: { marginLeft: 'auto', paddingVertical: 10, paddingHorizontal: 4 },
-  eventsLinkText: { color: '#1a1a1a', fontWeight: '600', fontSize: 13, textDecorationLine: 'underline' },
+  eventsHeader: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
+  eventsLink: { marginBottom: 8 },
+  eventsEmpty: { fontSize: 13, color: '#888' },
+  eventsLinkText: { color: colors.primary, fontWeight: '600', fontSize: 13, textDecorationLine: 'underline' },
   saveReportButton: {
     marginTop: 20,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: colors.primary,
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
@@ -917,11 +951,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 24,
   },
-  saveModalCard: { backgroundColor: '#fff', borderRadius: 12, padding: 20, width: '100%', maxWidth: 420 },
+  saveModalCard: { backgroundColor: colors.background, borderRadius: 12, padding: 20, width: '100%', maxWidth: 420 },
   saveModalHeading: { fontSize: 18, fontWeight: '700', marginBottom: 8 },
   saveModalNotes: { minHeight: 70, textAlignVertical: 'top' },
   saveButton: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: colors.primary,
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',

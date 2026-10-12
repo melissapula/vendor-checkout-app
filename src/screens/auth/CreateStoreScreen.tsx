@@ -12,6 +12,7 @@ import { useAuth } from '../../context/AuthContext';
 import { appAlert } from '../../lib/alert';
 import AppModal from '../../components/AppModal';
 import TermsScreen from '../TermsScreen';
+import { colors } from '../../lib/theme';
 
 // One line to update if the beta's point of contact changes — surfaced to
 // every new vendor on this screen.
@@ -110,7 +111,7 @@ export default function CreateStoreScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', padding: 24, gap: 10 },
+  container: { flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 10 },
   heading: { fontSize: 22, fontWeight: '700', textAlign: 'center' },
   subheading: { fontSize: 13, color: '#666', textAlign: 'center', maxWidth: 280, marginBottom: 4 },
   betaNotice: {
@@ -149,12 +150,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkboxChecked: { backgroundColor: '#1a1a1a', borderColor: '#1a1a1a' },
+  checkboxChecked: { backgroundColor: colors.primary, borderColor: colors.primary },
   checkmark: { color: '#fff', fontSize: 13, fontWeight: '700' },
   termsText: { fontSize: 13, color: '#333', flexShrink: 1 },
   termsLink: { textDecorationLine: 'underline', fontWeight: '600' },
   submitButton: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: colors.primary,
     paddingVertical: 14,
     paddingHorizontal: 40,
     borderRadius: 8,

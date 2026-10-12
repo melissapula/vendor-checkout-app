@@ -5,6 +5,7 @@ import { BrowserMultiFormatReader } from '@zxing/browser';
 import type { IScannerControls } from '@zxing/browser';
 import { BarcodeFormat, DecodeHintType } from '@zxing/library';
 import { Piece } from '../types/database';
+import { colors } from '../lib/theme';
 
 export type CameraScanLookup = { found: true; piece: Piece } | { found: false; message: string };
 
@@ -182,7 +183,7 @@ const videoStyle: React.CSSProperties = {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', padding: 24, gap: 16 },
+  container: { flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 16 },
   heading: { fontSize: 20, fontWeight: '700' },
   error: { color: '#b00020', textAlign: 'center', maxWidth: 320 },
   videoWrap: { width: '100%', maxWidth: 480, aspectRatio: 1, position: 'relative' },
@@ -204,7 +205,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
     padding: 16,
@@ -221,7 +222,7 @@ const styles = StyleSheet.create({
   foundButtonRow: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 4 },
   addButton: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: colors.primary,
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
@@ -230,7 +231,7 @@ const styles = StyleSheet.create({
   skipButton: { paddingVertical: 12, paddingHorizontal: 8 },
   skipButtonText: { color: '#666', fontSize: 13 },
   closeButton: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: colors.primary,
     paddingVertical: 14,
     paddingHorizontal: 40,
     borderRadius: 8,

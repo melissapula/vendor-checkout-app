@@ -12,6 +12,7 @@ import { EventsProvider } from './src/context/EventsContext';
 import { SavedReportsProvider } from './src/context/SavedReportsContext';
 import { AppModeProvider } from './src/context/AppModeContext';
 import { ConnectivityProvider } from './src/context/ConnectivityContext';
+import { ThemeProvider } from './src/context/ThemeContext';
 import RootNavigator from './src/navigation/RootNavigator';
 import AuthScreen from './src/screens/auth/AuthScreen';
 import CreateStoreScreen from './src/screens/auth/CreateStoreScreen';
@@ -19,6 +20,8 @@ import ResetPasswordScreen from './src/screens/auth/ResetPasswordScreen';
 import AlertHost from './src/components/AlertHost';
 import OfflineBanner from './src/components/OfflineBanner';
 import DemoBanner from './src/components/DemoBanner';
+import ColorStripe from './src/components/ColorStripe';
+import { colors } from './src/lib/theme';
 
 function AppGate() {
   const { session, authLoading, store, storeLoading, storeError, retryStoreFetch } = useAuth();
@@ -56,7 +59,7 @@ function AppGate() {
         <Text style={{ textAlign: 'center' }}>Couldn't load your store: {storeError}</Text>
         <Pressable
           onPress={retryStoreFetch}
-          style={{ backgroundColor: '#111', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8 }}
+          style={{ backgroundColor: colors.primary, paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8 }}
         >
           <Text style={{ color: '#fff' }}>Retry</Text>
         </Pressable>
@@ -91,10 +94,13 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ConnectivityProvider>
+        <ColorStripe />
         <OfflineBanner />
         <AuthProvider>
-          <DemoBanner />
-          <AppGate />
+          <ThemeProvider>
+            <DemoBanner />
+            <AppGate />
+          </ThemeProvider>
           <StatusBar style="auto" />
         </AuthProvider>
         <AlertHost />

@@ -14,6 +14,7 @@ import { usePieces, isSellable } from '../context/PiecesContext';
 import { useCart } from '../context/CartContext';
 import { appAlert } from '../lib/alert';
 import { Piece } from '../types/database';
+import { colors } from '../lib/theme';
 
 // Same "always browsable, cap the list" convention as
 // PrintLabelsBuilderScreen's item picker.
@@ -190,7 +191,7 @@ export default function AddItemModal({ visible, onClose }: { visible: boolean; o
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -202,7 +203,7 @@ const styles = StyleSheet.create({
   },
   heading: { fontSize: 17, fontWeight: '700' },
   closeText: { fontSize: 18, color: '#666', paddingHorizontal: 4 },
-  backText: { fontSize: 15, fontWeight: '600', color: '#1a1a1a' },
+  backText: { fontSize: 15, fontWeight: '600', color: colors.ink },
   searchInput: {
     margin: 16,
     marginBottom: 8,
@@ -221,10 +222,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#1a1a1a',
+    borderColor: colors.primary,
     borderStyle: 'dashed',
   },
-  customRowText: { fontWeight: '700', color: '#1a1a1a', textAlign: 'center' },
+  customRowText: { fontWeight: '700', color: colors.ink, textAlign: 'center' },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -250,7 +251,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   addButton: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: colors.primary,
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',

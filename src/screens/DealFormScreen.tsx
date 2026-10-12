@@ -15,6 +15,8 @@ import { AppliesTo } from '../lib/deals';
 import { appAlert } from '../lib/alert';
 import { Deal, DealType, PieceType } from '../types/database';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
+import { colors, switchColors } from '../lib/theme';
+import { typeLabel } from '../lib/labels';
 
 const DEAL_TYPES: { key: DealType; label: string }[] = [
   { key: 'percent_off', label: 'Percent off' },
@@ -286,7 +288,7 @@ export default function DealFormScreen({
         </View>
 
         {(scope === 'type' || scope === 'size') && (
-          <View style={styles.chipRow}>
+          <View style={[styles.chipRow, styles.chipSubRow]}>
             {pieceTypes.map((t) => (
               <Pressable
                 key={t}
@@ -297,7 +299,7 @@ export default function DealFormScreen({
                 }}
               >
                 <Text style={[styles.chipText, scopeType === t && styles.chipTextSelected]}>
-                  {t}
+                  {typeLabel(t)}
                 </Text>
               </Pressable>
             ))}
@@ -305,7 +307,7 @@ export default function DealFormScreen({
         )}
 
         {scope === 'size' && (
-          <View style={[styles.chipRow, { marginTop: 8 }]}>
+          <View style={[styles.chipRow, styles.chipSubRow]}>
             {availableSizes.length === 0 && (
               <Text style={styles.meta}>
                 No {scopeType} pieces have a size set yet — add sizes on those pieces in Inventory first.
@@ -338,11 +340,11 @@ export default function DealFormScreen({
 
         <View style={styles.switchRow}>
           <Text style={styles.label}>Stackable (combines with other deals)</Text>
-          <Switch value={stackable} onValueChange={setStackable} />
+          <Switch {...switchColors} value={stackable} onValueChange={setStackable} />
         </View>
         <View style={styles.switchRow}>
           <Text style={styles.label}>Active</Text>
-          <Switch value={active} onValueChange={setActive} />
+          <Switch {...switchColors} value={active} onValueChange={setActive} />
         </View>
 
         <Text style={styles.label}>Start date (optional, YYYY-MM-DD)</Text>
@@ -385,7 +387,7 @@ export default function DealFormScreen({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: colors.background },
   scroll: { padding: 16 },
   heading: { fontSize: 20, fontWeight: '700', marginBottom: 16 },
   label: { fontSize: 13, color: '#666', marginTop: 16, marginBottom: 8 },
@@ -399,14 +401,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  // The follow-up rows under "Applies to" (which type, then which sizes) —
+  // set apart from the row above so they read as separate choices.
+  chipSubRow: { marginTop: 16 },
   chip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: colors.chip,
   },
-  chipSelected: { backgroundColor: '#1a1a1a' },
-  chipText: { fontWeight: '600', color: '#1a1a1a' },
+  chipSelected: { backgroundColor: colors.primary },
+  chipText: { fontWeight: '600', color: colors.ink },
   chipTextSelected: { color: '#fff' },
   switchRow: {
     flexDirection: 'row',
@@ -416,7 +421,7 @@ const styles = StyleSheet.create({
   },
   footer: { padding: 16, borderTopWidth: 1, borderTopColor: '#eee', gap: 10 },
   saveButton: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: colors.primary,
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',

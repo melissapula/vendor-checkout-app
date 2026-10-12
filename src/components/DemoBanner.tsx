@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '../context/AuthContext';
+import { colors } from '../lib/theme';
 
 // Shown only inside the shared public demo store (see src/lib/demo.ts), so
 // a visitor knows it's sample data they can browse but not change, and has
@@ -23,7 +24,7 @@ export default function DemoBanner() {
 
 const styles = StyleSheet.create({
   banner: {
-    backgroundColor: '#1f4b43',
+    backgroundColor: colors.primaryDark,
     paddingVertical: 8,
     paddingHorizontal: 16,
     flexDirection: 'row',

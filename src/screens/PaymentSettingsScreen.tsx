@@ -15,6 +15,7 @@ import { startStripeOnboarding, checkStripeAccountStatus, getStripeAccountBalanc
 import { feeRateFor } from '../lib/fees';
 import { appAlert } from '../lib/alert';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
+import { colors } from '../lib/theme';
 
 const METHOD_LABELS: Record<PaymentMethod, string> = {
   card: 'Credit/debit card',
@@ -358,9 +359,9 @@ const styles = StyleSheet.create({
   helperText: { fontSize: 13, color: '#666', marginBottom: 12 },
   statusRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   statusReady: { fontSize: 14, color: '#2a7a2a', fontWeight: '600' },
-  link: { color: '#1a1a1a', fontSize: 13, textDecorationLine: 'underline' },
+  link: { color: colors.primary, fontSize: 13, textDecorationLine: 'underline' },
   connectButton: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: colors.primary,
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
@@ -370,21 +371,21 @@ const styles = StyleSheet.create({
     marginTop: 12,
     padding: 12,
     borderRadius: 8,
-    backgroundColor: '#f7f7f7',
+    backgroundColor: colors.card,
   },
   balanceLabel: { fontSize: 12, color: '#666' },
-  balanceValue: { fontSize: 22, fontWeight: '700', color: '#1a1a1a', marginTop: 2 },
+  balanceValue: { fontSize: 22, fontWeight: '700', color: colors.ink, marginTop: 2 },
   balanceBreakdown: { fontSize: 12, color: '#888', marginTop: 4 },
   divider: { height: 1, backgroundColor: '#eee', marginTop: 20 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 8, backgroundColor: '#f0f0f0' },
-  chipSelected: { backgroundColor: '#1a1a1a' },
+  chip: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 8, backgroundColor: colors.chip },
+  chipSelected: { backgroundColor: colors.primary },
   chipDisabled: { opacity: 0.4 },
-  chipText: { fontWeight: '600', color: '#1a1a1a', fontSize: 13 },
+  chipText: { fontWeight: '600', color: colors.ink, fontSize: 13 },
   chipTextSelected: { color: '#fff' },
   label: { fontSize: 13, color: '#666', marginTop: 14, marginBottom: 6 },
   feeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  feeRowLabel: { fontSize: 14, color: '#1a1a1a', width: 90 },
+  feeRowLabel: { fontSize: 14, color: colors.ink, width: 90 },
   feeRowInputs: { flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 },
   feeRowPlus: { fontSize: 13, color: '#666' },
   feeInput: {
@@ -414,11 +415,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkboxChecked: { backgroundColor: '#1a1a1a', borderColor: '#1a1a1a' },
+  checkboxChecked: { backgroundColor: colors.primary, borderColor: colors.primary },
   checkboxMark: { color: '#fff', fontSize: 14, fontWeight: '700' },
   toggleLabel: { flex: 1, fontSize: 14, color: '#333' },
   saveButton: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: colors.primary,
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',

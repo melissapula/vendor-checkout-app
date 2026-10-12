@@ -133,7 +133,7 @@ The app has two modes, switched via `AppModeContext` (`src/context/AppModeContex
 - **Admin** (`AdminScreen.tsx`) — Inventory/Cart/Deals, switched via a
   dropdown menu from the header (tap the title) rather than a tab bar; the
   same menu's last item is "Customer View" to exit back out. Reached by
-  tapping "Staff Access" and entering the PIN. This is plain local state, not
+  choosing "Staff Access" from the dropdown under the store name and entering the PIN. This is plain local state, not
   a navigator — no screen needs back-stack/deep-linking, so `@react-navigation/*`
   and `react-native-screens` were removed as dependencies (dropped the bundle
   from 2.6MB to 2.2MB, 1000+ modules to 659).
@@ -218,6 +218,35 @@ the customer screen, Reports opens on "All time", a banner offers "Exit
 demo", connecting Stripe is refused (in `PaymentSettingsScreen.tsx` and,
 enforced, in the `stripe-connect-onboarding` function), and the cart stays
 on the visitor's own device instead of syncing through `store_carts`.
+
+## Colors and themes
+
+No screen writes its own hex codes: they all import `colors` from
+`src/lib/theme.ts`, whose entries are references to CSS variables
+(`var(--vc-primary)` and so on — react-native-web passes these straight
+through). `applyTheme()` sets those variables on the page, so switching
+theme recolors the whole app at once with no screen re-rendering.
+
+The themes come from the MFP design system. `@mfp-design-system/tokens`
+ships each theme as a CSS file that redefines the same variables, which
+suits loading exactly one; to offer a choice, `npm run sync-themes`
+(`scripts/sync-mfp-themes.js`) reads every theme out of the installed
+package and writes them side by side to `src/lib/mfpThemes.ts` (generated —
+re-run it after upgrading the package). `theme.ts` maps each theme's
+variables onto this app's few color roles, and adds one theme of its own,
+"studio", the default. The design system's `dark` theme is left out: it
+restyles every neutral, and this app still hard-codes many of its greys.
+
+A vendor picks a theme in Settings. Tapping one previews it immediately and
+remembers it in that browser; "Save changes" writes its name to
+`stores.theme` (migration `0021_store_theme.sql`) so it follows the store
+to every device. The saved one wins; the browser's is the fallback, which
+is also all the read-only demo store has. The stripe across the top of the
+app (`ColorStripe.tsx`) shows every theme's color and doesn't change.
+
+Two things stay the same in every theme: `PrintLabelsOverlay.tsx` (labels
+must print in true black) and the green/red used for money in and
+destructive actions.
 
 ## Barcode labels
 

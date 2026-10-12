@@ -6,14 +6,16 @@ import { AppliesTo } from '../lib/deals';
 import { Deal } from '../types/database';
 import DealFormScreen from './DealFormScreen';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
+import { colors, switchColors } from '../lib/theme';
+import { typeLabel } from '../lib/labels';
 
 function describeScope(deal: Deal): string {
   const appliesTo = deal.applies_to as unknown as AppliesTo;
   if (appliesTo.scope === 'all') return 'All items';
-  if (appliesTo.scope === 'type') return `Type: ${appliesTo.type}`;
+  if (appliesTo.scope === 'type') return `Type: ${typeLabel(appliesTo.type)}`;
   if (appliesTo.scope === 'series') return `Series: ${appliesTo.series}`;
   if (appliesTo.scope === 'skus') return `${appliesTo.skus.length} SKU(s)`;
-  if (appliesTo.scope === 'size') return `${appliesTo.type}, size: ${appliesTo.sizes.join(', ')}`;
+  if (appliesTo.scope === 'size') return `${typeLabel(appliesTo.type)}, size: ${appliesTo.sizes.join(', ')}`;
   return '';
 }
 
@@ -44,6 +46,7 @@ function DealRow({ deal, onPress }: { deal: Deal; onPress: () => void }) {
         {deal.stackable && <Text style={styles.stackable}>Stackable</Text>}
       </View>
       <Switch
+        {...switchColors}
         value={deal.active}
         onValueChange={(value) => updateDeal(deal.id, { active: value })}
       />
@@ -117,7 +120,7 @@ export default function DealsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: colors.background },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   errorText: { color: '#b00020', textAlign: 'center' },
   emptyText: { color: '#666', fontSize: 15, textAlign: 'center' },
@@ -136,7 +139,7 @@ const styles = StyleSheet.create({
   separator: { height: 1, backgroundColor: '#eee', marginLeft: 16 },
   footer: { padding: 16, borderTopWidth: 1, borderTopColor: '#eee' },
   addButton: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: colors.primary,
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',

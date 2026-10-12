@@ -12,6 +12,8 @@ import { usePieces } from '../context/PiecesContext';
 import { Piece, PieceStatus, PieceType } from '../types/database';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 import { appAlert } from '../lib/alert';
+import { colors } from '../lib/theme';
+import { typeLabel } from '../lib/labels';
 
 const STATUSES: PieceStatus[] = ['available', 'sold', 'reserved'];
 
@@ -205,7 +207,7 @@ export default function PieceFormScreen({
         <View style={styles.chipRow}>
           {knownTypes.map((t) => (
             <Pressable key={t} style={[styles.chip, type === t && styles.chipSelected]} onPress={() => setType(t)}>
-              <Text style={[styles.chipText, type === t && styles.chipTextSelected]}>{t}</Text>
+              <Text style={[styles.chipText, type === t && styles.chipTextSelected]}>{typeLabel(t)}</Text>
             </Pressable>
           ))}
           <Pressable
@@ -410,7 +412,7 @@ export default function PieceFormScreen({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: colors.background },
   scroll: { padding: 16 },
   heading: { fontSize: 20, fontWeight: '700', marginBottom: 16 },
   label: { fontSize: 13, color: '#666', marginTop: 16, marginBottom: 8 },
@@ -427,9 +429,9 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 12 },
   half: { flex: 1 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, backgroundColor: '#f0f0f0' },
-  chipSelected: { backgroundColor: '#1a1a1a' },
-  chipText: { fontWeight: '600', color: '#1a1a1a' },
+  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.chip },
+  chipSelected: { backgroundColor: colors.primary },
+  chipText: { fontWeight: '600', color: colors.ink },
   chipTextSelected: { color: '#fff' },
   selectedOriginal: {
     flexDirection: 'row',
@@ -447,7 +449,7 @@ const styles = StyleSheet.create({
   searchResultRow: { paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#eee' },
   searchResultText: { fontSize: 14 },
   footer: { padding: 16, borderTopWidth: 1, borderTopColor: '#eee', gap: 10 },
-  saveButton: { backgroundColor: '#1a1a1a', paddingVertical: 14, borderRadius: 8, alignItems: 'center' },
+  saveButton: { backgroundColor: colors.primary, paddingVertical: 14, borderRadius: 8, alignItems: 'center' },
   disabled: { opacity: 0.6 },
   saveButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   deleteText: { textAlign: 'center', color: '#b00020', fontWeight: '600' },

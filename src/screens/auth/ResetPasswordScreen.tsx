@@ -9,6 +9,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { appAlert } from '../../lib/alert';
+import { colors } from '../../lib/theme';
 
 export default function ResetPasswordScreen({ onCancel }: { onCancel: () => void }) {
   const { requestPasswordReset, confirmPasswordReset } = useAuth();
@@ -133,7 +134,7 @@ export default function ResetPasswordScreen({ onCancel }: { onCancel: () => void
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', padding: 24, gap: 14 },
+  container: { flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 14 },
   heading: { fontSize: 22, fontWeight: '700', textAlign: 'center' },
   subheading: { fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 8, maxWidth: 280 },
   input: {
@@ -147,7 +148,7 @@ const styles = StyleSheet.create({
     maxWidth: 280,
   },
   submitButton: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: colors.primary,
     paddingVertical: 14,
     paddingHorizontal: 40,
     borderRadius: 8,

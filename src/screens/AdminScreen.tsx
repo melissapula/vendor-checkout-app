@@ -10,6 +10,8 @@ import StoreSettingsScreen from './StoreSettingsScreen';
 import { useCart } from '../context/CartContext';
 import { useAppMode } from '../context/AppModeContext';
 import { useAuth } from '../context/AuthContext';
+import { appAlert } from '../lib/alert';
+import { colors } from '../lib/theme';
 
 type Page = 'inventory' | 'cart' | 'deals' | 'reports' | 'settings';
 
@@ -25,11 +27,21 @@ export default function AdminScreen() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { itemCount } = useCart();
   const { exitToCustomer } = useAppMode();
-  const { store } = useAuth();
+  const { store, signOut } = useAuth();
 
   function choose(next: Page) {
     setPage(next);
     setMenuOpen(false);
+  }
+
+  // One stray tap here at a busy booth would otherwise lock the device out
+  // until someone types the store's email and password back in.
+  function confirmSignOut() {
+    setMenuOpen(false);
+    appAlert('Sign out?', "You'll need your email and password to sign back in on this device.", [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Sign out', style: 'destructive', onPress: signOut },
+    ]);
   }
 
   const title = page === 'inventory' ? store?.name : PAGE_TITLES[page];
@@ -82,6 +94,8 @@ export default function AdminScreen() {
                 }}
                 exit
               />
+              <View style={styles.menuDivider} />
+              <MenuItem label="Sign out" onPress={confirmSignOut} danger />
             </View>
           </SafeAreaView>
         </Pressable>
@@ -94,16 +108,25 @@ function MenuItem({
   label,
   active,
   exit,
+  danger,
   onPress,
 }: {
   label: string;
   active?: boolean;
   exit?: boolean;
+  danger?: boolean;
   onPress: () => void;
 }) {
   return (
     <Pressable style={styles.menuItem} onPress={onPress}>
-      <Text style={[styles.menuItemText, active && styles.menuItemTextActive, exit && styles.menuItemExit]}>
+      <Text
+        style={[
+          styles.menuItemText,
+          active && styles.menuItemTextActive,
+          exit && styles.menuItemExit,
+          danger && styles.menuItemDanger,
+        ]}
+      >
         {label}
       </Text>
     </Pressable>
@@ -111,7 +134,7 @@ function MenuItem({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -123,7 +146,7 @@ const styles = StyleSheet.create({
   },
   headerSide: { minWidth: 64 },
   backButton: { paddingVertical: 4, paddingHorizontal: 8, alignSelf: 'flex-start' },
-  backButtonText: { fontSize: 16, fontWeight: '600', color: '#1a1a1a' },
+  backButtonText: { fontSize: 16, fontWeight: '600', color: colors.primary },
   menuButton: { paddingVertical: 4, paddingHorizontal: 8 },
   menuButtonText: { fontSize: 18, fontWeight: '700' },
   betaBadgeText: { fontSize: 11, fontWeight: '700', color: '#8a6300' },
@@ -133,7 +156,7 @@ const styles = StyleSheet.create({
   menu: {
     marginTop: 8,
     width: 240,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
     borderRadius: 10,
     paddingVertical: 6,
     shadowColor: '#000',
@@ -143,8 +166,9 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   menuItem: { paddingVertical: 12, paddingHorizontal: 18 },
-  menuItemText: { fontSize: 16, color: '#1a1a1a' },
+  menuItemText: { fontSize: 16, color: colors.ink },
   menuItemTextActive: { fontWeight: '700' },
   menuItemExit: { color: '#666' },
+  menuItemDanger: { color: '#b00020', fontWeight: '600' },
   menuDivider: { height: 1, backgroundColor: '#eee', marginVertical: 6, marginHorizontal: 8 },
 });

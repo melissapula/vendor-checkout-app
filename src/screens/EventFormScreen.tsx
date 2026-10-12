@@ -4,6 +4,7 @@ import { useEvents } from '../context/EventsContext';
 import { appAlert } from '../lib/alert';
 import { Event } from '../types/database';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
+import { colors } from '../lib/theme';
 
 export default function EventFormScreen({ event, onClose }: { event?: Event; onClose: () => void }) {
   const { addEvent, updateEvent, deleteEvent } = useEvents();
@@ -137,7 +138,7 @@ export default function EventFormScreen({ event, onClose }: { event?: Event; onC
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: colors.background },
   scroll: { padding: 16 },
   heading: { fontSize: 20, fontWeight: '700', marginBottom: 16 },
   label: { fontSize: 13, color: '#666', marginTop: 16, marginBottom: 8 },
@@ -153,7 +154,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 12 },
   half: { flex: 1 },
   footer: { padding: 16, borderTopWidth: 1, borderTopColor: '#eee', gap: 10 },
-  saveButton: { backgroundColor: '#1a1a1a', paddingVertical: 14, borderRadius: 8, alignItems: 'center' },
+  saveButton: { backgroundColor: colors.primary, paddingVertical: 14, borderRadius: 8, alignItems: 'center' },
   disabled: { opacity: 0.6 },
   saveButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   deleteText: { textAlign: 'center', color: '#b00020', fontWeight: '600' },
