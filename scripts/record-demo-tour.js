@@ -288,6 +288,35 @@ async function main() {
   await openMenu(page, /^Cart/, 'The "3 for $40" deal applies itself. No mental math at the booth.', { pauseAfter: 3800 });
   log('Cart shown.');
 
+  // Checkout, up to (not including) the final "Confirm Paid": the demo
+  // store is read-only, so that last tap would only show the read-only
+  // message. Choosing Venmo sends nothing anywhere — it just draws a QR code.
+  await clickStep(page, page.getByText('Checkout', { exact: true }), 'Checkout: staff start it, then hand the device to the buyer.', {
+    pauseAfter: 1600,
+  });
+  await clickStep(page, page.getByText('Confirm & Continue', { exact: true }), 'The buyer checks their order, with the deal already taken off.', {
+    pauseBefore: 2600,
+    pauseAfter: 1200,
+  });
+  await clickStep(page, page.getByText('No tip', { exact: true }), 'They can add a tip, or skip it.', { pauseBefore: 2400, pauseAfter: 1200 });
+  await clickStep(page, page.getByText('Venmo', { exact: true }), 'Then pick how to pay. Cards and Cash App Pay appear once Stripe is connected.', {
+    pauseBefore: 3000,
+    pauseAfter: 1800,
+  });
+  await setCaption(page, 'Venmo and PayPal show a QR code with the amount filled in. The buyer scans it and pays.', 3800);
+  await clickStep(page, page.getByText("Done, I've paid", { exact: true }), null, { pauseAfter: 1200 });
+  await setCaption(page, 'Staff confirm the payment, and stock and reports update. (Switched off in this demo.)', 4000);
+  // "Cancel" steps back one screen at a time, so tap through quickly until
+  // the checkout has closed and the admin header is reachable again.
+  for (let i = 0; i < 8; i++) {
+    const cancel = page.getByText('Cancel', { exact: true });
+    if (!(await cancel.isVisible().catch(() => false))) break;
+    await cancel.click();
+    await page.waitForTimeout(120);
+  }
+  await page.waitForTimeout(500);
+  log('Checkout shown.');
+
   await openMenu(page, 'Reports', 'Reports: every sale, with fees, tips and net totals.', { pauseAfter: 2400 });
   await setCaption(page, 'Charts compare art fairs, item types, payment methods and best sellers.', 600);
   await scrollBy(page, 620);
