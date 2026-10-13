@@ -65,7 +65,7 @@ export default function CreateStoreScreen() {
         style={styles.input}
         value={name}
         onChangeText={setName}
-        placeholder="e.g. Four Seasons Studio"
+        placeholder="e.g. MFP Studios"
         onSubmitEditing={handleCreate}
       />
 

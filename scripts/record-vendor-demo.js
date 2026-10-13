@@ -214,7 +214,7 @@ async function main() {
   }
   if (!(await isChipSelected('PayPal'))) {
     await clickStep(page, page.getByText('PayPal', { exact: true }), 'And PayPal...');
-    await typeStep(page, page.getByPlaceholder('e.g. FourSeasonsStudio'), 'TwinMaplesStudio');
+    await typeStep(page, page.getByPlaceholder('e.g. MFPStudios'), 'TwinMaplesStudio');
     changedPaymentMethods = true;
   }
   if (changedPaymentMethods) {

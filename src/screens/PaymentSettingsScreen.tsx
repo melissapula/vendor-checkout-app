@@ -289,7 +289,7 @@ export default function PaymentSettingsScreen() {
             style={styles.input}
             value={paypalUsername}
             onChangeText={setPaypalUsername}
-            placeholder="e.g. FourSeasonsStudio"
+            placeholder="e.g. MFPStudios"
             autoCapitalize="none"
             onSubmitEditing={handleSave}
           />

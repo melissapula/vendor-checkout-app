@@ -1,6 +1,6 @@
 import { Piece } from '../types/database';
 
-// Real inventory, pulled from Four Seasons Studio's live Sanity dataset
+// Real inventory, pulled from MFP Studios' live Sanity dataset
 // (project 3i77cmnf, production, chrissys-studio repo) and reshaped to this
 // app's Piece schema. This is the actual catalog, not sample/test data.
 // image_url is the same CDN image used on the live site (print/sticker/pin/

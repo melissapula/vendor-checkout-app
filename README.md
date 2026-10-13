@@ -1,6 +1,6 @@
 # Checkout & Inventory App
 
-Expo/React Native app, originally built for Chrissy's Four Seasons Studio and
+Expo/React Native app, originally built for Chrissy's MFP Studios and
 since opened up as a multi-tenant app any independent art/craft vendor can
 sign up for: barcode-scan inventory, cart, and checkout via manual
 Venmo-PayPal-cash. See "Multi-tenant" below for how stores are isolated from
