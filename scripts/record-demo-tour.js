@@ -2,19 +2,25 @@
 // Records a captioned video tour of the public demo store ("Juniper Lane
 // Studio", see src/lib/demo.ts) on production: one click in from the
 // sign-in screen, then inventory, search, a cart with a deal applied,
-// reports by art fair, saved reports and deals. The demo is read-only, so
-// this only looks around — nothing it does is saved.
+// reports and their charts, saved reports, deals and the color themes. The
+// demo is read-only, so this only looks around — nothing it does is saved.
 //
 // Same pacing idea as record-vendor-demo.js (slow, captioned, with a fake
 // cursor dot), with one difference: the caption gets its own strip BELOW
 // the app instead of floating over the bottom of it, so it can never cover
 // a button, a total or the last row of a list. See reserveCaptionStrip().
 //
-// Usage: node scripts/record-demo-tour.js
+// Usage: node scripts/record-demo-tour.js [--narrate]
+//
+// --narrate also reads each caption aloud and writes a second file,
+// videos/demo-tour-narrated.mp4. The voice is Windows' built-in
+// text-to-speech (see NARRATION_VOICE), so it only works on Windows and
+// sounds synthetic; each caption stays up until its line has been spoken.
 // Output: videos/demo-tour.webm (raw), plus videos/demo-tour.mp4 with the
 // blank loading seconds trimmed off the front, if ffmpeg is on the PATH.
 const { chromium } = require('playwright');
 const { execFileSync } = require('child_process');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
@@ -134,8 +140,64 @@ async function assertStripIsClear(page, where) {
   }
 }
 
+// ---- narration (only with --narrate) ----
+const NARRATE = process.argv.includes('--narrate');
+const NARRATION_VOICE = 'Microsoft Zira Desktop';
+const NARRATION_DIR = path.join(__dirname, '..', 'videos', 'narration');
+const narration = { startedAt: 0, clips: [], busyUntil: 0 };
+
+// What to say when the caption wouldn't be read the way it's written.
+function spokenForm(text) {
+  return text
+    .replace(/(\d+)x(\d+)/g, '$1 by $2')
+    .replace('vendor-checkout-app.expo.app', 'vendor checkout app, dot expo, dot app')
+    .replace(/SKU/g, 'S K U')
+    .replace(/["]/g, '');
+}
+
+// One .wav per distinct caption, reused between takes.
+function narrationClip(text) {
+  fs.mkdirSync(NARRATION_DIR, { recursive: true });
+  const name = crypto.createHash('sha1').update(NARRATION_VOICE + spokenForm(text)).digest('hex').slice(0, 12);
+  const wav = path.join(NARRATION_DIR, `${name}.wav`);
+  if (!fs.existsSync(wav)) {
+    const txt = path.join(NARRATION_DIR, `${name}.txt`);
+    fs.writeFileSync(txt, spokenForm(text), 'utf8');
+    execFileSync(
+      'powershell',
+      [
+        '-NoProfile',
+        '-Command',
+        'Add-Type -AssemblyName System.Speech; $s = New-Object System.Speech.Synthesis.SpeechSynthesizer; ' +
+          '$s.SelectVoice($env:NARRATION_VOICE); $s.SetOutputToWaveFile($env:NARRATION_OUT); ' +
+          '$s.Speak([IO.File]::ReadAllText($env:NARRATION_IN)); $s.Dispose()',
+      ],
+      { env: { ...process.env, NARRATION_VOICE, NARRATION_OUT: wav, NARRATION_IN: txt } }
+    );
+  }
+  const seconds = Number(
+    execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', wav], { encoding: 'utf8' })
+  );
+  return { wav, seconds };
+}
+
+// When the first caption went up: everything before it is trimmed off.
+let firstCaptionAt = null;
+
 async function setCaption(page, text, pause = 1600) {
+  let clip = null;
+  if (NARRATE && text) {
+    clip = narrationClip(text);
+    // Never talk over the previous line.
+    const wait = narration.busyUntil - Date.now();
+    if (wait > 0) await page.waitForTimeout(wait);
+  }
+  if (firstCaptionAt === null) firstCaptionAt = Date.now();
   await page.evaluate((t) => window.__setCaption(t), text);
+  if (clip) {
+    narration.clips.push({ wav: clip.wav, at: (Date.now() - narration.startedAt) / 1000 });
+    narration.busyUntil = Date.now() + clip.seconds * 1000 + 350;
+  }
   await assertStripIsClear(page, text);
   if (pause) await page.waitForTimeout(pause);
 }
@@ -189,15 +251,16 @@ async function main() {
   const context = await browser.newContext({ viewport: size, recordVideo: { dir: outDir, size } });
   const page = await context.newPage();
   const recordingStarted = Date.now();
+  narration.startedAt = recordingStarted;
 
   log('Loading the app...');
   await page.goto(URL, { waitUntil: 'networkidle' });
   await page.waitForTimeout(1200);
   await reserveCaptionStrip(page);
-  // Everything before this point is a blank page loading, which would
-  // otherwise be the video's opening seconds and its thumbnail.
-  const leadSeconds = ((Date.now() - recordingStarted) / 1000).toFixed(2);
   await setCaption(page, 'Vendor Checkout: inventory, checkout and sales reports for art fair vendors.', 3000);
+  // Everything before the first caption is a blank page loading, which
+  // would otherwise be the video's opening seconds and its thumbnail.
+  const leadSeconds = ((firstCaptionAt - recordingStarted) / 1000).toFixed(2);
 
   await clickStep(page, page.getByText('Explore the demo store', { exact: true }), 'No sign-up needed. One click opens a sample art booth.', {
     pauseBefore: 2200,
@@ -225,23 +288,42 @@ async function main() {
   await openMenu(page, /^Cart/, 'The "3 for $40" deal applies itself. No mental math at the booth.', { pauseAfter: 3800 });
   log('Cart shown.');
 
-  await openMenu(page, 'Reports', 'Reports: every sale, with fees, tips and net totals.', { pauseAfter: 2600 });
-  await scrollBy(page, 500);
-  await scrollBy(page, -500, 10);
+  await openMenu(page, 'Reports', 'Reports: every sale, with fees, tips and net totals.', { pauseAfter: 2400 });
+  await setCaption(page, 'Charts compare art fairs, item types, payment methods and best sellers.', 600);
+  await scrollBy(page, 620);
+  await page.waitForTimeout(1800);
+  await scrollBy(page, 520);
+  await page.waitForTimeout(1800);
+  await scrollBy(page, -1140, 14);
   await clickStep(page, page.getByText('Lakeside Art Fair', { exact: false }).first(), 'Filter to one art fair to see how that weekend really went.', {
-    pauseAfter: 2400,
+    pauseAfter: 1600,
   });
-  await scrollBy(page, 600);
-  await page.waitForTimeout(800);
-  await scrollBy(page, -600, 10);
+  await scrollBy(page, 520);
+  await page.waitForTimeout(1600);
+  await scrollBy(page, -520, 10);
   await clickStep(page, page.getByText('Saved Reports', { exact: true }), "Save a fair's final numbers with notes, to compare next year.", {
-    pauseAfter: 3000,
+    pauseAfter: 2800,
   });
   log('Reports shown.');
 
-  await openMenu(page, 'Deals', 'Deals: bundles, buy-some-get-one and percent-off, by type or print size.', { pauseAfter: 3400 });
+  await openMenu(page, 'Deals', 'Deals: bundles, buy-some-get-one and percent-off, by type or print size.', { pauseAfter: 3000 });
+
+  // Themes. Tapping one only previews it in this recording's own browser;
+  // the demo store itself is read-only and stays as it was.
+  await openMenu(page, 'Settings', 'Make it yours: every store can pick its own color theme.', { pauseAfter: 1200 });
+  await page.getByText('Theme', { exact: true }).scrollIntoViewIfNeeded();
+  await page.waitForTimeout(900);
+  await assertStripIsClear(page, 'theme picker');
+  await clickStep(page, page.getByText('Emerald', { exact: true }), 'The themes come from my own design system.', { pauseAfter: 1500 });
+  await clickStep(page, page.getByText('Navy', { exact: true }), null, { pauseAfter: 1500 });
+  await clickStep(page, page.getByText('Terracotta', { exact: true }), null, { pauseAfter: 1700 });
+  await openMenu(page, 'Inventory', 'One tap, and the whole app changes with it.', { pauseAfter: 3200 });
+  log('Themes shown.');
 
   await setCaption(page, 'Try it yourself: vendor-checkout-app.expo.app, then "Explore the demo store".', 4500);
+
+  // Let the last line finish before the recording stops.
+  if (NARRATE) await page.waitForTimeout(Math.max(0, narration.busyUntil - Date.now()));
 
   const video = page.video();
   await context.close();
@@ -255,8 +337,25 @@ async function main() {
     const mp4 = path.join(outDir, 'demo-tour.mp4');
     execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-ss', leadSeconds, '-i', webm, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '20', '-movflags', '+faststart', mp4]);
     log(`Saved ${mp4}`);
-  } catch {
-    log('ffmpeg not found (or it failed), so there is no .mp4 copy.');
+    if (NARRATE && narration.clips.length) {
+      // Each clip is delayed to the moment its caption appeared (measured
+      // from the same trimmed start as the picture), then all are mixed.
+      const narrated = path.join(outDir, 'demo-tour-narrated.mp4');
+      const inputs = narration.clips.flatMap((c) => ['-i', c.wav]);
+      const delayed = narration.clips.map((c, i) => {
+        const ms = Math.max(0, Math.round((c.at - Number(leadSeconds)) * 1000));
+        return `[${i + 1}:a]adelay=${ms}:all=1[a${i}]`;
+      });
+      const mix = `${narration.clips.map((_, i) => `[a${i}]`).join('')}amix=inputs=${narration.clips.length}:normalize=0[narration]`;
+      execFileSync('ffmpeg', [
+        '-y', '-loglevel', 'error', '-i', mp4, ...inputs,
+        '-filter_complex', [...delayed, mix].join(';'),
+        '-map', '0:v', '-map', '[narration]', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '160k', '-movflags', '+faststart', narrated,
+      ]);
+      log(`Saved ${narrated} (${narration.clips.length} spoken lines)`);
+    }
+  } catch (err) {
+    log(`ffmpeg not found (or it failed), so the .mp4 output is missing or incomplete: ${err.message || err}`);
   }
 
   if (overlaps) {
