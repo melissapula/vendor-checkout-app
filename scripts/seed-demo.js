@@ -25,6 +25,12 @@
 // Usage: npm run seed-demo
 // Needs: migration 0020 applied, .env (project URL + anon key) and a logged-in Supabase CLI
 // (`npx supabase login`) with access to this project.
+//
+// It also runs every night on GitHub (.github/workflows/reset-demo.yml),
+// where there is no .env file and no logged-in CLI: there the same three
+// values arrive as environment variables from the repository's secrets
+// (EXPO_PUBLIC_SUPABASE_URL, EXPO_PUBLIC_SUPABASE_ANON_KEY,
+// SUPABASE_SERVICE_ROLE_KEY).
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
@@ -41,12 +47,19 @@ function log(msg) {
   console.log(`[seed-demo] ${msg}`);
 }
 
+// .env if there is one (a developer's machine), with real environment
+// variables taking priority (the nightly run on GitHub has only those).
 function readEnv() {
   const env = {};
   const file = path.join(__dirname, '..', '.env');
-  for (const line of fs.readFileSync(file, 'utf8').split(/\r?\n/)) {
-    const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
-    if (m) env[m[1]] = m[2].replace(/^['"]|['"]$/g, '');
+  if (fs.existsSync(file)) {
+    for (const line of fs.readFileSync(file, 'utf8').split(/\r?\n/)) {
+      const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
+      if (m) env[m[1]] = m[2].replace(/^['"]|['"]$/g, '');
+    }
+  }
+  for (const key of ['EXPO_PUBLIC_SUPABASE_URL', 'EXPO_PUBLIC_SUPABASE_ANON_KEY']) {
+    if (process.env[key]) env[key] = process.env[key];
   }
   return env;
 }
@@ -146,11 +159,19 @@ async function main() {
   const env = readEnv();
   const url = env.EXPO_PUBLIC_SUPABASE_URL;
   const anonKey = env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !anonKey) throw new Error('.env is missing EXPO_PUBLIC_SUPABASE_URL / EXPO_PUBLIC_SUPABASE_ANON_KEY');
+  if (!url || !anonKey) {
+    throw new Error('EXPO_PUBLIC_SUPABASE_URL / EXPO_PUBLIC_SUPABASE_ANON_KEY are not set (in .env or the environment)');
+  }
   const projectRef = new URL(url).hostname.split('.')[0];
 
-  log('Fetching the service-role key from the Supabase CLI (kept in memory only)...');
-  const admin = createClient(url, fetchServiceRoleKey(projectRef), {
+  let serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (serviceRoleKey) {
+    log('Using the service-role key from the environment.');
+  } else {
+    log('Fetching the service-role key from the Supabase CLI (kept in memory only)...');
+    serviceRoleKey = fetchServiceRoleKey(projectRef);
+  }
+  const admin = createClient(url, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 

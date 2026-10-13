@@ -1,0 +1,59 @@
+# Resets the public demo store ("Juniper Lane Studio") every night by running
+# the same script a developer runs by hand: npm run seed-demo.
+#
+# Why it's needed even though the demo is read-only: the reset puts the demo
+# login's password back (the one thing a visitor can still change, through
+# the sign-in service rather than the database), and recalculates every date
+# so the most recent art fair is always "last weekend".
+#
+# How this works on GitHub, for anyone coming from GitLab:
+# - `schedule` is GitHub's version of a pipeline schedule. The time is in
+#   UTC, it only ever runs the copy of this file on the default branch
+#   (master), and GitHub may start it some minutes late when it is busy.
+# - `workflow_dispatch` adds a "Run workflow" button on the repository's
+#   Actions tab (or `gh workflow run reset-demo.yml`), for running it on
+#   demand.
+# - `secrets.*` are the repository's Actions secrets (Settings > Secrets and
+#   variables > Actions) — GitLab's masked CI/CD variables. They are never
+#   printed in logs and are not available to workflows from forks.
+# - If a scheduled run fails, GitHub emails whoever last changed the
+#   schedule in this file.
+name: Reset demo store
+
+on:
+  schedule:
+    # 09:00 UTC every day: the small hours across the US.
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+# Nothing here writes to the repository.
+permissions:
+  contents: read
+
+# Never run two resets at once.
+concurrency:
+  group: reset-demo
+  cancel-in-progress: false
+
+jobs:
+  reset:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # The script needs only the Supabase client, not the whole app.
+      - name: Install the Supabase client
+        run: |
+          version=$(node -p "require('./package-lock.json').packages['node_modules/@supabase/supabase-js'].version")
+          mkdir -p "$RUNNER_TEMP/deps"
+          npm install --prefix "$RUNNER_TEMP/deps" --no-audit --no-fund "@supabase/supabase-js@$version"
+          echo "NODE_PATH=$RUNNER_TEMP/deps/node_modules" >> "$GITHUB_ENV"
+      - name: Reset the demo store
+        run: node scripts/seed-demo.js
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

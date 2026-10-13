@@ -212,6 +212,16 @@ Not covered by either: the login itself lives in Supabase Auth, outside
 those tables, so a visitor calling the API directly could still change the
 demo password. Re-running the seed script puts it back.
 
+The same script runs every night on GitHub
+(`.github/workflows/reset-demo.yml`, 09:00 UTC, also startable by hand from
+the Actions tab), which is what restores a changed password and keeps the
+fair dates current without anyone remembering to. There it has no `.env`
+and no logged-in CLI, so it takes its three settings from repository
+secrets: `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` and
+`SUPABASE_SERVICE_ROLE_KEY`. If the service-role key is ever rotated in
+Supabase, update that secret or the nightly run will start failing (GitHub
+emails whoever last edited the schedule).
+
 A few other things behave differently when signed in as the demo (`isDemo`
 on `AuthContext`): the app opens on the admin Inventory screen instead of
 the customer screen, Reports opens on "All time", a banner offers "Exit

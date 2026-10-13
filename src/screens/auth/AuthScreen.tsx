@@ -19,7 +19,7 @@ const CONFIRMATION_SENDER = 'mfpstudioart@gmail.com';
 
 export default function AuthScreen({ onForgotPassword }: { onForgotPassword: () => void }) {
   const { signIn, signUp } = useAuth();
-  const [mode, setMode] = useState<'sign-in' | 'sign-up'>('sign-up');
+  const [mode, setMode] = useState<'sign-in' | 'sign-up'>('sign-in');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
   },
   disabled: { opacity: 0.6 },
   submitButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
-  toggle: { color: '#666', marginTop: 8 },
+  toggle: { color: '#666', marginTop: 8, fontSize: 13 },
   demoBox: {
     marginTop: 20,
     padding: 16,
