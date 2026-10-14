@@ -12,11 +12,24 @@
 // without this a viewer has no visual cue where an action happened).
 //
 // Usage: node scripts/record-vendor-demo.js
+// Needs TEST_VENDOR_PASSWORD (the Twin Maples account's password) in .env or
+// the environment; it is kept out of the code because this repo is public.
 const { chromium } = require('playwright');
+const fs = require('fs');
 const path = require('path');
 
+function readTestPassword() {
+  if (process.env.TEST_VENDOR_PASSWORD) return process.env.TEST_VENDOR_PASSWORD;
+  const file = path.join(__dirname, '..', '.env');
+  if (fs.existsSync(file)) {
+    const m = fs.readFileSync(file, 'utf8').match(/^\s*TEST_VENDOR_PASSWORD\s*=\s*(.*?)\s*$/m);
+    if (m) return m[1].replace(/^['"]|['"]$/g, '');
+  }
+  throw new Error('TEST_VENDOR_PASSWORD is not set (in .env or the environment)');
+}
+
 const EMAIL = 'demo.vendor.mfp+beta1@gmail.com';
-const PASSWORD = 'DemoVendor2026!';
+const PASSWORD = readTestPassword();
 const PIN = '4321';
 const PIECE_TITLE = 'Twilight Falls';
 const PIECE_PRICE = '225';
