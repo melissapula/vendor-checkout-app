@@ -44,6 +44,9 @@ supabase/.temp/
 # output, not source
 videos/
 
+# Test screenshots (see tests/README.md) — regenerated on every run
+test-results/
+
 # generated native folders
 /ios
 /android

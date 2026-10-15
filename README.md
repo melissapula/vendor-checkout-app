@@ -122,6 +122,15 @@ signed-in vendor's own store name (see `App.tsx`); the static default in
       Replace these with Chrissy's real picks whenever she has them; that's a
       row edit in Supabase, no app change needed.
 
+## Tests
+
+End-to-end scripts in `tests/` (Playwright for the app, the Supabase client
+for the database rules). `npm run test:ui` and `npm run test:api` run them
+against the live site; GitHub Actions runs the ui tests on every push to
+master and every pull request (`.github/workflows/tests.yml`). See
+[`tests/README.md`](tests/README.md) for what each covers, what it writes,
+and the settings it needs.
+
 ## Admin vs. Customer
 
 The app has two modes, switched via `AppModeContext` (`src/context/AppModeContext.tsx`):
