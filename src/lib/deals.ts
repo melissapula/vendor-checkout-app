@@ -1,4 +1,4 @@
-import { effectivePrice, type CartItem } from '../context/CartContext';
+import { effectivePrice, type CartItem } from './cartItem';
 import type { Deal, PieceType } from '../types/database';
 
 // Structured shape for Deal.applies_to / trigger_condition (stored as jsonb
