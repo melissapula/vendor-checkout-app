@@ -1,0 +1,104 @@
+# Runs the test scripts in tests/ (see tests/README.md).
+#
+# Two jobs, because they test different things:
+# - `ui` tests the code in the commit. Pushing does not deploy (deploys are
+#   run by hand), so pointing the tests at the live site after a push would
+#   test the old code. Instead this builds the web app from the commit,
+#   serves it inside the job, and runs tests/ui against that. The app still
+#   talks to the live database, so every ui script is read-only.
+# - `api` tests the database rules and the deployed server function, which
+#   no commit changes until a migration or function deploy is run by hand.
+#   It runs nightly, just after the demo reset (reset-demo.yml), so a
+#   broken reset shows up too. tests/api/lock.js writes and deletes one row
+#   in the test vendor's store.
+#
+# How the triggers work on GitHub, for anyone coming from GitLab:
+# - `push` to master runs after a merge. `pull_request` runs on every push
+#   to a branch with an open pull request, testing the branch as if merged
+#   into master; its result shows as a check on the pull request page.
+#   Pushes to other branches without a pull request run nothing, so a
+#   branch is never tested twice.
+# - Pull requests from forks get no secrets, so `ui` is skipped for them
+#   instead of failing on a missing password.
+# - `schedule` only ever runs the copy of this file on master, in UTC.
+# - `workflow_dispatch` adds a "Run workflow" button on the Actions tab (or
+#   `gh workflow run tests.yml`), which runs both jobs.
+name: Tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  schedule:
+    # 09:30 UTC, half an hour after the nightly demo reset.
+    - cron: '30 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ui:
+    if: >-
+      github.event_name == 'push' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # A newer push to the same branch cancels the older, now pointless run.
+    concurrency:
+      group: tests-ui-${{ github.ref }}
+      cancel-in-progress: true
+    env:
+      EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+      TEST_VENDOR_EMAIL: ${{ secrets.TEST_VENDOR_EMAIL }}
+      TEST_VENDOR_PASSWORD: ${{ secrets.TEST_VENDOR_PASSWORD }}
+      TEST_VENDOR_PIN: ${{ secrets.TEST_VENDOR_PIN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Install the Chromium browser for Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Build the web app from this commit
+        run: npx expo export --platform web
+      - name: Serve the build and run the ui tests against it
+        run: |
+          python3 -m http.server 8081 --directory dist > /dev/null 2>&1 &
+          for i in $(seq 1 20); do curl -sf http://localhost:8081/ > /dev/null && break; sleep 1; done
+          npm run test:ui -- http://localhost:8081
+      - name: Keep the screenshots when something failed
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-test-results
+          path: test-results/
+          retention-days: 14
+
+  api:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Never cancelled part-way: lock.js cleans up its own test row at the end.
+    concurrency:
+      group: tests-api
+      cancel-in-progress: false
+    env:
+      EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+      TEST_VENDOR_EMAIL: ${{ secrets.TEST_VENDOR_EMAIL }}
+      TEST_VENDOR_PASSWORD: ${{ secrets.TEST_VENDOR_PASSWORD }}
+      TEST_VENDOR_PIN: ${{ secrets.TEST_VENDOR_PIN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run test:api

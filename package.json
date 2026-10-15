@@ -37,7 +37,9 @@
     "deploy:web": "expo export --platform web && eas deploy --prod",
     "record-demo": "node scripts/record-demo.js",
     "seed-demo": "node scripts/seed-demo.js",
-    "sync-themes": "node scripts/sync-mfp-themes.js"
+    "sync-themes": "node scripts/sync-mfp-themes.js",
+    "test:ui": "node tests/run.js ui",
+    "test:api": "node tests/run.js api"
   },
   "private": true
 }
