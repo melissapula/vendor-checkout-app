@@ -157,7 +157,7 @@ export type Store = {
 };
 
 // One row per store — the shared "current cart" every device signed into
-// that store sees live. `items` is CartItem[] (defined in CartContext.tsx,
+// that store sees live. `items` is CartItem[] (defined in src/lib/cartItem.ts,
 // not here, since it's an app-level shape built on Piece) stored as Json;
 // the client casts on read the same way finalize_sale's sale_rows does.
 export type StoreCart = {
