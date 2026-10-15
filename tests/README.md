@@ -1,8 +1,12 @@
 # Tests
 
-End-to-end checks of the real app and the real database. There is no test
-database: every script talks to the live Supabase project, so each one says
-in its header comment exactly what (if anything) it writes.
+This folder holds end-to-end checks of the real app and the real database.
+There is no test database: every script here talks to the live Supabase
+project, so each one says in its header comment exactly what (if anything)
+it writes.
+
+Unit tests are separate and live next to the code they test (see
+[Unit tests](#unit-tests) below).
 
 | Folder | What | Writes? | Runs on GitHub |
 |---|---|---|---|
@@ -36,6 +40,20 @@ npx expo export --platform web
 python -m http.server 8081 --directory dist
 npm run test:ui -- http://localhost:8081
 ```
+
+## Unit tests
+
+Jest tests of plain functions, in `src/**/*.test.ts` next to the file they
+test (for example `src/lib/fees.test.ts`). They touch nothing live: no
+browser, no network, no `.env`.
+
+```sh
+npm run test:unit                 # all of them
+npx jest src/lib/fees.test.ts     # one file
+```
+
+On GitHub they run on every pull request (including from forks, since they
+need no secrets) and every push to master.
 
 ## Settings
 

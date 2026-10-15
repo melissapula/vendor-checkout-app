@@ -1,6 +1,10 @@
-# Runs the test scripts in tests/ (see tests/README.md).
+# Runs the test scripts in tests/ and the unit tests next to the source
+# (see tests/README.md).
 #
-# Two jobs, because they test different things:
+# Three jobs, because they test different things:
+# - `unit` runs the Jest unit tests (src/**/*.test.ts) on plain functions.
+#   No browser, no network, no secrets, so it is the one job that also
+#   runs on pull requests from forks.
 # - `ui` tests the code in the commit. Pushing does not deploy (deploys are
 #   run by hand), so pointing the tests at the live site after a push would
 #   test the old code. Instead this builds the web app from the commit,
@@ -19,10 +23,11 @@
 #   Pushes to other branches without a pull request run nothing, so a
 #   branch is never tested twice.
 # - Pull requests from forks get no secrets, so `ui` is skipped for them
-#   instead of failing on a missing password.
+#   instead of failing on a missing password. `unit` needs none, so it runs.
 # - `schedule` only ever runs the copy of this file on master, in UTC.
 # - `workflow_dispatch` adds a "Run workflow" button on the Actions tab (or
-#   `gh workflow run tests.yml`), which runs both jobs.
+#   `gh workflow run tests.yml`), which runs all three jobs. The nightly
+#   `schedule` runs only `api`.
 name: Tests
 
 on:
@@ -38,6 +43,22 @@ permissions:
   contents: read
 
 jobs:
+  unit:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: tests-unit-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run test:unit
+
   ui:
     if: >-
       github.event_name == 'push' ||
