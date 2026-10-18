@@ -44,6 +44,13 @@ export function platformFeeCents(feeBaseCents: number, rate: number): number {
   return Math.max(0, Math.round(exactCents));
 }
 
+// Stripe rejects refund_application_fee on a charge that had no application
+// fee ("has no application fee to refund"), so a refund sends the flag only
+// when the PaymentIntent carried one.
+export function shouldRefundApplicationFee(applicationFeeAmount: number | null | undefined): boolean {
+  return (applicationFeeAmount ?? 0) > 0;
+}
+
 export interface BalanceTransactionFeeDetail {
   type: string;
   amount: number;

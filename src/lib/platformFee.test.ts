@@ -5,6 +5,7 @@ import {
   parseExemptStoreIds,
   parsePlatformFeeRate,
   platformFeeCents,
+  shouldRefundApplicationFee,
   splitBalanceTransactionFees,
 } from '../../supabase/functions/_shared/platformFee';
 
@@ -104,5 +105,17 @@ describe('splitBalanceTransactionFees', () => {
 
   test('no breakdown yet gives nulls', () => {
     expect(splitBalanceTransactionFees(null)).toEqual({ stripeFeeCents: null, platformFeeCents: null });
+  });
+});
+
+// Stripe rejects refund_application_fee on a charge that had no fee, so the
+// flag is sent only when the PaymentIntent actually carried one.
+describe('shouldRefundApplicationFee', () => {
+  test('a payment with a platform fee refunds it', () => {
+    expect(shouldRefundApplicationFee(25)).toBe(true);
+  });
+
+  test.each([null, undefined, 0])('a payment with fee %s refunds none', (amount) => {
+    expect(shouldRefundApplicationFee(amount)).toBe(false);
   });
 });
