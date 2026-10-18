@@ -1,8 +1,9 @@
-// Creates (if needed) the vendor's Stripe Express connected account and
-// returns a fresh Account Link URL for Stripe's hosted onboarding form.
-// Express + direct charges (not destination/standard): funds settle
-// straight to the vendor's own account, this app takes no revenue cut, and
-// the vendor — not the app owner — is merchant-of-record for their sales.
+// Creates (if needed) the vendor's Stripe connected account and returns a
+// fresh Account Link URL for Stripe's hosted onboarding form. Direct charges
+// (not destination): funds settle straight to the vendor's own account, this
+// app takes no revenue cut, and the vendor — not the app owner — is
+// merchant-of-record for their sales. New accounts use Stripe-owned pricing
+// with the full Stripe dashboard; see _shared/connectAccount.ts.
 //
 // Deploy: supabase functions deploy stripe-connect-onboarding
 // Secrets: supabase secrets set STRIPE_SECRET_KEY=sk_...
@@ -10,6 +11,7 @@
 import Stripe from 'npm:stripe@17';
 import { corsHeaders } from '../_shared/cors.ts';
 import { getCallingStore } from '../_shared/store.ts';
+import { NEW_CONNECTED_ACCOUNT_PARAMS } from '../_shared/connectAccount.ts';
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
   httpClient: Stripe.createFetchHttpClient(),
@@ -65,13 +67,7 @@ Deno.serve(async (req) => {
     }
 
     if (!accountId) {
-      const account = await stripe.accounts.create({
-        type: 'express',
-        capabilities: {
-          card_payments: { requested: true },
-          transfers: { requested: true },
-        },
-      });
+      const account = await stripe.accounts.create(NEW_CONNECTED_ACCOUNT_PARAMS);
       accountId = account.id;
       const { error: updateError } = await supabase
         .from('stores')
