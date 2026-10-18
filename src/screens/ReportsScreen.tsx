@@ -21,6 +21,7 @@ import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive'
 import { refundSale } from '../lib/refunds';
 import { appAlert } from '../lib/alert';
 import { salesGroupedBy, salesOverTime } from '../lib/reportCharts';
+import { summarizeSales } from '../lib/salesSummary';
 import { RankedBarChart, TimeBarChart } from '../components/ReportCharts';
 import { colors } from '../lib/theme';
 import { paymentMethodLabel, typeLabel } from '../lib/labels';
@@ -167,12 +168,7 @@ function SalesReport({ onManageEvents }: { onManageEvents: () => void }) {
   // gross/net/by-type — the money isn't actually the store's anymore.
   const activeFiltered = useMemo(() => filtered.filter((s) => !s.refunded_at), [filtered]);
 
-  const summary = useMemo(() => {
-    const gross = activeFiltered.reduce((sum, s) => sum + s.sale_price, 0);
-    const fees = activeFiltered.reduce((sum, s) => sum + s.fee_amount, 0);
-    const tips = activeFiltered.reduce((sum, s) => sum + (s.tip_amount ?? 0), 0);
-    return { gross, fees, tips, net: gross - fees, count: activeFiltered.length };
-  }, [activeFiltered]);
+  const summary = useMemo(() => summarizeSales(activeFiltered), [activeFiltered]);
 
   const byType = useMemo(() => {
     const map = new Map<string, { count: number; gross: number }>();
@@ -377,6 +373,9 @@ function SalesReport({ onManageEvents }: { onManageEvents: () => void }) {
             <SummaryRow label="Gross sales" value={summary.gross} />
             <SummaryRow label="Tips collected" value={summary.tips} />
             <SummaryRow label="Fees deducted" value={-summary.fees} muted />
+            {summary.platformFees > 0 && (
+              <SummaryRow label="Platform fee" value={-summary.platformFees} muted />
+            )}
             <SummaryRow label="Net revenue" value={summary.net} bold />
           </View>
 
@@ -823,6 +822,9 @@ function SavedReportDetail({
           <SummaryRow label="Gross sales" value={snapshot.summary.gross} />
           <SummaryRow label="Tips collected" value={snapshot.summary.tips} />
           <SummaryRow label="Fees deducted" value={-snapshot.summary.fees} muted />
+          {(snapshot.summary.platformFees ?? 0) > 0 && (
+            <SummaryRow label="Platform fee" value={-(snapshot.summary.platformFees ?? 0)} muted />
+          )}
           <SummaryRow label="Net revenue" value={snapshot.summary.net} bold />
         </View>
 

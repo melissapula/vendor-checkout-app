@@ -41,9 +41,11 @@ export function exportInventoryCsv(pieces: Piece[]) {
   downloadCsv(`inventory-${todayStamp()}.csv`, rows);
 }
 
-export function exportSalesCsv(sales: Sale[], pieces: Piece[]) {
+// fee_amount is Stripe's fee and platform_fee_amount the MFP Apps fee; net
+// is what the vendor keeps after both.
+export function salesCsvRows(sales: Sale[], pieces: Piece[]) {
   const pieceById = new Map(pieces.map((p) => [p.id, p]));
-  const rows = sales.map((s) => ({
+  return sales.map((s) => ({
     sale_date: s.sale_date,
     title: pieceById.get(s.piece_id)?.title ?? 'Unknown item',
     sku: pieceById.get(s.piece_id)?.sku ?? '',
@@ -51,10 +53,14 @@ export function exportSalesCsv(sales: Sale[], pieces: Piece[]) {
     tip_amount: s.tip_amount ?? 0,
     payment_method: s.payment_method,
     fee_amount: s.fee_amount,
-    net: Math.round((s.sale_price - s.fee_amount) * 100) / 100,
+    platform_fee_amount: s.platform_fee_amount,
+    net: Math.round((s.sale_price - s.fee_amount - s.platform_fee_amount) * 100) / 100,
     refunded: s.refunded_at ? 'yes' : 'no',
     refunded_at: s.refunded_at ?? '',
     location: s.location ?? '',
   }));
-  downloadCsv(`sales-${todayStamp()}.csv`, rows);
+}
+
+export function exportSalesCsv(sales: Sale[], pieces: Piece[]) {
+  downloadCsv(`sales-${todayStamp()}.csv`, salesCsvRows(sales, pieces));
 }
