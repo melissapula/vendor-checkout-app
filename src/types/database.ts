@@ -115,7 +115,9 @@ export type ReportSnapshotSaleLine = {
 };
 
 export type ReportSnapshot = {
-  summary: { count: number; gross: number; fees: number; tips: number; net: number };
+  // platformFees is optional because snapshots saved before the platform fee
+  // existed don't have it.
+  summary: { count: number; gross: number; fees: number; platformFees?: number; tips: number; net: number };
   byType: { type: string; count: number; gross: number }[];
   sales: ReportSnapshotSaleLine[];
 };
