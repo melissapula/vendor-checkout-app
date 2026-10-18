@@ -18,6 +18,7 @@ import { evaluateDeals } from '../lib/deals';
 import { calculateFee } from '../lib/fees';
 import { venmoPayUrl, paypalPayUrl, renderQrDataUrl } from '../lib/payLinks';
 import { createStripeCheckout, checkStripeCheckoutStatus } from '../lib/payments';
+import { apportionPerUnit, saleTotals } from '../lib/saleMath';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 import { appAlert } from '../lib/alert';
 import { supabase } from '../lib/supabase';
@@ -139,19 +140,24 @@ export default function CheckoutScreen({
     return effectiveSubtotal + tipAmount + (passFeeToBuyer ? f : 0);
   }
 
-  async function finalizeSale(actualFee: number, processorPaymentId: string | null, m: PaymentMethod) {
+  // stripeFee is Stripe's processing fee (or the estimate for self-reported
+  // methods); platformFee is the MFP Apps application fee, 0 off Stripe.
+  async function finalizeSale(
+    stripeFee: number,
+    platformFee: number,
+    processorPaymentId: string | null,
+    m: PaymentMethod
+  ) {
     const newSales: NewSale[] = [];
 
     items.forEach((item, itemIndex) => {
       const itemDiscount = dealsResult.discountByPieceId.get(item.piece.id) ?? 0;
       const perUnitDiscount = itemDiscount / item.quantity;
       const unitPrice = Math.max(0, effectivePrice(item) - perUnitDiscount);
+      const lineAmount = unitPrice * item.quantity;
 
-      const apportionedFee =
-        effectiveSubtotal > 0
-          ? Math.round(((unitPrice * item.quantity) / effectiveSubtotal) * actualFee * 100) / 100
-          : 0;
-      const perUnitFee = Math.round((apportionedFee / item.quantity) * 100) / 100;
+      const perUnitFee = apportionPerUnit(stripeFee, lineAmount, effectiveSubtotal, item.quantity);
+      const perUnitPlatformFee = apportionPerUnit(platformFee, lineAmount, effectiveSubtotal, item.quantity);
 
       for (let i = 0; i < item.quantity; i++) {
         newSales.push({
@@ -160,6 +166,7 @@ export default function CheckoutScreen({
           tip_amount: itemIndex === 0 && i === 0 ? tipAmount : null,
           payment_method: m,
           fee_amount: perUnitFee,
+          platform_fee_amount: perUnitPlatformFee,
           sale_date: new Date().toISOString(),
           processor_payment_id: itemIndex === 0 && i === 0 ? processorPaymentId : null,
           location: null,
@@ -204,13 +211,18 @@ export default function CheckoutScreen({
       if (error) throw error;
       applyPieceUpdates(data.pieces);
       applySales(data.sales);
-      const total = effectiveSubtotal + tipAmount + (passFeeToBuyer ? actualFee : 0);
-      const net = effectiveSubtotal - (passFeeToBuyer ? 0 : actualFee);
+      const { charged, net } = saleTotals({
+        subtotal: effectiveSubtotal,
+        tip: tipAmount,
+        stripeFee,
+        platformFee,
+        passFeeToBuyer,
+      });
       clear();
       onClose();
       appAlert(
         'Sale recorded',
-        `Charged $${total.toFixed(2)} via ${METHOD_LABELS[m]}.\nNet after fees: $${net.toFixed(2)}`
+        `Charged $${charged.toFixed(2)} via ${METHOD_LABELS[m]}.\nNet after fees: $${net.toFixed(2)}`
       );
     } catch (err) {
       appAlert(
@@ -253,14 +265,23 @@ export default function CheckoutScreen({
       if (STRIPE_METHODS.includes(selected)) {
         const idempotencyKey = crypto.randomUUID();
         const amountCents = Math.round(buyerTotalFor(selected) * 100);
-        const { url, sessionId } = await createStripeCheckout(
+        // The platform fee is a percentage of the subtotal after deals only —
+        // not the tip, and not a Stripe fee passed on to the buyer.
+        const feeBaseCents = Math.round(effectiveSubtotal * 100);
+        const { url, sessionId, platformFeeCents } = await createStripeCheckout(
           amountCents,
+          feeBaseCents,
           idempotencyKey,
           selected === 'cash_app' ? 'cashapp' : 'card'
         );
         setCheckoutSessionId(sessionId);
         setQrDataUrl(await renderQrDataUrl(url));
-        pollTimer.current = setInterval(() => pollCardStatus(sessionId, selected), CARD_POLL_INTERVAL_MS);
+        // ?? 0: a stripe-create-checkout deployed before the platform fee
+        // doesn't return the field, and took no fee.
+        pollTimer.current = setInterval(
+          () => pollCardStatus(sessionId, selected, platformFeeCents ?? 0),
+          CARD_POLL_INTERVAL_MS
+        );
       } else if (selected === 'venmo' && store?.venmo_username) {
         const url = venmoPayUrl(store.venmo_username, buyerTotalFor(selected), `${store.name} purchase`);
         setQrDataUrl(await renderQrDataUrl(url));
@@ -277,7 +298,10 @@ export default function CheckoutScreen({
     }
   }
 
-  async function pollCardStatus(sessionId: string, m: PaymentMethod) {
+  // createdPlatformFeeCents is the fee stripe-create-checkout set on this
+  // session — exact, and the fallback while Stripe's own fee breakdown
+  // hasn't been attached to the charge yet.
+  async function pollCardStatus(sessionId: string, m: PaymentMethod, createdPlatformFeeCents: number) {
     try {
       const status = await checkStripeCheckoutStatus(sessionId);
       // A slow network response can leave two ticks in flight at once —
@@ -289,8 +313,14 @@ export default function CheckoutScreen({
         finalizingRef.current = true;
         if (pollTimer.current) clearInterval(pollTimer.current);
         setCardPaid(true);
-        const realFee = status.feeAmountCents != null ? status.feeAmountCents / 100 : feeFor(m);
-        await finalizeSale(realFee, status.paymentIntentId, m);
+        const platformFeeCents = status.platformFeeCents ?? createdPlatformFeeCents;
+        const stripeFee =
+          status.stripeFeeCents != null
+            ? status.stripeFeeCents / 100
+            : status.feeAmountCents != null
+              ? (status.feeAmountCents - platformFeeCents) / 100
+              : feeFor(m);
+        await finalizeSale(stripeFee, platformFeeCents / 100, status.paymentIntentId, m);
       }
     } catch {
       // A transient poll failure isn't fatal — just try again next tick.
@@ -520,7 +550,7 @@ export default function CheckoutScreen({
           <Pressable
             style={[styles.confirmButton, isTabletUp && styles.confirmButtonTabletUp, submitting && styles.confirmButtonDisabled]}
             disabled={submitting}
-            onPress={() => method && finalizeSale(fee, null, method)}
+            onPress={() => method && finalizeSale(fee, 0, null, method)}
           >
             {submitting ? (
               <ActivityIndicator color="#fff" />

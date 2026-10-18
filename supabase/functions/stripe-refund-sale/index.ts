@@ -7,12 +7,19 @@
 // point, so staff need to know to fix the record by hand rather than
 // silently losing track of it.
 //
+// When the payment carried a platform application fee, the refund also
+// returns it to the vendor (refund_application_fee), so a refunded sale costs
+// them no platform fee. The flag is left off otherwise, because Stripe rejects
+// it on a charge with no fee. The PaymentIntent is the source of truth, not
+// the sale row: a multi-unit sale splits the fee across rows.
+//
 // Deploy: supabase functions deploy stripe-refund-sale
 // Secrets: supabase secrets set STRIPE_SECRET_KEY=sk_...
 
 import Stripe from 'npm:stripe@17';
 import { corsHeaders } from '../_shared/cors.ts';
 import { getCallingStore } from '../_shared/store.ts';
+import { shouldRefundApplicationFee } from '../_shared/platformFee.ts';
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
   httpClient: Stripe.createFetchHttpClient(),
@@ -66,8 +73,16 @@ Deno.serve(async (req) => {
     // payment) so two overlapping invocations for the same sale (a client
     // retry, or the race this refund_sale() itself now closes on the DB
     // side) collapse into one real Stripe refund instead of two.
+    const paymentIntent = await stripe.paymentIntents.retrieve(sale.processor_payment_id, {
+      stripeAccount: store.stripe_account_id,
+    });
+    const refundParams: Stripe.RefundCreateParams = { payment_intent: sale.processor_payment_id };
+    if (shouldRefundApplicationFee(paymentIntent.application_fee_amount)) {
+      refundParams.refund_application_fee = true;
+    }
+
     await stripe.refunds.create(
-      { payment_intent: sale.processor_payment_id },
+      refundParams,
       { stripeAccount: store.stripe_account_id, idempotencyKey: `refund-sale-${sale.id}` }
     );
 

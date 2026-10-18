@@ -5,12 +5,20 @@
 // detects support on their device) — this app's own screen never collects
 // card details at all.
 //
+// The platform takes an application fee on the charge: PLATFORM_FEE_RATE of
+// the client's feeBaseCents (the subtotal after deals, no tip), except for
+// stores listed in PLATFORM_FEE_EXEMPT_STORE_IDS. Unset rate = no fee. See
+// _shared/platformFee.ts.
+//
 // Deploy: supabase functions deploy stripe-create-checkout
 // Secrets: supabase secrets set STRIPE_SECRET_KEY=sk_...
+//          supabase secrets set PLATFORM_FEE_RATE=0.01 (optional)
+//          supabase secrets set PLATFORM_FEE_EXEMPT_STORE_IDS=<id>,<id> (optional)
 
 import Stripe from 'npm:stripe@17';
 import { corsHeaders } from '../_shared/cors.ts';
 import { getCallingStore } from '../_shared/store.ts';
+import { parseExemptStoreIds, parsePlatformFeeRate, platformFeeCents } from '../_shared/platformFee.ts';
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
   httpClient: Stripe.createFetchHttpClient(),
@@ -29,13 +37,25 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { amountCents, idempotencyKey, paymentMethodType } = await req.json();
+    const { amountCents, feeBaseCents, idempotencyKey, paymentMethodType } = await req.json();
     if (!Number.isInteger(amountCents) || amountCents <= 0) {
       return new Response(JSON.stringify({ error: 'amountCents must be a positive integer' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+    if (!Number.isInteger(feeBaseCents) || feeBaseCents < 0 || feeBaseCents > amountCents) {
+      return new Response(JSON.stringify({ error: 'feeBaseCents must be an integer from 0 to amountCents' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Parsed before the exemption check so a bad rate secret fails every
+    // store's card checkout, not only the non-exempt ones.
+    const configuredRate = parsePlatformFeeRate(Deno.env.get('PLATFORM_FEE_RATE'));
+    const isExempt = parseExemptStoreIds(Deno.env.get('PLATFORM_FEE_EXEMPT_STORE_IDS')).has(store.id);
+    const fee = platformFeeCents(feeBaseCents, isExempt ? 0 : configuredRate);
 
     // 'card' or 'cashapp' — both are real Stripe payment method types that
     // work on this Connect (Direct charge) setup. Scoping the session to one
@@ -60,6 +80,8 @@ Deno.serve(async (req) => {
         ],
         success_url: 'https://vendor-checkout-app.expo.app/?paid=1',
         cancel_url: 'https://vendor-checkout-app.expo.app/?paid=0',
+        // Stripe rejects a zero application fee, so leave it off entirely.
+        ...(fee > 0 ? { payment_intent_data: { application_fee_amount: fee } } : {}),
       },
       {
         stripeAccount: store.stripe_account_id,
@@ -67,7 +89,7 @@ Deno.serve(async (req) => {
       }
     );
 
-    return new Response(JSON.stringify({ url: session.url, sessionId: session.id }), {
+    return new Response(JSON.stringify({ url: session.url, sessionId: session.id, platformFeeCents: fee }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {
