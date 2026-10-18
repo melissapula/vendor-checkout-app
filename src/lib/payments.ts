@@ -62,15 +62,25 @@ export async function getStripeAccountBalance(): Promise<StripeAccountBalance> {
   return data!;
 }
 
+export interface StripeCheckoutSession {
+  url: string;
+  sessionId: string;
+  // The application fee set on this charge; see
+  // supabase/functions/_shared/platformFee.ts.
+  platformFeeCents: number;
+}
+
+// feeBaseCents is what the platform fee is a percentage of: the subtotal
+// after deals, without the tip or any Stripe fee passed to the buyer.
 export async function createStripeCheckout(
   amountCents: number,
+  feeBaseCents: number,
   idempotencyKey: string,
   paymentMethodType: 'card' | 'cashapp'
-): Promise<{ url: string; sessionId: string }> {
-  const { data, error } = await supabase.functions.invoke<{ url: string; sessionId: string }>(
-    'stripe-create-checkout',
-    { body: { amountCents, idempotencyKey, paymentMethodType } }
-  );
+): Promise<StripeCheckoutSession> {
+  const { data, error } = await supabase.functions.invoke<StripeCheckoutSession>('stripe-create-checkout', {
+    body: { amountCents, feeBaseCents, idempotencyKey, paymentMethodType },
+  });
   if (error) throw await unwrapFunctionError(error);
   return data!;
 }
@@ -78,7 +88,11 @@ export async function createStripeCheckout(
 export interface StripeCheckoutStatus {
   paymentStatus: 'paid' | 'unpaid' | 'no_payment_required';
   paymentIntentId: string | null;
+  // Deprecated: Stripe's fee and the platform fee combined. Use the two
+  // fields below; this is only the fallback while they're null.
   feeAmountCents: number | null;
+  stripeFeeCents: number | null;
+  platformFeeCents: number | null;
 }
 
 export async function checkStripeCheckoutStatus(sessionId: string): Promise<StripeCheckoutStatus> {

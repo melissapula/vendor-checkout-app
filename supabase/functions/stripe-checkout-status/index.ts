@@ -11,6 +11,7 @@
 import Stripe from 'npm:stripe@17';
 import { corsHeaders } from '../_shared/cors.ts';
 import { getCallingStore } from '../_shared/store.ts';
+import { splitBalanceTransactionFees } from '../_shared/platformFee.ts';
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
   httpClient: Stripe.createFetchHttpClient(),
@@ -52,7 +53,13 @@ Deno.serve(async (req) => {
       JSON.stringify({
         paymentStatus: session.payment_status, // 'paid' | 'unpaid' | 'no_payment_required'
         paymentIntentId: paymentIntent?.id ?? null,
+        // Deprecated: Stripe's fee plus any platform fee, combined. Kept for
+        // one release so a web app deployed before this function still
+        // records a fee; remove once every client reads the two fields below.
         feeAmountCents: balanceTransaction?.fee ?? null,
+        // Null until Stripe attaches the fee breakdown, which can lag the
+        // 'paid' status — the client falls back to its own numbers then.
+        ...splitBalanceTransactionFees(balanceTransaction?.fee_details ?? null),
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

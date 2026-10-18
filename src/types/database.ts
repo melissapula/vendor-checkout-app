@@ -49,6 +49,10 @@ export type Sale = {
   tip_amount: number | null;
   payment_method: PaymentMethod;
   fee_amount: number;
+  // The MFP Apps application fee on a card/Cash App sale, kept apart from
+  // fee_amount (Stripe's fee). 0 for every other method. See
+  // supabase/migrations/0023_sales_platform_fee.sql.
+  platform_fee_amount: number;
   sale_date: string;
   processor_payment_id: string | null;
   location: string | null;

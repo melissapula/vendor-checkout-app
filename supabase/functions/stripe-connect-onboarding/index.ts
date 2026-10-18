@@ -1,7 +1,8 @@
 // Creates (if needed) the vendor's Stripe connected account and returns a
 // fresh Account Link URL for Stripe's hosted onboarding form. Direct charges
-// (not destination): funds settle straight to the vendor's own account, this
-// app takes no revenue cut, and the vendor — not the app owner — is
+// (not destination): funds settle straight to the vendor's own account, the
+// platform's only cut is the application fee in _shared/platformFee.ts, and
+// the vendor — not the app owner — is
 // merchant-of-record for their sales. New accounts use Stripe-owned pricing
 // with the full Stripe dashboard; see _shared/connectAccount.ts.
 //

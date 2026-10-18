@@ -461,6 +461,17 @@ npx supabase functions deploy stripe-refund-sale
 npx supabase functions deploy stripe-account-balance
 ```
 
+**Platform fee secrets** (both optional; read by `stripe-create-checkout`,
+see `supabase/functions/_shared/platformFee.ts`):
+- `PLATFORM_FEE_RATE`: the MFP Apps fee on card and Cash App sales, as a
+  fraction of the subtotal after deals (tips are never charged), for example
+  `0.01` for 1%. Unset means no fee. Anything that isn't a number from 0 to
+  0.05 makes every card checkout fail on purpose rather than charge a guessed
+  rate. `npx supabase secrets unset PLATFORM_FEE_RATE` stops the fee at once,
+  with no deploy.
+- `PLATFORM_FEE_EXEMPT_STORE_IDS`: comma-separated store ids that pay no
+  platform fee (MFP Studios).
+
 **Stripe balance**: Payment Settings shows the vendor how much money is
 currently sitting in their Stripe account (available for the next payout,
 plus anything still clearing) via `stripe-account-balance` — read-only,

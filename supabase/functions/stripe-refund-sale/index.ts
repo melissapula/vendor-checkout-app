@@ -7,6 +7,10 @@
 // point, so staff need to know to fix the record by hand rather than
 // silently losing track of it.
 //
+// The refund also returns the platform's application fee to the vendor
+// (refund_application_fee), so a refunded sale costs them no platform fee.
+// It does nothing on a charge that had no fee.
+//
 // Deploy: supabase functions deploy stripe-refund-sale
 // Secrets: supabase secrets set STRIPE_SECRET_KEY=sk_...
 
@@ -67,7 +71,7 @@ Deno.serve(async (req) => {
     // retry, or the race this refund_sale() itself now closes on the DB
     // side) collapse into one real Stripe refund instead of two.
     await stripe.refunds.create(
-      { payment_intent: sale.processor_payment_id },
+      { payment_intent: sale.processor_payment_id, refund_application_fee: true },
       { stripeAccount: store.stripe_account_id, idempotencyKey: `refund-sale-${sale.id}` }
     );
 
