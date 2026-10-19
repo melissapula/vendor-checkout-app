@@ -8,7 +8,8 @@
 // The platform takes an application fee on the charge: PLATFORM_FEE_RATE of
 // the client's feeBaseCents (the subtotal after deals, no tip), except for
 // stores listed in PLATFORM_FEE_EXEMPT_STORE_IDS. Unset rate = no fee. See
-// _shared/platformFee.ts.
+// _shared/platformFee.ts. A store that hasn't accepted the Terms version
+// stating that fee (_shared/terms.ts) is refused with a 403.
 //
 // Deploy: supabase functions deploy stripe-create-checkout
 // Secrets: supabase secrets set STRIPE_SECRET_KEY=sk_...
@@ -19,6 +20,7 @@ import Stripe from 'npm:stripe@17';
 import { corsHeaders } from '../_shared/cors.ts';
 import { getCallingStore } from '../_shared/store.ts';
 import { parseExemptStoreIds, parsePlatformFeeRate, platformFeeCents } from '../_shared/platformFee.ts';
+import { CURRENT_TERMS_VERSION } from '../_shared/terms.ts';
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
   httpClient: Stripe.createFetchHttpClient(),
@@ -29,6 +31,17 @@ Deno.serve(async (req) => {
 
   try {
     const { store } = await getCallingStore(req);
+
+    // The app shows the accept screen first (src/lib/terms.ts); this stops a
+    // direct call from taking a card sale under terms that don't state the
+    // fee. Checked before the Stripe check so tests/api/terms-gate.js can
+    // reach it as a vendor with no Stripe account.
+    if ((store.terms_version_accepted ?? 0) < CURRENT_TERMS_VERSION) {
+      return new Response(
+        JSON.stringify({ error: 'Accept the updated Terms of Service in the app before taking card payments' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     if (!store.stripe_account_id || !store.stripe_onboarding_complete) {
       return new Response(JSON.stringify({ error: 'This store has not finished connecting Stripe yet' }), {

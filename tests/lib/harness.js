@@ -37,6 +37,21 @@ const testVendor = () => ({
   pin: env('TEST_VENDOR_PIN'),
 });
 
+// After clicking Sign in, waits for the customer view. If the app shows the
+// updated-Terms screen first (src/screens/auth/AcceptTermsScreen.tsx), ticks
+// and accepts it: the one write a ui script can make, and only once per new
+// Terms version, since tests/api/terms-gate.js puts back what it changes.
+async function waitForCustomerView(page) {
+  const customerView = page.getByText('Scan with camera', { exact: true });
+  const termsScreen = page.getByText('Our Terms have changed', { exact: true });
+  await customerView.or(termsScreen).waitFor({ timeout: 30000 });
+  if (await termsScreen.isVisible()) {
+    await page.getByTestId('accept-terms-checkbox').click();
+    await page.getByText('Accept', { exact: true }).click();
+    await customerView.waitFor({ timeout: 30000 });
+  }
+}
+
 // Signs a Playwright page in as the test vendor and unlocks the admin side
 // (Staff Access lives in the ▾ menu), stopping on Inventory.
 async function signInToInventory(page, url) {
@@ -45,7 +60,7 @@ async function signInToInventory(page, url) {
   await page.getByPlaceholder('Email').fill(vendor.email);
   await page.getByPlaceholder('Password', { exact: true }).fill(vendor.password);
   await page.getByText('Sign in', { exact: true }).click();
-  await page.getByText('Scan with camera', { exact: true }).waitFor({ timeout: 30000 });
+  await waitForCustomerView(page);
   await page.getByText(/▾/).first().click();
   await page.getByText('Staff Access', { exact: true }).click();
   await page.getByPlaceholder('Enter PIN').fill(vendor.pin);
@@ -84,4 +99,4 @@ function start(name) {
   return { url, check, problems, shotPath, finish, crash };
 }
 
-module.exports = { env, testVendor, signInToInventory, DEMO, start };
+module.exports = { env, testVendor, signInToInventory, waitForCustomerView, DEMO, start };

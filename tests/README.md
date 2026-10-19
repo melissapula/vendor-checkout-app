@@ -10,8 +10,8 @@ Unit tests are separate and live next to the code they test (see
 
 | Folder | What | Writes? | Runs on GitHub |
 |---|---|---|---|
-| `ui/` | Playwright drives Chromium through the app: the demo store (`demo`, `charts-signout`, `themes`) and the Twin Maples test vendor (`smoke`, `search`, `reports`) | No | Every push to master and every pull request, against a build of that commit |
-| `api/` | Supabase client calls with no app in between: the demo store's read-only lock (`lock`) and the Stripe onboarding function's demo guard (`edge-function`) | `lock` inserts and deletes one event row | Nightly at 09:30 UTC, after the demo reset |
+| `ui/` | Playwright drives Chromium through the app: the demo store (`demo`, `charts-signout`, `themes`) and the Twin Maples test vendor (`smoke`, `search`, `reports`) | Only to accept an updated Terms screen if the test vendor is shown one | Every push to master and every pull request, against a build of that commit |
+| `api/` | Supabase client calls with no app in between: the demo store's read-only lock (`lock`) the Stripe onboarding function's demo guard (`edge-function`), and the checkout function's Terms gate (`terms-gate`) | `lock` inserts and deletes one event row; `terms-gate` lowers the test vendor's Terms version, then puts it back | Nightly at 09:30 UTC, after the demo reset |
 | `manual/` | `theme-save`: saves a theme to the test store and checks a fresh browser gets it | Yes, then puts the original theme back | Never — run by hand |
 
 ## Running them

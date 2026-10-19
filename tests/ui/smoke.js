@@ -1,8 +1,9 @@
 // Read-only smoke test of the whole app as an ordinary vendor (the Twin
 // Maples test store, not the demo). Opens every screen and form, never
-// saves, sells, prints or deletes.
+// saves, sells, prints or deletes (signing in may accept an updated Terms
+// screen; see waitForCustomerView in tests/lib/harness.js).
 const { chromium } = require('playwright');
-const { start, testVendor } = require('../lib/harness');
+const { start, testVendor, waitForCustomerView } = require('../lib/harness');
 
 const { url, check, problems, shotPath, finish, crash } = start('smoke');
 const vendor = testVendor();
@@ -105,7 +106,7 @@ async function run(viewport, label) {
   where = 'login';
   await page.getByPlaceholder('Password', { exact: true }).fill(vendor.password);
   await page.getByText('Sign in', { exact: true }).click();
-  await page.getByText('Scan with camera', { exact: true }).waitFor({ timeout: 30000 });
+  await waitForCustomerView(page);
   await page.waitForTimeout(1500);
   check(`[${label}] signs in to the customer view`, true);
   check(`[${label}] browser tab title is the store name`, (await page.title()) === 'Twin Maples Studio', await page.title());
