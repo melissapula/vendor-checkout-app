@@ -3,7 +3,6 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { appAlert } from '../../lib/alert';
-import { PLATFORM_FEE_TEXT } from '../../lib/terms';
 import AppModal from '../../components/AppModal';
 import TermsScreen from '../TermsScreen';
 import { colors } from '../../lib/theme';
@@ -37,9 +36,7 @@ export default function AcceptTermsScreen() {
     <SafeAreaView style={styles.container}>
       <Text style={styles.heading}>Our Terms have changed</Text>
       <Text style={styles.subheading}>
-        MFP Apps now charges a platform fee of {PLATFORM_FEE_TEXT} of the subtotal on card and Cash App
-        sales, starting with sales made after you accept. It comes out of your payout, never your
-        customer's total. Tips, Venmo, PayPal, and cash have no fee.
+        We've updated our Terms of Service. Please review and accept them to continue.
       </Text>
 
       <Pressable style={styles.termsRow} onPress={() => setTermsAccepted((v) => !v)}>

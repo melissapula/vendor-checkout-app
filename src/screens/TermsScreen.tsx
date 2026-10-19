@@ -2,7 +2,6 @@ import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 import { colors } from '../lib/theme';
-import { PLATFORM_FEE_TEXT } from '../lib/terms';
 
 // One line to update if the operator name, point of contact, or "as of"
 // date changes.
@@ -66,15 +65,8 @@ export default function TermsScreen({ onClose }: { onClose: () => void }) {
             Card and Cash App payments from your customers are processed directly by Stripe through your
             own connected Stripe account — funds go straight to you, and we never receive or hold your
             customers' payment information. Venmo, PayPal, and cash are self-reported by you at checkout;
-            we don't verify or process those payments in any way.
-          </P>
-          <P>
-            Platform fee: {SERVICE_NAME} charges {PLATFORM_FEE_TEXT} of the subtotal (after any deals) of
-            each card and Cash App sale you make after accepting this version of these terms. Stripe
-            collects it from that sale for us, so it comes out of your payout; it is never added to your
-            customer's total, even when you choose to pass Stripe's processing fee to the buyer. There is no
-            fee on tips, or on Venmo, PayPal, or cash sales. If a card or Cash App sale is refunded through
-            the app, the platform fee is refunded with it.
+            we don't verify or process those payments in any way. We do not currently charge any fee for
+            using this Service.
           </P>
         </Section>
 

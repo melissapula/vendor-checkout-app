@@ -8,12 +8,13 @@
 // The platform takes an application fee on the charge: PLATFORM_FEE_RATE of
 // the client's feeBaseCents (the subtotal after deals, no tip), except for
 // stores listed in PLATFORM_FEE_EXEMPT_STORE_IDS. Unset rate = no fee. See
-// _shared/platformFee.ts. A store that hasn't accepted the Terms version
-// stating that fee (_shared/terms.ts) is refused with a 403.
+// _shared/platformFee.ts. The Terms no longer state a fee, so leave the rate
+// unset. A store that hasn't accepted the current Terms version
+// (_shared/terms.ts) is refused with a 403.
 //
 // Deploy: supabase functions deploy stripe-create-checkout
 // Secrets: supabase secrets set STRIPE_SECRET_KEY=sk_...
-//          supabase secrets set PLATFORM_FEE_RATE=0.01 (optional)
+//          supabase secrets set PLATFORM_FEE_RATE=0.01 (not set: see above)
 //          supabase secrets set PLATFORM_FEE_EXEMPT_STORE_IDS=<id>,<id> (optional)
 
 import Stripe from 'npm:stripe@17';
