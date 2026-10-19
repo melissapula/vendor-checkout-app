@@ -9,12 +9,14 @@
 #   run by hand), so pointing the tests at the live site after a push would
 #   test the old code. Instead this builds the web app from the commit,
 #   serves it inside the job, and runs tests/ui against that. The app still
-#   talks to the live database, so every ui script is read-only.
+#   talks to the live database, so every ui script is read-only, except
+#   that signing in accepts an updated Terms screen if one is shown.
 # - `api` tests the database rules and the deployed server function, which
 #   no commit changes until a migration or function deploy is run by hand.
 #   It runs nightly, just after the demo reset (reset-demo.yml), so a
 #   broken reset shows up too. tests/api/lock.js writes and deletes one row
-#   in the test vendor's store.
+#   in the test vendor's store; tests/api/terms-gate.js lowers its Terms
+#   version and puts it back.
 #
 # How the triggers work on GitHub, for anyone coming from GitLab:
 # - `push` to master runs after a merge. `pull_request` runs on every push

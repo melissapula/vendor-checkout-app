@@ -16,12 +16,14 @@ import { ThemeProvider } from './src/context/ThemeContext';
 import RootNavigator from './src/navigation/RootNavigator';
 import AuthScreen from './src/screens/auth/AuthScreen';
 import CreateStoreScreen from './src/screens/auth/CreateStoreScreen';
+import AcceptTermsScreen from './src/screens/auth/AcceptTermsScreen';
 import ResetPasswordScreen from './src/screens/auth/ResetPasswordScreen';
 import AlertHost from './src/components/AlertHost';
 import OfflineBanner from './src/components/OfflineBanner';
 import DemoBanner from './src/components/DemoBanner';
 import ColorStripe from './src/components/ColorStripe';
 import { colors } from './src/lib/theme';
+import { needsTermsAcceptance } from './src/lib/terms';
 
 function AppGate() {
   const { session, authLoading, store, storeLoading, storeError, retryStoreFetch } = useAuth();
@@ -68,6 +70,7 @@ function AppGate() {
   }
 
   if (!store) return <CreateStoreScreen />;
+  if (needsTermsAcceptance(store)) return <AcceptTermsScreen />;
 
   return (
     <PiecesProvider>

@@ -13,6 +13,7 @@ import { useAuth } from '../context/AuthContext';
 import { FeeRate, PaymentMethod } from '../types/database';
 import { startStripeOnboarding, checkStripeAccountStatus, getStripeAccountBalance, StripeAccountBalance } from '../lib/payments';
 import { feeRateFor } from '../lib/fees';
+import { PLATFORM_FEE_TEXT } from '../lib/terms';
 import { appAlert } from '../lib/alert';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
 import { colors } from '../lib/theme';
@@ -298,11 +299,14 @@ export default function PaymentSettingsScreen() {
       <View style={styles.divider} />
 
       <Text style={styles.sectionLabel}>Processing fees</Text>
+      <Text style={styles.helperText}>
+        MFP Apps fee: {PLATFORM_FEE_TEXT} of the subtotal on card and Cash App sales. Not passed to the buyer.
+      </Text>
       <Pressable style={styles.toggleRow} onPress={() => setPassFeeToBuyer((v) => !v)}>
         <View style={[styles.checkbox, passFeeToBuyer && styles.checkboxChecked]}>
           {passFeeToBuyer && <Text style={styles.checkboxMark}>✓</Text>}
         </View>
-        <Text style={styles.toggleLabel}>Add the processing fee to the buyer's total (instead of it coming out of your payout)</Text>
+        <Text style={styles.toggleLabel}>Add Stripe's processing fee to the buyer's total (instead of it coming out of your payout)</Text>
       </Pressable>
 
       <Pressable style={{ marginTop: 14 }} onPress={() => setShowFeeOverrides((v) => !v)}>

@@ -3,6 +3,7 @@ import { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { Store } from '../types/database';
 import { isDemoEmail } from '../lib/demo';
+import { CURRENT_TERMS_VERSION } from '../lib/terms';
 
 interface AuthContextValue {
   session: Session | null;
@@ -36,6 +37,9 @@ interface AuthContextValue {
       >
     >
   ) => Promise<void>;
+  // Records that the vendor accepted the current Terms version (see
+  // src/lib/terms.ts), which lets them past AcceptTermsScreen.
+  acceptTerms: () => Promise<void>;
   // For state written server-side by an Edge Function (stripe_account_id,
   // stripe_onboarding_complete) rather than through updateStore — re-fetches
   // the store row so local state catches up.
@@ -181,6 +185,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // CreateStoreScreen is checked, so acceptance is stamped right here
         // rather than needing a separate write.
         terms_accepted_at: new Date().toISOString(),
+        terms_version_accepted: CURRENT_TERMS_VERSION,
       })
       .select()
       .single();
@@ -193,6 +198,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { error } = await supabase.from('stores').update(updates).eq('id', store.id);
     if (error) throw error;
     setStore((prev) => (prev ? { ...prev, ...updates } : prev));
+  }
+
+  async function acceptTerms() {
+    await updateStore({
+      terms_version_accepted: CURRENT_TERMS_VERSION,
+      terms_accepted_at: new Date().toISOString(),
+    });
   }
 
   async function refreshStore() {
@@ -219,6 +231,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         retryStoreFetch,
         createStore,
         updateStore,
+        acceptTerms,
         refreshStore,
       }}
     >

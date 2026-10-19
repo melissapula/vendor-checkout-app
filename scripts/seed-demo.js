@@ -207,7 +207,15 @@ async function main() {
   if (!store) {
     const { data, error } = await demo
       .from('stores')
-      .insert({ owner_id: demoUser.id, name: STORE_NAME, admin_pin: STAFF_PIN, terms_accepted_at: new Date().toISOString() })
+      // terms_version_accepted is for consistency only: the app never shows
+      // the demo store the accept screen (src/lib/terms.ts skips is_demo).
+      .insert({
+        owner_id: demoUser.id,
+        name: STORE_NAME,
+        admin_pin: STAFF_PIN,
+        terms_accepted_at: new Date().toISOString(),
+        terms_version_accepted: 2, // src/lib/terms.ts CURRENT_TERMS_VERSION
+      })
       .select()
       .single();
     if (error) throw error;

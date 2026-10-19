@@ -142,6 +142,10 @@ export type Store = {
   require_admin_pin: boolean;
   low_stock_threshold: number;
   terms_accepted_at: string | null;
+  // The Terms version last accepted (see src/lib/terms.ts), or null for a
+  // store that hasn't accepted since versions began. Optional because the
+  // column arrives with migration 0024.
+  terms_version_accepted?: number | null;
   // Only ever true for the public demo store, which the database treats as
   // read-only. See supabase/migrations/0020_demo_read_only.sql.
   is_demo: boolean;
