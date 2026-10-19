@@ -462,7 +462,10 @@ npx supabase functions deploy stripe-account-balance
 ```
 
 **Platform fee secrets** (both optional; read by `stripe-create-checkout`,
-see `supabase/functions/_shared/platformFee.ts`):
+see `supabase/functions/_shared/platformFee.ts`). **Leave `PLATFORM_FEE_RATE`
+unset:** the per-sale fee was withdrawn before it was ever charged, and the
+Terms say there is no fee, so setting it would charge vendors without their
+agreement.
 - `PLATFORM_FEE_RATE`: the MFP Apps fee on card and Cash App sales, as a
   fraction of the subtotal after deals (tips are never charged), for example
   `0.01` for 1%. Unset means no fee. Anything that isn't a number from 0 to
