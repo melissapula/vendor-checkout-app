@@ -166,6 +166,41 @@ export type Store = {
   fee_overrides: Partial<Record<PaymentMethod, FeeRate>>;
 };
 
+// A store's subscription plan, written only by the server (the Stripe
+// billing webhook, or by hand for comps). See
+// supabase/migrations/0025_store_subscriptions.sql. A store with no row is
+// on the free plan.
+export type StoreSubscription = {
+  store_id: string;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  status: string | null;
+  price_interval: string | null;
+  trial_end: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  comped: boolean;
+  updated_at: string;
+};
+
+// The single row of global billing switches (migration 0025).
+export type BillingSettings = {
+  id: boolean;
+  plans_enforced: boolean;
+};
+
+// What get_plan_state() returns for the signed-in vendor's store. is_paid
+// is the server's answer; the app never works it out itself.
+export type PlanState = {
+  plans_enforced: boolean;
+  is_paid: boolean;
+  status: string | null;
+  trial_end: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  has_subscribed_before: boolean;
+};
+
 // One row per store — the shared "current cart" every device signed into
 // that store sees live. `items` is CartItem[] (defined in src/lib/cartItem.ts,
 // not here, since it's an app-level shape built on Piece) stored as Json;
@@ -231,6 +266,19 @@ export type Database = {
         Update: Partial<SavedReport>;
         Relationships: [];
       };
+      // Read-only to vendors: the database refuses their writes.
+      store_subscriptions: {
+        Row: StoreSubscription;
+        Insert: Partial<StoreSubscription>;
+        Update: Partial<StoreSubscription>;
+        Relationships: [];
+      };
+      billing_settings: {
+        Row: BillingSettings;
+        Insert: Partial<BillingSettings>;
+        Update: Partial<BillingSettings>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -265,6 +313,16 @@ export type Database = {
       // someone else.
       redeem_beta_code: {
         Args: { p_code: string };
+        Returns: boolean;
+      };
+      // The signed-in vendor's plan — see
+      // supabase/migrations/0025_store_subscriptions.sql.
+      get_plan_state: {
+        Args: Record<string, never>;
+        Returns: PlanState;
+      };
+      store_has_paid_plan: {
+        Args: { p_store_id: string };
         Returns: boolean;
       };
     };
