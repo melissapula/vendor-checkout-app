@@ -18,7 +18,7 @@ import {
   ReportSnapshot,
 } from '../types/database';
 import { useBreakpoint, centeredColumn, CONTENT_WIDTH } from '../lib/responsive';
-import { refundSale } from '../lib/refunds';
+import { refundSale, refundSuccessMessage } from '../lib/refunds';
 import { appAlert } from '../lib/alert';
 import { salesGroupedBy, salesOverTime } from '../lib/reportCharts';
 import { summarizeSales } from '../lib/salesSummary';
@@ -201,6 +201,7 @@ function SalesReport({ onManageEvents }: { onManageEvents: () => void }) {
       const result = await refundSale(sale);
       applySaleUpdate(result.sale);
       if (result.piece) applyPieceUpdates([result.piece]);
+      appAlert('Refunded', refundSuccessMessage(result));
     } catch (err) {
       appAlert('Refund failed', err instanceof Error ? err.message : 'Could not refund this sale.');
     }
