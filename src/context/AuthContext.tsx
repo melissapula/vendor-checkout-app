@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-import { Store } from '../types/database';
+import { PlanState, Store } from '../types/database';
 import { isDemoEmail } from '../lib/demo';
 import { CURRENT_TERMS_VERSION } from '../lib/terms';
+import { planStateFromRpc } from '../lib/plan';
 
 interface AuthContextValue {
   session: Session | null;
@@ -44,6 +45,14 @@ interface AuthContextValue {
   // stripe_onboarding_complete) rather than through updateStore — re-fetches
   // the store row so local state catches up.
   refreshStore: () => Promise<void>;
+  // The store's subscription plan from get_plan_state() (migration 0025),
+  // or null before it loads or while plans don't exist yet. Use
+  // src/lib/plan.ts to read it, rather than checking fields here.
+  planState: PlanState | null;
+  planError: string | null;
+  // Re-fetches planState, for after the server changes it (a subscription
+  // started or cancelled through Stripe).
+  refreshPlanState: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -55,6 +64,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [storeLoading, setStoreLoading] = useState(true);
   const [storeError, setStoreError] = useState<string | null>(null);
   const [storeFetchAttempt, setStoreFetchAttempt] = useState(0);
+  const [planState, setPlanState] = useState<PlanState | null>(null);
+  const [planError, setPlanError] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -120,6 +131,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, storeFetchAttempt]);
+
+  // Keyed on the store id, for the same reason the fetch above is keyed on
+  // the user id rather than the session object.
+  const storeId = store?.id;
+
+  useEffect(() => {
+    if (!storeId) {
+      setPlanState(null);
+      setPlanError(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function fetchPlanState() {
+      const result = await loadPlanState();
+      if (cancelled) return;
+      setPlanState(result.planState);
+      setPlanError(result.planError);
+    }
+
+    fetchPlanState();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeId]);
+
+  async function loadPlanState(): Promise<{ planState: PlanState | null; planError: string | null }> {
+    try {
+      // `get: true` sends a GET. A POST (rpc's default) from the demo login
+      // is treated as a write by demoGuardedFetch (src/lib/supabase.ts),
+      // which would show every demo visitor "The demo is read-only".
+      return planStateFromRpc(await supabase.rpc('get_plan_state', {}, { get: true }));
+    } catch (error) {
+      return { planState: null, planError: error instanceof Error ? error.message : 'Failed to load plan' };
+    }
+  }
+
+  async function refreshPlanState() {
+    const result = await loadPlanState();
+    setPlanState(result.planState);
+    setPlanError(result.planError);
+  }
 
   function retryStoreFetch() {
     setStoreFetchAttempt((n) => n + 1);
@@ -233,6 +289,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         updateStore,
         acceptTerms,
         refreshStore,
+        planState,
+        planError,
+        refreshPlanState,
       }}
     >
       {children}
