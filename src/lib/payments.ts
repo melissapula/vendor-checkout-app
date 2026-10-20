@@ -34,6 +34,25 @@ export async function startStripeOnboarding(returnUrl: string, refreshUrl: strin
   return data!.url;
 }
 
+// The vendor's own subscription to the paid plan (Stripe Billing on the
+// platform account): stripe-billing-checkout and stripe-billing-portal.
+// Each returns a Stripe-hosted page to send the browser to.
+export async function startBillingCheckout(interval: 'month' | 'year', returnUrl: string): Promise<string> {
+  const { data, error } = await supabase.functions.invoke<{ url: string }>('stripe-billing-checkout', {
+    body: { interval, returnUrl },
+  });
+  if (error) throw await unwrapFunctionError(error);
+  return data!.url;
+}
+
+export async function openBillingPortal(returnUrl: string): Promise<string> {
+  const { data, error } = await supabase.functions.invoke<{ url: string }>('stripe-billing-portal', {
+    body: { returnUrl },
+  });
+  if (error) throw await unwrapFunctionError(error);
+  return data!.url;
+}
+
 export interface StripeAccountStatus {
   connected: boolean;
   chargesEnabled: boolean;

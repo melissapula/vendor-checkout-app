@@ -459,7 +459,43 @@ npx supabase functions deploy stripe-create-checkout
 npx supabase functions deploy stripe-checkout-status
 npx supabase functions deploy stripe-refund-sale
 npx supabase functions deploy stripe-account-balance
+npx supabase functions deploy stripe-billing-checkout
+npx supabase functions deploy stripe-billing-portal
+npx supabase functions deploy stripe-billing-webhook --no-verify-jwt
 ```
+`--no-verify-jwt` is only for the webhook: Stripe calls it with no Supabase
+login, so the gateway's login check must be off for it. The function checks
+Stripe's signature instead, before it reads anything else. Leave it off
+every other function.
+
+**Subscription billing** (the vendor's own paid plan, `store_subscriptions`
+from migration 0025). This is Stripe Billing on the **platform** account,
+separate from Connect: vendors pay MFP Apps, unlike their sales, which go to
+their own connected accounts. `stripe-billing-checkout` starts a Checkout
+Session in subscription mode (a 14-day trial the first time only),
+`stripe-billing-portal` opens the Stripe Customer Portal, and
+`stripe-billing-webhook` writes every subscription change into
+`store_subscriptions` with the service-role key. Nothing is charged to
+anyone while `billing_settings.plans_enforced` is false, but a subscription
+started there is real. One-time setup, in live mode in the Stripe Dashboard:
+1. **Product** "Vendor Checkout Pro" with two recurring Prices: $12/month and
+   $120/year. Copy both price ids (`price_...`).
+2. **Customer Portal** (Settings > Billing > Customer portal): allow cancel
+   at the end of the billing period, updating the payment method, and
+   switching between the two prices.
+3. **Webhook endpoint** at
+   `https://<project-ref>.supabase.co/functions/v1/stripe-billing-webhook`,
+   on the platform account (not "connected accounts"), listening for
+   `checkout.session.completed`, `customer.subscription.created`,
+   `customer.subscription.updated` and `customer.subscription.deleted`.
+   Copy its signing secret (`whsec_...`).
+4. **Restricted key**, under plain **Permissions** (not Connect
+   Permissions): Checkout Sessions write, Customers write, Subscriptions
+   read, Customer portal write, Prices read.
+5. **Secrets**:
+   ```
+   npx supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_... STRIPE_PRICE_MONTHLY=price_... STRIPE_PRICE_YEARLY=price_...
+   ```
 
 **Platform fee secrets** (both optional; read by `stripe-create-checkout`,
 see `supabase/functions/_shared/platformFee.ts`). **Leave `PLATFORM_FEE_RATE`
