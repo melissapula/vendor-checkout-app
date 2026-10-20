@@ -33,3 +33,15 @@ export async function refundSale(sale: Sale): Promise<RefundResult> {
   if (error) throw error;
   return data;
 }
+
+// Body of the "Refunded" alert shown after refundSale() succeeds. Stripe
+// refunds go back automatically (card about 5-10 business days, Cash App Pay
+// up to 10, per Stripe's docs); self-reported ones only change our records,
+// so staff are reminded the money is theirs to hand back.
+export function refundSuccessMessage(result: RefundResult): string {
+  const moneyLine = wasStripePaid(result.sale.payment_method)
+    ? 'Stripe is returning the money to the customer. It can take up to 10 business days to show up.'
+    : "Marked as refunded. Make sure you've given the customer their money back.";
+  if (!result.piece) return moneyLine;
+  return `${moneyLine}\n\n${result.piece.title} is back in stock.`;
+}
