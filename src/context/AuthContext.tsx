@@ -162,7 +162,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function loadPlanState(): Promise<{ planState: PlanState | null; planError: string | null }> {
     try {
-      return planStateFromRpc(await supabase.rpc('get_plan_state'));
+      // `get: true` sends a GET. A POST (rpc's default) from the demo login
+      // is treated as a write by demoGuardedFetch (src/lib/supabase.ts),
+      // which would show every demo visitor "The demo is read-only".
+      return planStateFromRpc(await supabase.rpc('get_plan_state', {}, { get: true }));
     } catch (error) {
       return { planState: null, planError: error instanceof Error ? error.message : 'Failed to load plan' };
     }
